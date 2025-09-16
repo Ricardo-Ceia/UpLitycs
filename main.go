@@ -12,6 +12,7 @@ func getUserName(w http.ResponseWriter, r * http.Request){
 	w.Write([]byte("Hello "+userName))
 }
 
+
 func main(){
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -21,7 +22,17 @@ func main(){
 		w.Write([]byte("root."))
 	})
 	
-
 	r.Get("/{userName}",getUserName)
+	
+	r.NotFound(func(w http.ResponseWriter,r *http.Request){
+		w.WriteHeader(404)
+		w.Write([]byte("route does not exist"))
+	})
+
+	r.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request){
+		w.WriteHeader(405)
+		w.Write([]byte("method is not valid"))
+	})
+
 	http.ListenAndServe(":3333",r)
 }
