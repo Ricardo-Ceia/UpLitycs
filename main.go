@@ -1,25 +1,12 @@
 package main 
 
 import (
-	"context"
+	//"context"
 	"net/http"
 	"fmt"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/v5/middleware"
 )
-
-func getUserName(w http.ResponseWriter, r * http.Request){
-	userName := chi.URLParam(r,"userName")
-
-	w.Write([]byte("Hello "+userName))
-}
-
-func MyMiddleware(next http.Handler) http.Handler {
-  return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    ctx := context.WithValue(r.Context(), "user", "123")
-    next.ServeHTTP(w, r.WithContext(ctx))
-  })
-}
 
 func MyHandler(w http.ResponseWriter,r *http.Request){
 	user := r.Context().Value("user").(string)
@@ -27,15 +14,27 @@ func MyHandler(w http.ResponseWriter,r *http.Request){
 	w.Write([]byte(fmt.Sprintf("hi %s",user)))
 }
 
+func sendHTMLHandler(w http.ResponseWriter, r *http.Request){
+	w.Header().Set("Content-Type","text/html")
+	w.Write([]byte(`
+		<!DOCTYPE html>
+		<html>
+		<head>
+    	<title>Hello</title>
+		</head>
+		<body>
+    	<h1>Hello, World!</h1>
+    	<p>This is a simple HTML string.</p>
+		</body>
+		</html>`))
+}
+
 func main(){
 	r := chi.NewRouter()
-	r.Use(MyMiddleware)
+	r.Use(middleware.Compress(5,"text/html","text/css"))
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
-
-	r.Get("/",MyHandler)
-	
-	//r.Get("/{userName}",getUserName)
+	r.Get("/",sendHTMLHandler)
 	
 	r.NotFound(func(w http.ResponseWriter,r *http.Request){
 		w.WriteHeader(404)
