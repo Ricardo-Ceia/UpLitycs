@@ -1,11 +1,13 @@
 package main 
 
 import (
-	//"context"
-	"net/http"
-	"fmt"
-	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/v5/middleware"
+    "net/http"
+    "fmt"
+		"log"
+    "github.com/go-chi/chi"
+    "github.com/go-chi/chi/v5/middleware"
+		"time"
+    "uplytics/db"
 )
 
 func MyHandler(w http.ResponseWriter,r *http.Request){
@@ -35,6 +37,18 @@ func main(){
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Get("/",sendHTMLHandler)
+	
+	//Testing the connection db function
+	conn := db.OpenDB()
+	defer conn.Close()
+	for i:=0;i<10;i++{
+		err := db.PingDB(conn)
+		if err != nil{
+			log.Println(err)
+		}
+		log.Println("Ping successfull")
+		time.Sleep(2*time.Second)
+	}
 	
 	r.NotFound(func(w http.ResponseWriter,r *http.Request){
 		w.WriteHeader(404)
