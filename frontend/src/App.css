@@ -40,3 +40,29 @@
 .read-the-docs {
   color: #888;
 }
+
+
+/*Home*/
+
+.shiny-letter {
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  animation: shine 1s ease-in-out forwards;
+}
+
+@keyframes shine {
+  0% {
+    background-position: -200% 0;
+    text-shadow: 0 0 2px #666;
+  }
+  50% {
+    background-position: 200% 0;
+    color: #fff;
+    text-shadow: 0 0 10px #fff, 0 0 20px #ffd700;
+  }
+  100% {
+    background-position: 200% 0;
+    text-shadow: 0 0 2px #666;
+  }
+}
+/*Home end*/
