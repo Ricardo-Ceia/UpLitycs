@@ -2,12 +2,12 @@ package main
 
 import (
     "net/http"
-    "fmt"
 		"log"
     "github.com/go-chi/chi"
     "github.com/go-chi/chi/v5/middleware"
 		"time"
     "uplytics/db"
+		"uplytics/backend"
 )
 
 func main(){
@@ -17,6 +17,18 @@ func main(){
 	
 	conn := db.OpenDB()
 	defer conn.Close()
+
+	testUrl := "https://x.com/home"
+	for i:=0;i<4;i++{
+		status,err := backend.GetMainPage(testUrl)
+		
+		if err!=nil{
+			log.Println(err)
+		}
+
+		log.Println("Status code returned from:%s was %d",testUrl,status)
+		time.Sleep(5*time.Second)
+	} 
 	
 	r.NotFound(func(w http.ResponseWriter,r *http.Request){
 		w.WriteHeader(404)
