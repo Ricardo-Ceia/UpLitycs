@@ -1,14 +1,12 @@
 import "./App.css";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+
 function Home() {
   return (
     <section className="homeBackground relative min-h-screen flex flex-col justify-center items-center px-6 text-center space-y-6 overflow-hidden">
         <h1 className="brand-logo">UPLYTICS</h1>
         <StatusLight/>
-        <ShinyText text="Monitor Your Services. Catch Issues Before They Catch You." />
-        <p className="text-textSecondary text-lg md:text-xl max-w-xl mt-4">
-          Uplytics keeps your websites, APIs, and apps running smoothly with real-time alerts and a public status page.
-        </p>
+        <TypingText text="Monitor Your Services. Catch Issues Before They Catch You." speed={60} />
         <button className="retro-button mt-6">
           Get Started - Free
         </button>
@@ -31,19 +29,28 @@ function StatusLight(){
       </div>
   )
 }
-function ShinyText({ text }) {
+
+
+function TypingText({ text, speed = 100 }) {
+  const [displayedText, setDisplayedText] = useState("");
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (index < text.length) {
+      const timeout = setTimeout(() => {
+        setDisplayedText((prev) => prev + text[index]);
+        setIndex(index + 1);
+      }, speed);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [index, text, speed]);
+
   return (
-    <h1 className="text-4xl md:text-5xl font-bold text-primary leading-tight">
-      {text.split("").map((c, index) => (
-        <span
-          key={index}
-          style={{ animationDelay: `${index * 0.1}s` }}
-          className="shiny-letter"
-        >
-          {c}
-        </span>
-      ))}
-    </h1>
+    <h2 className="retro-typping">
+      {displayedText}
+      <span className="vim-cursor">{index < text.length ? " " : ""}</span>
+    </h2>
   );
 }
 
