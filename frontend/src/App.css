@@ -1,5 +1,7 @@
 /*Home*/
-
+.homeBackground{
+  background: linear-gradient(135deg, #1B1B2F, #2E1B4D);
+}
 .brand-logo {
   font-family: 'Press Start 2P', monospace;
   font-size: 2.5rem;

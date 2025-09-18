@@ -2,7 +2,7 @@ import "./App.css";
 import React, { useState } from "react";
 function Home() {
   return (
-    <section className="relative min-h-screen flex flex-col justify-center items-center px-6 text-center space-y-6 overflow-hidden">
+    <section className="homeBackground relative min-h-screen flex flex-col justify-center items-center px-6 text-center space-y-6 overflow-hidden">
         <h1 className="brand-logo">UPLYTICS</h1>
         <StatusLight/>
         <ShinyText text="Monitor Your Services. Catch Issues Before They Catch You." />
