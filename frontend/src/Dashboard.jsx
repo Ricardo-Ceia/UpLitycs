@@ -14,7 +14,6 @@ const Dashboard = () => {
   const [uptimeHistory, setUptimeHistory] = useState([]);
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Generate mock uptime history (90 days of data)
   const generateUptimeHistory = () => {
     const days = [];
     const now = new Date();
@@ -23,17 +22,16 @@ const Dashboard = () => {
       const date = new Date(now);
       date.setDate(date.getDate() - i);
       
-      // Generate random uptime percentage with occasional outages
       let uptimePercent;
       const randomOutage = Math.random();
       
-      if (randomOutage < 0.02) { // 2% chance of major outage
-        uptimePercent = Math.random() * 50; // 0-50% uptime
-      } else if (randomOutage < 0.08) { // 6% chance of partial outage
-        uptimePercent = 70 + Math.random() * 29; // 70-99% uptime
-      } else { // 92% chance of good uptime
-        uptimePercent = 99 + Math.random() * 1; // 99-100% uptime
-      }
+      if (randomOutage < 0.02) { 
+        uptimePercent = Math.random() * 50; 
+      } else if (randomOutage < 0.08) { 
+        uptimePercent = 70 + Math.random() * 29; 
+      } else { 
+        uptimePercent = 99 + Math.random() * 1; 
+    }
       
       days.push({
         date: date,
@@ -49,7 +47,6 @@ const Dashboard = () => {
     setUptimeHistory(generateUptimeHistory());
   }, []);
 
-  // Update time every second
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -58,7 +55,6 @@ const Dashboard = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Simulate status checks every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       const statuses = ['operational', 'operational', 'operational', 'degraded', 'down'];
@@ -93,9 +89,9 @@ const Dashboard = () => {
   };
 
   const getUptimeColor = (uptime) => {
-    if (uptime >= 99) return '#00FF7F'; // Green - operational
-    if (uptime >= 90) return '#FFB347'; // Orange - degraded
-    return '#FF6EC7'; // Pink - down
+    if (uptime >= 99) return '#00FF7F';
+    if (uptime >= 90) return '#FFB347';
+         return '#FF6EC7'; 
   };
 
   const calculateOverallUptime = () => {
@@ -106,10 +102,8 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-container">
-      {/* Retro CRT effect overlay */}
       <div className="crt-overlay"></div>
       
-      {/* Header */}
       <header className="dashboard-header">
         <div className="header-content">
           <h1 className="dashboard-title">HOMEPAGE STATUS</h1>
@@ -120,7 +114,6 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* Homepage Status Card */}
       <section className="status-section">
         <div className="homepage-card">
           <div className="status-header">
@@ -161,7 +154,6 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Uptime Progress Bar */}
           <div className="uptime-bar">
             <div 
               className="uptime-fill"
@@ -171,7 +163,6 @@ const Dashboard = () => {
         </div>
       </section>
 
-      {/* Uptime History Section */}
       <section className="uptime-history-section">
         <div className="uptime-history-header">
           <h3 className="uptime-history-title">90-DAY UPTIME HISTORY</h3>
@@ -212,7 +203,6 @@ const Dashboard = () => {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="dashboard-footer">
         <div className="footer-content">
           <div className="footer-text">
