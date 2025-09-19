@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"uplytics/backend/utils"
 )
@@ -15,11 +14,11 @@ type OnboardingRequest struct {
 
 func StartOnboardingHandler(w http.ResponseWriter, r *http.Request) {
 	//TODO ADD LOGIN VERIFICATION BEFORE REDIRECTING USER
-	log.Println("Reaching the endpoint")
 	http.Redirect(w, r, "/onboarding", http.StatusFound)
 }
 
 func GoToDashboardHandler(w http.ResponseWriter, r *http.Request) {
+	//TODO ADD LOGIN VERIFICATION BEFORE REDIRECTING USER
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
@@ -48,5 +47,8 @@ func GoToDashboardHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/dashboard", http.StatusFound)
+	// Return success JSON instead of redirect
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"success": true, "message": "Onboarding completed successfully"}`))
 }

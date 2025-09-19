@@ -104,7 +104,8 @@ const TerminalOnboarding = () => {
           "Setup complete! 🚀",
           "",
           "Redirecting..."
-        ]);
+        ]);   
+
         setTimeout(() => {
           fetch('/api/go-to-dashboard', {
             method: 'POST',
@@ -113,13 +114,18 @@ const TerminalOnboarding = () => {
             },
             body: JSON.stringify(answers)
           })
-          .then(response => { 
+          .then(response => {
             if (response.ok) {
-               window.location.href = "/dashboard";
-              } else {
-                setError("Failed to complete onboarding. Please try again."); 
-              }
+              // Redirect using React Router instead of backend redirect
+              window.location.href = "/dashboard";
+            } else {
+              setError("Failed to complete onboarding. Please try again.");
+            }
           })
+          .catch(error => {
+            console.error('Error:', error);
+            setError("Network error. Please try again.");
+          });
         }, 2000);
         return;
       }

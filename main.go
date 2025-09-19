@@ -27,6 +27,7 @@ func main() {
 	// --- API routes ---
 	r.Route("/api", func(r chi.Router) {
 		r.Get("/start-onboarding", handlers.StartOnboardingHandler)
+		r.Post("/go-to-dashboard", handlers.GoToDashboardHandler)
 	})
 
 	// --- React build directory ---

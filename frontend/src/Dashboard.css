@@ -1,0 +1,366 @@
+/* Retro Dashboard Styling - Coherent with Homepage */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+.dashboard-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1B1B2F, #2E1B4D);
+  color: #00fff7;
+  font-family: 'JetBrains Mono', monospace;
+  position: relative;
+  overflow-x: hidden;
+  padding: 1rem;
+}
+
+/* CRT Effect Overlay */
+.crt-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    repeating-linear-gradient(
+      0deg,
+      rgba(0, 255, 247, 0.03),
+      rgba(0, 255, 247, 0.03) 1px,
+      transparent 1px,
+      transparent 2px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 110, 199, 0.02),
+      rgba(255, 110, 199, 0.02) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+  pointer-events: none;
+  z-index: 1;
+  animation: scanlines 0.1s linear infinite;
+}
+
+@keyframes scanlines {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(2px); }
+}
+
+/* Header */
+.dashboard-header {
+  position: relative;
+  z-index: 2;
+  margin-bottom: 2rem;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.dashboard-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 2rem;
+  color: #FF6EC7;
+  text-shadow:
+    2px 2px 0 #8C52FF,
+    -2px -2px 0 #00FFF7,
+    0 0 5px #FF6EC7,
+    0 0 10px #8C52FF;
+  letter-spacing: 0.1em;
+  animation: flicker 3s infinite;
+}
+
+@keyframes flicker {
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
+  20%, 22%, 24%, 55% { opacity: 0.9; }
+}
+
+.system-clock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+
+.clock-label {
+  font-size: 0.7rem;
+  color: #8C52FF;
+  opacity: 0.8;
+  letter-spacing: 0.1em;
+}
+
+.clock-time {
+  font-size: 1.2rem;
+  color: #00fff7;
+  text-shadow: 0 0 8px #00fff7;
+  font-weight: 600;
+}
+
+/* Overall Status */
+.overall-status {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.status-text {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 1.5rem;
+  color: #00fff7;
+  text-shadow: 0 0 10px #00fff7;
+  letter-spacing: 0.05em;
+}
+
+/* Status LEDs */
+.status-led {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #333;
+  box-shadow: inset -2px -2px 6px rgba(255,255,255,0.2),
+              inset 2px 2px 6px rgba(0,0,0,0.6);
+  transition: all 0.3s ease;
+}
+
+.status-led.active.red {
+  background: radial-gradient(circle at 30% 30%, #ff6666, #cc0000);
+  box-shadow: 0 0 10px #ff3333,
+              0 0 20px #ff0000,
+              0 0 30px #ff0000,
+              inset -2px -2px 6px rgba(255,255,255,0.3),
+              inset 2px 2px 6px rgba(0,0,0,0.6);
+}
+
+.status-led.active.yellow {
+  background: radial-gradient(circle at 30% 30%, #ffff99, #ffcc00);
+  box-shadow: 0 0 10px #ffeb3b,
+              0 0 20px #ffc107,
+              0 0 30px #ffc107,
+              inset -2px -2px 6px rgba(255,255,255,0.3),
+              inset 2px 2px 6px rgba(0,0,0,0.6);
+}
+
+.status-led.active.green {
+  background: radial-gradient(circle at 30% 30%, #99ff99, #00cc00);
+  box-shadow: 0 0 10px #33ff33,
+              0 0 20px #00ff00,
+              0 0 30px #00ff00,
+              inset -2px -2px 6px rgba(255,255,255,0.3),
+              inset 2px 2px 6px rgba(0,0,0,0.6);
+}
+
+/* Status Section */
+.status-section {
+  position: relative;
+  z-index: 2;
+  max-width: 600px;
+  margin: 0 auto 3rem auto;
+}
+
+.homepage-card {
+  background: rgba(18, 18, 32, 0.9);
+  border: 2px solid #8C52FF;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 
+    0 0 20px rgba(140, 82, 255, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.homepage-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 
+    0 10px 30px rgba(140, 82, 255, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.status-header {
+  margin-bottom: 2rem;
+}
+
+.site-info {
+  text-align: center;
+}
+
+.site-url {
+  font-size: 1.5rem;
+  color: #00fff7;
+  text-shadow: 0 0 10px #00fff7;
+  margin-bottom: 1rem;
+  word-break: break-all;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.status-text {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+}
+
+.status-indicator.green .status-text { color: #00ff00; }
+.status-indicator.yellow .status-text { color: #ffcc00; }
+.status-indicator.red .status-text { color: #ff4444; }
+
+.status-metrics {
+  margin-bottom: 2rem;
+}
+
+.metric-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.metric {
+  text-align: center;
+}
+
+.metric-label {
+  display: block;
+  font-size: 0.9rem;
+  color: #8C52FF;
+  opacity: 0.8;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.metric-value {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #FF6EC7;
+  text-shadow: 0 0 8px #FF6EC7;
+}
+
+/* Uptime Progress Bar */
+.uptime-bar {
+  height: 8px;
+  background: rgba(51, 51, 51, 0.8);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.uptime-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00ff00, #33ff33);
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+  transition: width 0.3s ease;
+  position: relative;
+}
+
+.uptime-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: progress-glow 2s ease-in-out infinite;
+}
+
+@keyframes progress-glow {
+  0%, 100% { transform: translateX(-100%); }
+  50% { transform: translateX(100%); }
+}
+
+/* Footer */
+.dashboard-footer {
+  position: relative;
+  z-index: 2;
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(140, 82, 255, 0.3);
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.footer-text {
+  font-size: 0.9rem;
+  color: #8C52FF;
+  opacity: 0.7;
+}
+
+.refresh-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #00fff7;
+}
+
+.refresh-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #00ff00;
+  box-shadow: 0 0 5px #00ff00;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 0.5rem;
+  }
+  
+  .dashboard-title {
+    font-size: 1.5rem;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .system-clock {
+    align-items: center;
+  }
+  
+  .site-url {
+    font-size: 1.2rem;
+  }
+  
+  .status-text {
+    font-size: 0.9rem;
+  }
+  
+  .metric-row {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .homepage-card {
+    padding: 1.5rem;
+  }
+}
