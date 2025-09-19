@@ -105,8 +105,8 @@ const TerminalOnboarding = () => {
           "",
           "Redirecting..."
         ]);
+        console.log("Onboarding completed with data:", answers);
         setTimeout(() => {
-          console.log("Onboarding completed with data:", answers);
           window.location.href = "/dashboard";
         }, 2000);
         return;
