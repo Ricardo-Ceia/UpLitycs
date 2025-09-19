@@ -283,6 +283,188 @@
   50% { transform: translateX(100%); }
 }
 
+/* Uptime History Section */
+.uptime-history-section {
+  position: relative;
+  z-index: 2;
+  max-width: 800px;
+  margin: 2rem auto 3rem auto;
+  background: rgba(18, 18, 32, 0.9);
+  border: 2px solid #8C52FF;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 
+    0 0 20px rgba(140, 82, 255, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.uptime-history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.uptime-history-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.9rem;
+  color: #00FFF7;
+  text-shadow: 0 0 10px #00FFF7;
+  letter-spacing: 1px;
+  margin: 0;
+}
+
+.uptime-legend {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: #CCC;
+}
+
+.legend-color {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 8px currentColor;
+}
+
+.legend-color.operational {
+  background-color: #00FF7F;
+  color: #00FF7F;
+}
+
+.legend-color.degraded {
+  background-color: #FFB347;
+  color: #FFB347;
+}
+
+.legend-color.down {
+  background-color: #FF6EC7;
+  color: #FF6EC7;
+}
+
+.uptime-history-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 150px;
+  padding: 1.5rem;
+  background: rgba(10, 10, 30, 0.8);
+  border: 1px solid rgba(0, 255, 247, 0.3);
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 20px rgba(0, 255, 247, 0.1);
+}
+
+/* Retro CRT scanlines effect on chart */
+.uptime-history-chart::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0, 255, 247, 0.05) 3px,
+    rgba(0, 255, 247, 0.05) 6px
+  );
+  pointer-events: none;
+  animation: scanlines 0.1s linear infinite;
+}
+
+@keyframes scanlines {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(3px); }
+}
+
+.uptime-bar {
+  flex: 1;
+  min-width: 4px;
+  max-width: 12px;
+  border-radius: 2px 2px 0 0;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 0 6px currentColor,
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  animation: barGrow 0.8s ease-out;
+  animation-delay: calc(var(--bar-index, 0) * 15ms);
+}
+
+.uptime-bar:hover {
+  transform: scaleY(1.15) scaleX(1.8);
+  z-index: 10;
+  box-shadow: 
+    0 0 15px currentColor,
+    0 6px 12px rgba(0, 0, 0, 0.4),
+    inset 0 2px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* Retro glow effect for bars */
+.uptime-bar::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -2px;
+  right: -2px;
+  height: 6px;
+  background: linear-gradient(to bottom, currentColor, transparent);
+  opacity: 0.7;
+  border-radius: 3px;
+  filter: blur(1px);
+}
+
+.uptime-timeline {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: #8C52FF;
+  opacity: 0.8;
+}
+
+.timeline-start, .timeline-end {
+  padding: 0 1.5rem;
+  text-shadow: 0 0 5px currentColor;
+}
+
+/* Animation for chart loading */
+@keyframes barGrow {
+  from {
+    height: 0 !important;
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Retro terminal grid background */
+.uptime-history-chart {
+  background-image: 
+    linear-gradient(rgba(0, 255, 247, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 247, 0.08) 1px, transparent 1px);
+  background-size: 25px 25px;
+}
+
 /* Footer */
 .dashboard-footer {
   position: relative;
@@ -362,5 +544,41 @@
   
   .homepage-card {
     padding: 1.5rem;
+  }
+  
+  .uptime-history-section {
+    padding: 1.5rem;
+    margin: 1.5rem auto 2rem auto;
+  }
+
+  .uptime-history-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .uptime-legend {
+    gap: 1rem;
+  }
+
+  .uptime-history-chart {
+    height: 100px;
+    padding: 1rem;
+  }
+
+  .uptime-bar {
+    min-width: 2px;
+    max-width: 6px;
+  }
+
+  .legend-item {
+    font-size: 0.7rem;
+  }
+
+  .uptime-history-title {
+    font-size: 0.7rem;
+  }
+
+  .timeline-start, .timeline-end {
+    padding: 0 1rem;
   }
 }
