@@ -62,31 +62,16 @@ const TerminalOnboarding = () => {
     setDisplayedText("");
     setShowInput(false);
     setError("");
-    setIsTyping(true);
+    setIsTyping(false); // No typing animation
     
     const question = steps[stepIndex]?.question ?? "";
-    let index = 0;
-    const delayPerChar = 12; // Much faster - 12ms per character
     
-    const typeChar = () => {
-      if (index < question.length) {
-        setDisplayedText(question.slice(0, index + 1));
-        index++;
-        setTimeout(typeChar, delayPerChar);
-      } else {
-        setIsTyping(false);
-        setShowInput(true);
-        // Immediate focus
-        inputRef.current?.focus();
-      }
-    };
+    // Show text instantly
+    setDisplayedText(question);
+    setShowInput(true);
     
-    // Start typing immediately
-    typeChar();
-    
-    return () => {
-      index = question.length; // Stop typing if component unmounts
-    };
+    // Focus input immediately
+    setTimeout(() => inputRef.current?.focus(), 0);
   }, [stepIndex]);
 
   const validateInput = (value) => {
@@ -151,7 +136,7 @@ const TerminalOnboarding = () => {
       setInputValue("");
       
       if (stepIndex < steps.length - 1) {
-        setTimeout(() => setStepIndex(stepIndex + 1), 300);
+        setStepIndex(stepIndex + 1); // Immediate step change
       }
     }
   };
@@ -195,7 +180,6 @@ const TerminalOnboarding = () => {
           {/* Current Question */}
           <div className="terminal-question" aria-live="polite">
             {displayedText}
-            {isTyping && <span className="terminal-cursor" />}
           </div>
 
           {/* Error Message */}
