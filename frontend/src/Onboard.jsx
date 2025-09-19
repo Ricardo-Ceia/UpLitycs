@@ -105,9 +105,21 @@ const TerminalOnboarding = () => {
           "",
           "Redirecting..."
         ]);
-        console.log("Onboarding completed with data:", answers);
         setTimeout(() => {
-          window.location.href = "/dashboard";
+          fetch('/api/go-to-dashboard', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(answers)
+          })
+          .then(response => { 
+            if (response.ok) {
+               window.location.href = "/dashboard";
+              } else {
+                setError("Failed to complete onboarding. Please try again."); 
+              }
+          })
         }, 2000);
         return;
       }
