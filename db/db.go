@@ -2,65 +2,140 @@ package db
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
-	"os"
 
 	_ "github.com/lib/pq"
 )
 
-func env(k, d string) string {
-	if v := os.Getenv(k); v != "" {
-		return v
-	}
-	return d
+type User struct {
+	Username string
+	Homepage string
+	Alerts   string
+	Id       int
 }
 
 func OpenDB() *sql.DB {
-	connStr := fmt.Sprintf(
-		"user=%s password=%s host=%s port=%s dbname=%s sslmode=%s",
-		env("DB_USER", "postgres"),
-		env("DB_PASSWORD", "example"),
-		env("DB_HOST", "localhost"),
-		env("DB_PORT", "5432"),
-		env("DB_NAME", "uplytics"),
-		env("DB_SSLMODE", "disable"),
-	)
+	connStr := "user=postgres dbname=postgres password=example host=localhost port=5432 sslmode=disable"
 
 	conn, err := sql.Open("postgres", connStr)
+
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := conn.Ping(); err != nil {
-		log.Fatal(err)
-	}
-	log.Println("Connection to DATABASE ESTABLISHED ✅:", env("DB_NAME", "uplytics"))
+
+	log.Println("Connection to DATABSE ESTABLISHED✅")
+
 	return conn
 }
 
 func PingDB(conn *sql.DB) error {
-	return conn.Ping()
+	err := conn.Ping()
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func GetAllUsers(conn *sql.DB) ([]string, error) {
-	rows, err := conn.Query("SELECT username FROM users")
+func GetUserIdFromUser(conn *sql.DB, u User) (int, error) {
+	var id int
+	err := conn.QueryRow("SELECT id FROM users WHERE username=$1", u.Username).Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
+func GetAllUsers(conn *sql.DB) ([]struct {
+	Username string
+	Homepage string
+	Alerts   string
+	Id       int
+}, error) {
+	// Define a slice of the anonymous struct
+	users := []struct {
+		Username string
+		Homepage string
+		Alerts   string
+		Id       int
+	}{}
+
+	rows, err := conn.Query(`SELECT id, username, homepage, alerts FROM users`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var users []string
+
 	for rows.Next() {
-		var u string
-		if err := rows.Scan(&u); err != nil {
+		var u struct {
+			Username string
+			Homepage string
+			Alerts   string
+			Id       int
+		}
+
+		err := rows.Scan(&u.Id, &u.Username, &u.Homepage, &u.Alerts)
+		if err != nil {
 			return nil, err
 		}
+
 		users = append(users, u)
 	}
-	return users, rows.Err()
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }
 
-func GetURLOfMainPage(conn *sql.DB, username string) (string, error) {
+func GetUserPage(conn *sql.DB, id int) (string, error) {
 	var homepage string
-	err := conn.QueryRow("SELECT homepage FROM users WHERE username=$1", username).Scan(&homepage)
-	return homepage, err
+
+	err := conn.QueryRow("SELECT homepage FROM users where id=$1", id).Scan(&homepage)
+
+	if err != nil {
+		return "", err
+	}
+
+	return homepage, nil
+}
+
+func InsertStatus(conn *sql.DB, userID int, page string, status string) error {
+	_, err := conn.Exec("INSERT INTO user_status (user_id, page, status) VALUES ($1, $2, $3)", userID, page, status)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func GetAllStatuses(conn *sql.DB, userID int, page string) ([]string, error) {
+	rows, err := conn.Query("SELECT status FROM user_status WHERE user_id=$1 AND page=$2 ORDER BY checked_at DESC", userID, page)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var statuses []string
+	for rows.Next() {
+		var status string
+		if err := rows.Scan(&status); err != nil {
+			return nil, err
+		}
+		statuses = append(statuses, status)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return statuses, nil
+}
+
+func GetLatestStatus(conn *sql.DB, userID int, page string) (string, error) {
+	var status string
+	err := conn.QueryRow("SELECT status FROM user_status WHERE user_id=$1 AND page=$2 ORDER BY checked_at DESC LIMIT 1", userID, page).Scan(&status)
+	if err != nil {
+		return "", err
+	}
+	return status, nil
 }

@@ -6,3 +6,12 @@ CREATE TABLE IF NOT EXISTS users (
   alerts TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
+
+
+CREATE TABLE IF NOT EXISTS user_status (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    page TEXT NOT NULL,
+    status TEXT NOT NULL,
+    checked_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
