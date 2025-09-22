@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"log"
 
@@ -15,7 +16,7 @@ type User struct {
 }
 
 func OpenDB() *sql.DB {
-	connStr := "user=postgres dbname=postgres password=example host=localhost port=5432 sslmode=disable"
+	connStr := "user=postgres dbname=uplytics password=example host=localhost port=5432 sslmode=disable"
 
 	conn, err := sql.Open("postgres", connStr)
 
@@ -44,6 +45,20 @@ func InsertUser(conn *sql.DB, username, homepage, alerts string) error {
 		return err
 	}
 	return nil
+}
+
+func GetUserFromContext(conn *sql.DB, ctx context.Context) (User, error) {
+	user, ok := ctx.Value("user").(string)
+	if !ok {
+		return User{}, sql.ErrNoRows
+	}
+
+	var u User
+	err := conn.QueryRow("SELECT id, username, homepage, alerts FROM users WHERE username=$1", user).Scan(&u.Id, &u.Username, &u.Homepage, &u.Alerts)
+	if err != nil {
+		return User{}, err
+	}
+	return u, nil
 }
 
 func GetUserIdFromUser(conn *sql.DB, u User) (int, error) {

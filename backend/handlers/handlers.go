@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 	"uplytics/backend/utils"
 	"uplytics/db"
@@ -60,6 +61,7 @@ func (h *Handler) GoToDashboardHandler(w http.ResponseWriter, r *http.Request) {
 	err = db.InsertUser(h.conn, req.Name, req.Homepage, req.Alerts)
 
 	if err != nil {
+		log.Println("Error inserting user on the GoToDashboardHandler", err)
 		if err == sql.ErrNoRows {
 			http.Error(w, "User already exists", http.StatusConflict)
 		} else {
@@ -71,4 +73,36 @@ func (h *Handler) GoToDashboardHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"success": true, "message": "Onboarding completed successfully"}`))
+}
+
+func (h *Handler) LatestDataStatusHandler(w http.ResponseWriter, r *http.Request) {
+	//TODO:check if user is logged in
+	conn := h.conn
+	user, err := db.GetUserFromContext(conn, r.Context())
+
+	if err != nil {
+		log.Println("Error getting user from context in LatestDataStatusHandler:", err)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	id, err := db.GetUserIdFromUser(conn, user)
+
+	if err != nil {
+		log.Println("Error getting user ID from user in LatestDataStatusHandler:", err)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	LatestStatus, err := db.GetLatestStatus(conn, id, user.Homepage)
+
+	if err != nil {
+		log.Println("Error getting latest status in LatestDataStatusHandler:", err)
+		http.Error(w, "Error fetching latest status", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(LatestStatus)
 }
