@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"uplytics/backend/handlers"
+	"uplytics/db"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -19,6 +20,11 @@ func main() {
 	mime.AddExtensionType(".js", "application/javascript")
 	mime.AddExtensionType(".json", "application/json")
 
+	conn := db.OpenDB()
+	defer conn.Close()
+
+	appHandlers := handlers.NewHandler(conn)
+
 	r := chi.NewRouter()
 
 	// Add some useful middleware
@@ -28,7 +34,7 @@ func main() {
 	// --- API routes ---
 	r.Route("/api", func(r chi.Router) {
 		r.Get("/start-onboarding", handlers.StartOnboardingHandler)
-		r.Post("/go-to-dashboard", handlers.GoToDashboardHandler)
+		r.Post("/go-to-dashboard", appHandlers.GoToDashboardHandler)
 	})
 
 	// --- React build directory ---

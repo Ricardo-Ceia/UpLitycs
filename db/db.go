@@ -38,6 +38,14 @@ func PingDB(conn *sql.DB) error {
 	return nil
 }
 
+func InsertUser(conn *sql.DB, username, homepage, alerts string) error {
+	_, err := conn.Exec("INSERT INTO users (username, homepage, alerts) VALUES ($1, $2, $3)", username, homepage, alerts)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func GetUserIdFromUser(conn *sql.DB, u User) (int, error) {
 	var id int
 	err := conn.QueryRow("SELECT id FROM users WHERE username=$1", u.Username).Scan(&id)
