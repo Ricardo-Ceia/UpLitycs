@@ -1,16 +1,57 @@
 package main
 
 import (
+	"log"
 	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 	"uplytics/backend/handlers"
+	"uplytics/backend/status_checker"
+	"uplytics/db"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
+
+func testFunc(intervalSeconds int) {
+	log.Println("Starting periodic status checks every", intervalSeconds, "seconds")
+	conn := db.OpenDB()
+	defer conn.Close()
+
+	users, err := db.GetAllUsers(conn)
+	if err != nil {
+		log.Println("GetAllUsers error:", err)
+		return
+	}
+	var urls []string
+	for _, u := range users {
+		hp, err := db.GetURLOfMainPage(conn, u)
+		if err != nil {
+			log.Println("GetURLOfMainPage error:", err)
+			continue
+		}
+		urls = append(urls, hp)
+	}
+	if len(urls) == 0 {
+		log.Println("No homepages to check yet.")
+	}
+
+	ticker := time.NewTicker(time.Duration(intervalSeconds) * time.Second)
+	defer ticker.Stop()
+
+	for {
+		statuses, err := status_checker.GetPagesStatus(urls)
+		if err != nil {
+			log.Println("status check error:", err)
+		} else {
+			log.Println("Status codes:", statuses)
+		}
+		<-ticker.C
+	}
+}
 
 func main() {
 	// Ensure correct MIME types are registered
@@ -72,6 +113,11 @@ func main() {
 		http.ServeFile(w, r, indexPath)
 	})
 
-	println("Server starting on http://localhost:3333")
-	http.ListenAndServe(":3333", r)
+	// Start background checks
+	go testFunc(30)
+
+	log.Println("Server starting on http://localhost:3333")
+	if err := http.ListenAndServe(":3333", r); err != nil {
+		log.Fatal(err)
+	}
 }
