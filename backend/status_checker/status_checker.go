@@ -9,7 +9,7 @@ import (
 	"uplytics/db"
 )
 
-func getPageStatus(url string) (string, error) {
+func GetPageStatus(url string) (string, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", err
@@ -32,7 +32,7 @@ func UpdateStatuses(conn *sql.DB) {
 			continue
 		}
 
-		status, err := getPageStatus(page)
+		status, err := GetPageStatus(page)
 		if err != nil {
 			log.Printf("Error checking statuses for user %s: %v", user, err)
 			continue
