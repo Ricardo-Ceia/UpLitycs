@@ -9,13 +9,13 @@ import (
 	"uplytics/db"
 )
 
-func GetPageStatus(url string) (string, error) {
+func GetPageStatus(url string) (string, int, error) {
 	resp, err := http.Get(url)
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
 	defer resp.Body.Close()
-	return utils.MapStatusCode(resp.StatusCode), nil
+	return utils.MapStatusCode(resp.StatusCode), resp.StatusCode, nil
 }
 
 func UpdateStatuses(conn *sql.DB) {
@@ -28,17 +28,17 @@ func UpdateStatuses(conn *sql.DB) {
 	for _, user := range users {
 		page, err := db.GetUserPage(conn, user.Id)
 		if err != nil {
-			log.Printf("Error fetching pages for user %s: %v", user, err)
+			log.Printf("Error fetching pages for user %s: %v", user.Username, err)
 			continue
 		}
 
-		status, err := GetPageStatus(page)
+		status, status_code, err := GetPageStatus(page)
 		if err != nil {
-			log.Printf("Error checking statuses for user %s: %v", user, err)
+			log.Printf("Error checking statuses for user %s: %v", user.Username, err)
 			continue
 		}
 
-		err = db.InsertStatus(conn, user.Id, user.Homepage, status)
+		err = db.InsertStatus(conn, user.Id, user.Homepage, status, status_code)
 		if err != nil {
 			log.Printf("Error inserting status for user %s, page %s: %v", user.Username, page, err)
 		}
