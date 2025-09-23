@@ -1,106 +1,87 @@
 import React, { useState, useEffect } from 'react';
 import './Dashboard.css';
+import { UNSAFE_DataWithResponseInit } from 'react-router-dom';
 
 const Dashboard = () => {
-  const [homepageStatus, setHomepageStatus] = useState({
-    url: 'https://example.com',
-    status: 'operational',
-    responseTime: '234ms',
-    uptime: '99.95%',
-    lastChecked: new Date().toLocaleTimeString(),
-    statusCode: 200
-  });
 
-  const [uptimeHistory, setUptimeHistory] = useState([]);
-  const [currentTime, setCurrentTime] = useState(new Date());
-
-  const generateUptimeHistory = () => {
-    const days = [];
-    const now = new Date();
-    
-    for (let i = 89; i >= 0; i--) {
-      const date = new Date(now);
-      date.setDate(date.getDate() - i);
-      
-      let uptimePercent;
-      const randomOutage = Math.random();
-      
-      if (randomOutage < 0.02) { 
-        uptimePercent = Math.random() * 50; 
-      } else if (randomOutage < 0.08) { 
-        uptimePercent = 70 + Math.random() * 29; 
-      } else { 
-        uptimePercent = 99 + Math.random() * 1; 
+  const [loading, setLoading] = useState(true);
+  const [error ,setError] = useState(null);
+  const [latestStatus, setLatestStatus] = useState(null);
+  const [currentTime,setCurrentTime] = useState(new Date());
+  const [interval,setInterval] = useState(null);
+  
+  const latestStatusData = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/latest-status');
+      if(!response.ok){
+        throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
+      setLatestStatus(data);
+      setError(null);
+    }catch(error){
+      console.error('Error fetching latest status:',error);
+      setError('Failed to load status data. Please try again later.');
+    }finally{
+      setLoading(false)
     }
-      
-      days.push({
-        date: date,
-        uptime: Math.round(uptimePercent * 100) / 100,
-        status: uptimePercent >= 99 ? 'operational' : uptimePercent >= 90 ? 'degraded' : 'down'
-      });
-    }
-    
-    return days;
-  };
-
-  useEffect(() => {
-    setUptimeHistory(generateUptimeHistory());
-  }, []);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
+  }
+  useEffect(()=>{
+    const timer = setInterval(()=>{
       setCurrentTime(new Date());
-    }, 1000);
-
+    },1000);
     return () => clearInterval(timer);
-  }, []);
+  },[])
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const statuses = ['operational', 'operational', 'operational', 'degraded', 'down'];
-      const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
-      
-      setHomepageStatus(prev => ({
-        ...prev,
-        status: randomStatus,
-        responseTime: randomStatus === 'down' ? 'Timeout' : `${Math.floor(Math.random() * 300) + 50}ms`,
-        lastChecked: new Date().toLocaleTimeString(),
-        statusCode: randomStatus === 'down' ? 0 : randomStatus === 'degraded' ? 500 : 200
-      }));
-    }, 30000);
-
+  useEffect(()=>{
+    latestStatusData();
+    const interval = setInterval(latestStatusData,30000);
     return () => clearInterval(interval);
-  }, []);
+  })
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'operational': return 'green';
-      case 'degraded': return 'yellow';
-      case 'down': return 'red';
-      default: return 'gray';
-    }
-  };
+  const getStatusColor = (statusCode) => {
+    if(statusCode >= 200 && statusCode < 300) return 'Operational';
+    if(statusCode >=300 && statusCode < 400) return 'Degraded';
+    return 'down';
+  }
 
-  const formatDate = (date) => {
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric'
+  const formatTime = (dateString) => {
+    return new Date(dateString).toLocaleTimeString('en-US',{
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
     });
-  };
+  }
 
-  const getUptimeColor = (uptime) => {
-    if (uptime >= 99) return '#00FF7F';
-    if (uptime >= 90) return '#FFB347';
-         return '#FF6EC7'; 
-  };
+  if (loading && !latestStatus){
+    return (
+      <div className = "dashboard-container">
+        <div className = "loading-state">
+          <h2>Loading status data...</h2>
+        </div>
+      </div>
+    );
+  }
 
-  const calculateOverallUptime = () => {
-    if (uptimeHistory.length === 0) return 99.50;
-    const total = uptimeHistory.reduce((sum, day) => sum + day.uptime, 0);
-    return Math.round((total / uptimeHistory.length) * 100) / 100;
-  };
+  if (error && !latestStatus){
+    return (
+      <div className="dashboard-container">
+        <div className="error-state">
+          <h2>Error loading status data</h2>
+          <p>{error}</p>
+          <button onClick={latestStatusData}>Retry</button>
+        </div>
+      </div>
+    )
+  }
 
-  return (
+  const statusCode = latestStatus?.Status_code || 0;
+  const status = latestStatus?.Status || 'unknown';
+  const lastChecked = latestStatus?.CheckedAt || new Date().toISOString();     
+
+    return (
     <div className="dashboard-container">
       <div className="crt-overlay"></div>
       
@@ -109,7 +90,7 @@ const Dashboard = () => {
           <h1 className="dashboard-title">HOMEPAGE STATUS</h1>
           <div className="system-clock">
             <span className="clock-label">LAST CHECK</span>
-            <span className="clock-time">{currentTime.toLocaleTimeString()}</span>
+            <span className="clock-time">{formatTime(checkedAt)}</span>
           </div>
         </div>
       </header>
@@ -118,10 +99,10 @@ const Dashboard = () => {
         <div className="homepage-card">
           <div className="status-header">
             <div className="site-info">
-              <h2 className="site-url">{homepageStatus.url}</h2>
-              <div className={`status-indicator ${getStatusColor(homepageStatus.status)}`}>
-                <div className={`status-led ${getStatusColor(homepageStatus.status)} active`}></div>
-                <span className="status-text">{homepageStatus.status.toUpperCase()}</span>
+              <h2 className="site-url">Homepage Monitor</h2>
+              <div className={`status-indicator ${getStatusColor(statusCode)}`}>
+                <div className={`status-led ${getStatusColor(statusCode)} active`}></div>
+                <span className="status-text">{getStatusText(statusCode)}</span>
               </div>
             </div>
           </div>
@@ -129,77 +110,33 @@ const Dashboard = () => {
           <div className="status-metrics">
             <div className="metric-row">
               <div className="metric">
-                <span className="metric-label">Response Time</span>
-                <span className="metric-value">{homepageStatus.responseTime}</span>
+                <span className="metric-label">Status</span>
+                <span className="metric-value">{status}</span>
               </div>
               <div className="metric">
                 <span className="metric-label">Status Code</span>
-                <span className="metric-value">{homepageStatus.statusCode}</span>
+                <span className="metric-value">{statusCode}</span>
               </div>
             </div>
             
             <div className="metric-row">
-                          <div className="metric">
-              <span className="metric-label">Uptime</span>
-              <span className="metric-value">{homepageStatus.uptime}</span>
-            </div>
-            <div className="metric">
-              <span className="metric-label">90-Day Uptime</span>
-              <span className="metric-value">{calculateOverallUptime()}%</span>
-            </div>
               <div className="metric">
                 <span className="metric-label">Last Checked</span>
-                <span className="metric-value">{homepageStatus.lastChecked}</span>
+                <span className="metric-value">{formatTime(checkedAt)}</span>
+              </div>
+              <div className="metric">
+                <span className="metric-label">Current Time</span>
+                <span className="metric-value">{currentTime.toLocaleTimeString()}</span>
               </div>
             </div>
           </div>
 
-          <div className="uptime-bar">
-            <div 
-              className="uptime-fill"
-              style={{ width: homepageStatus.uptime }}
-            ></div>
-          </div>
-        </div>
-      </section>
-
-      <section className="uptime-history-section">
-        <div className="uptime-history-header">
-          <h3 className="uptime-history-title">90-DAY UPTIME HISTORY</h3>
-          <div className="uptime-legend">
-            <div className="legend-item">
-              <div className="legend-color operational"></div>
-              <span>Operational</span>
+          {error && (
+            <div className="error-banner">
+              <span>⚠️ {error}</span>
+              <button onClick={latestStatusData}>Retry</button>
             </div>
-            <div className="legend-item">
-              <div className="legend-color degraded"></div>
-              <span>Degraded</span>
-            </div>
-            <div className="legend-item">
-              <div className="legend-color down"></div>
-              <span>Down</span>
-            </div>
-          </div>
-        </div>
-        
-        <div className="uptime-history-chart">
-          {uptimeHistory.map((day, index) => (
-            <div
-              key={index}
-              className="uptime-bar"
-              style={{ 
-                backgroundColor: getUptimeColor(day.uptime),
-                height: `${Math.max(day.uptime, 10)}%`
-              }}
-              title={`${formatDate(day.date)}: ${day.uptime}% uptime`}
-            >
-            </div>
-          ))}
-        </div>
-        
-        <div className="uptime-timeline">
-          <span className="timeline-start">90 days ago</span>
-          <span className="timeline-end">Today</span>
+          )}
         </div>
       </section>
 

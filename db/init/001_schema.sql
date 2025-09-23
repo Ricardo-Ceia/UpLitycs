@@ -13,5 +13,6 @@ CREATE TABLE IF NOT EXISTS user_status (
     user_id INT REFERENCES users(id) ON DELETE CASCADE,
     page TEXT NOT NULL,
     status TEXT NOT NULL,
+    status_code INT NOT NULL,
     checked_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

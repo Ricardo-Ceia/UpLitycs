@@ -15,6 +15,12 @@ type User struct {
 	Id       int
 }
 
+type LatestStatus struct {
+	Status      string
+	Status_code int
+	CheckedAt   string
+}
+
 func OpenDB() *sql.DB {
 	connStr := "user=postgres dbname=uplytics password=example host=localhost port=5432 sslmode=disable"
 
@@ -125,8 +131,8 @@ func GetUserPage(conn *sql.DB, id int) (string, error) {
 	return homepage, nil
 }
 
-func InsertStatus(conn *sql.DB, userID int, page string, status string) error {
-	_, err := conn.Exec("INSERT INTO user_status (user_id, page, status) VALUES ($1, $2, $3)", userID, page, status)
+func InsertStatus(conn *sql.DB, userID int, page string, status string, status_code int) error {
+	_, err := conn.Exec("INSERT INTO user_status (user_id, page, status, status_code) VALUES ($1, $2, $3, $4)", userID, page, status, status_code)
 	if err != nil {
 		return err
 	}
@@ -154,11 +160,11 @@ func GetAllStatuses(conn *sql.DB, userID int, page string) ([]string, error) {
 	return statuses, nil
 }
 
-func GetLatestStatus(conn *sql.DB, userID int, page string) (string, error) {
-	var status string
-	err := conn.QueryRow("SELECT status FROM user_status WHERE user_id=$1 AND page=$2 ORDER BY checked_at DESC LIMIT 1", userID, page).Scan(&status)
+func GetLatestStatus(conn *sql.DB, userID int, page string) (LatestStatus, error) {
+	var status LatestStatus
+	err := conn.QueryRow("SELECT status, status_code, checked_at FROM user_status WHERE user_id=$1 AND page=$2 ORDER BY checked_at DESC LIMIT 1", userID, page).Scan(&status.Status, &status.Status_code, &status.CheckedAt)
 	if err != nil {
-		return "", err
+		return LatestStatus{}, err
 	}
 	return status, nil
 }
