@@ -13,11 +13,14 @@ func TestGetPageStatus(t *testing.T) {
 	}))
 	defer server.Close()
 
-	status, err := status_checker.GetPageStatus(server.URL)
+	status, status_code, err := status_checker.GetPageStatus(server.URL)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if status != "up" {
 		t.Errorf("expected status up, got %s", status)
+	}
+	if status_code != 200 {
+		t.Errorf("expected status code 200, got %d", status_code)
 	}
 }
