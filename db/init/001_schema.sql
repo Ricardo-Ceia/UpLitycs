@@ -2,11 +2,12 @@
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
   username TEXT UNIQUE NOT NULL,
-  homepage TEXT NOT NULL,
+  email TEXT UNIQUE NOT NULL, -- Add email field
+  avatar_url TEXT, -- Add avatar_url field  
+  homepage TEXT,
   alerts TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
-
 
 CREATE TABLE IF NOT EXISTS user_status (
     id SERIAL PRIMARY KEY,

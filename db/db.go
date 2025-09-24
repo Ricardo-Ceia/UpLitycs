@@ -9,12 +9,12 @@ import (
 )
 
 type User struct {
-	Name string
+	Name      string
 	AvatarUrl string
-	Email string
-	Homepage string
-	Alerts   string
-	Id       int
+	Email     string
+	Homepage  string
+	Alerts    string
+	Id        int
 }
 
 type LatestStatus struct {
@@ -47,25 +47,33 @@ func PingDB(conn *sql.DB) error {
 	return nil
 }
 
-func InsertUser(conn *sql.DB, name, avatarUrl,email,homepage, alerts string) error {
-	_, err := conn.Exec("INSERT INTO users (name, avatarUrl, email) VALUES ($1, $2, $3,Null,Null)", username, avatarUrl, email,homepage, alerts)
+func InsertUser(conn *sql.DB, name, avatarUrl, email string) (int, error) {
+	//should return the id of the inserted user
+	var id int
+	err := conn.QueryRow(
+		"INSERT INTO users (username, avatar_url, email, homepage, alerts) VALUES ($1, $2, $3, Null, Null) ON CONFLICT (email) DO NOTHING RETURNING id",
+		name,
+		avatarUrl,
+		email,
+	).Scan(&id)
+
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
+func UpdateUser(conn *sql.DB, id int, homepage, alerts string) error {
+	_, err := conn.Exec(
+		"UPDATE users SET homepage = $2, alerts = $3 WHERE id = $1",
+		id,
+		homepage,
+		alerts,
+	)
 	if err != nil {
 		return err
 	}
 	return nil
-}
-
-func UpdateUser(conn *sql.DB, email,homepage,alerts string) error{
-    _, err := conn.Exec(
-        "UPDATE users SET homepage = $2, alerts = $3 WHERE email = $1",
-        email,
-        homepage,
-        alerts,
-    )
-    if err != nil {
-        return err
-    }
-    return nil
 }
 
 func GetUserFromContext(conn *sql.DB, ctx context.Context) (User, error) {
@@ -75,7 +83,7 @@ func GetUserFromContext(conn *sql.DB, ctx context.Context) (User, error) {
 	}
 
 	var u User
-	err := conn.QueryRow("SELECT id, username, homepage, alerts FROM users WHERE username=$1", user).Scan(&u.Id, &u.Username, &u.Homepage, &u.Alerts)
+	err := conn.QueryRow("SELECT id, username, homepage, alerts FROM users WHERE username=$1", user).Scan(&u.Id, &u.Name, &u.Homepage, &u.Alerts)
 	if err != nil {
 		return User{}, err
 	}
@@ -84,7 +92,7 @@ func GetUserFromContext(conn *sql.DB, ctx context.Context) (User, error) {
 
 func GetUserIdFromUser(conn *sql.DB, u User) (int, error) {
 	var id int
-	err := conn.QueryRow("SELECT id FROM users WHERE username=$1", u.Username).Scan(&id)
+	err := conn.QueryRow("SELECT id FROM users WHERE username=$1", u.Name).Scan(&id)
 	if err != nil {
 		return 0, err
 	}

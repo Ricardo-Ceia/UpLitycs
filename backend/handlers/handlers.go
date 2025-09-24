@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"uplytics/backend/auth"
 	"uplytics/backend/utils"
 	"uplytics/db"
-	"github.com/go-chi/chi/v5"
-	"github.com/markbates/goth"
+
+	"github.com/markbates/goth/gothic"
 )
 
 type OnboardingRequest struct {
@@ -26,7 +27,6 @@ func NewHandler(conn *sql.DB) *Handler {
 }
 
 func StartOnboardingHandler(w http.ResponseWriter, r *http.Request) {
-	//TODO ADD LOGIN VERIFICATION BEFORE REDIRECTING USER
 	http.Redirect(w, r, "/onboarding", http.StatusFound)
 }
 
@@ -60,10 +60,13 @@ func (h *Handler) GoToDashboardHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = db.InsertUser(h.conn, req.Name, req.Homepage, req.Alerts)
+	conn := h.conn
+
+	user, err := db.GetUserFromContext(conn, r.Context())
+	err = db.UpdateUser(conn, user.Id, req.Homepage, req.Alerts)
 
 	if err != nil {
-		log.Println("Error inserting user on the GoToDashboardHandler", err)
+		log.Println("Error updating user on the GoToDashboardHandler", err)
 		if err == sql.ErrNoRows {
 			http.Error(w, "User already exists", http.StatusConflict)
 		} else {
@@ -109,31 +112,49 @@ func (h *Handler) LatestDataStatusHandler(w http.ResponseWriter, r *http.Request
 	json.NewEncoder(w).Encode(LatestStatus)
 }
 
-
-func BeginAuthHandler(w http.ResponseWritter, r *http.Request){
+func BeginAuthHandler(w http.ResponseWriter, r *http.Request) {
 	gothic.BeginAuthHandler(w, r)
 }
 
-func GetAuthHandler (w http.ResponseWriter,r *http.Request){
-	user,	err := gothic.CompleteUserAuth(w,r)
+func (h *Handler) GetAuthHandler(w http.ResponseWriter, r *http.Request) {
+	user, err := gothic.CompleteUserAuth(w, r)
 
-	if err != nil{
-		log.Println("Gothic authentication failed:%v",err)
+	if err != nil {
+		log.Println("Gothic authentication failed:%v", err)
 		return
 	}
 
-	err = InsertUser(db,user.Name,user.AvatarURL,user.Email)
+	conn := h.conn
 
+	id, err := db.InsertUser(conn, user.Name, user.AvatarURL, user.Email)
 
+	if err != nil {
+		log.Println("Error inserting user in the database:", err)
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+	session, err := auth.Store.Get(r, "auth-session")
+	if err != nil {
+		log.Println("Error getting session:", err)
+		http.Error(w, "Session error", http.StatusInternalServerError)
+		return
+	}
 
-	http.Redirect(w,r,"http://localhost:3333",http.StatusFound)
+	session.Values["user"] = user.Name
+	session.Values["userId"] = id
+	err = session.Save(r, w)
+	if err != nil {
+		log.Println("Error saving session:", err)
+		http.Error(w, "Session error", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "http://localhost:3333", http.StatusFound)
 }
 
-func LogoutHandler(w http.ResponseWritter, r *http.Request){
-	session,_ := auth.Store.Get(r,"auth-session")
+func LogoutHandler(w http.ResponseWriter, r *http.Request) {
+	session, _ := auth.Store.Get(r, "auth-session")
 	session.Options.MaxAge = -1
-	session.Save(r,w)
-	http.redirect(w,r,"/",http.StatusFound)
+	session.Save(r, w)
+	http.Redirect(w, r, "/", http.StatusFound)
 }
-
-

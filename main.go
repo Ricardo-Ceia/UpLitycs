@@ -7,9 +7,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"uplytics/backend/auth"
 	"uplytics/backend/handlers"
 	"uplytics/db"
-	"uplytics/backend/auth"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -30,21 +31,21 @@ func main() {
 	// Add some useful middleware
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
-	
+
 	auth.NewAuth()
 
 	//--- Auth Routes ---
-	r.Route("/auth",func(r chi.Router){
-		r.Get("auth/{provider}",handlers.BeginAuthHandler)
-		r.Get("/{provider}/callback",handlers.GetAuthHandler)
-		r.Get("/logout",handlers.LogoutHandler)
+	r.Route("/auth", func(r chi.Router) {
+		r.Get("auth/{provider}", handlers.BeginAuthHandler)
+		r.Get("/{provider}/callback", appHandlers.GetAuthHandler)
+		r.Get("/logout", handlers.LogoutHandler)
 	})
 
 	// --- API routes ---
 	r.Route("/api", func(r chi.Router) {
-		r.Get("/start-onboarding", handlers.StartOnboardingHandler)
-		r.Post("/go-to-dashboard", appHandlers.GoToDashboardHandler)
-		r.Get("/latest-status", appHandlers.LatestDataStatusHandler)
+		r.With(auth.AuthMiddleware).Get("/start-onboarding", handlers.StartOnboardingHandler)
+		r.With(auth.AuthMiddleware).Post("/go-to-dashboard", appHandlers.GoToDashboardHandler)
+		r.With(auth.AuthMiddleware).Get("/latest-status", appHandlers.LatestDataStatusHandler)
 	})
 
 	// --- React build directory ---
