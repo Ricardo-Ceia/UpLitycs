@@ -15,7 +15,7 @@ function Home() {
 }
 
 const handleGetStarted = () => {
-  window.location.href = "/onboarding"
+  window.location.href = "/auth";
 }
 
 function StatusLight(){

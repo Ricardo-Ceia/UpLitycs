@@ -120,36 +120,67 @@ func (h *Handler) GetAuthHandler(w http.ResponseWriter, r *http.Request) {
 	user, err := gothic.CompleteUserAuth(w, r)
 
 	if err != nil {
-		log.Println("Gothic authentication failed:%v", err)
+		log.Printf("Gothic authentication failed:%v", err)
+		http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
 		return
 	}
 
 	conn := h.conn
+	mode := r.URL.Query().Get("mode")
 
-	id, err := db.InsertUser(conn, user.Name, user.AvatarURL, user.Email)
+	existingUser, err := db.GetUserByEmail(conn, user.Email)
 
-	if err != nil {
-		log.Println("Error inserting user in the database:", err)
-		http.Error(w, "Database error", http.StatusInternalServerError)
+	if mode == "login" {
+		if err != nil {
+			log.Printf("User not found during login: %v", err)
+			http.Redirect(w, r, "/auth?error=user_not_found", http.StatusFound)
+			return
+		}
+		id := existingUser.Id
+
+		session, _ := auth.Store.Get(r, "auth-session")
+		session.Values["user"] = user.Name
+		session.Values["userId"] = id
+		session.Save(r, w)
+
+		http.Redirect(w, r, "/dashboard", http.StatusFound)
+	} else {
+		var id int
+		if err != nil {
+			id, err = db.InsertUser(conn, user.Name, user.AvatarURL, user.Email)
+			if err != nil {
+				log.Printf("Error creating user:%v", err)
+				http.Redirect(w, r, "/auth?error=signup_failed", http.StatusTemporaryRedirect)
+			}
+		} else {
+			id = existingUser.Id
+		}
+		session, _ := auth.Store.Get(r, "auth-session")
+		session.Values["user"] = user.Name
+		session.Values["userId"] = id
+		session.Save(r, w)
+
+		//check if user needs onboarding
+		dbUser, _ := db.GetUserById(conn, id)
+		if dbUser.Homepage == "" {
+			http.Redirect(w, r, "/onboarding", http.StatusFound)
+		} else {
+			http.Redirect(w, r, "/dashboard", http.StatusFound)
+		}
+	}
+}
+
+func (h *Handler) GetUserStatusHandler(w http.ResponseWriter, r *http.Request) {
+	// This is called by ProtectedRoute to check authentication
+	userID := r.Context().Value("userID")
+	if userID == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	session, err := auth.Store.Get(r, "auth-session")
-	if err != nil {
-		log.Println("Error getting session:", err)
-		http.Error(w, "Session error", http.StatusInternalServerError)
-		return
-	}
 
-	session.Values["user"] = user.Name
-	session.Values["userId"] = id
-	err = session.Save(r, w)
-	if err != nil {
-		log.Println("Error saving session:", err)
-		http.Error(w, "Session error", http.StatusInternalServerError)
-		return
-	}
-
-	http.Redirect(w, r, "http://localhost:3333", http.StatusFound)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"authenticated": true}`))
 }
 
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {

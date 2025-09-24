@@ -90,6 +90,24 @@ func GetUserFromContext(conn *sql.DB, ctx context.Context) (User, error) {
 	return u, nil
 }
 
+func GetUserByEmail(conn *sql.DB, email string) (User, error) {
+	var u User
+	err := conn.QueryRow("SELECT id, username, homepage, alerts, email, avatar_url FROM users WHERE email=$1", email).Scan(&u.Id, &u.Name, &u.Homepage, &u.Alerts, &u.Email, &u.AvatarUrl)
+	if err != nil {
+		return User{}, err
+	}
+	return u, nil
+}
+
+func GetUserById(conn *sql.DB, id int) (User, error) {
+	var u User
+	err := conn.QueryRow("SELECT id, username, homepage, alerts, email, avatar_url FROM users WHERE id=$1", id).Scan(&u.Id, &u.Name, &u.Homepage, &u.Alerts, &u.Email, &u.AvatarUrl)
+	if err != nil {
+		return User{}, err
+	}
+	return u, nil
+}
+
 func GetUserIdFromUser(conn *sql.DB, u User) (int, error) {
 	var id int
 	err := conn.QueryRow("SELECT id FROM users WHERE username=$1", u.Name).Scan(&id)
