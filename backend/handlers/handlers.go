@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 	"uplytics/backend/auth"
 	"uplytics/backend/utils"
 	"uplytics/db"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/markbates/goth/gothic"
 )
 
@@ -113,6 +115,27 @@ func (h *Handler) LatestDataStatusHandler(w http.ResponseWriter, r *http.Request
 }
 
 func BeginAuthHandler(w http.ResponseWriter, r *http.Request) {
+	// try chi param first
+	provider := chi.URLParam(r, "provider")
+
+	// fallback: parse path (e.g. /auth/google or /auth/google?mode=login)
+	if provider == "" {
+		parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
+		if len(parts) >= 2 && parts[0] == "auth" {
+			provider = parts[1]
+		}
+	}
+
+	if provider == "" {
+		http.Error(w, "you must select a provider", http.StatusBadRequest)
+		return
+	}
+
+	// ensure gothic sees provider via query param
+	q := r.URL.Query()
+	q.Set("provider", provider)
+	r.URL.RawQuery = q.Encode()
+
 	gothic.BeginAuthHandler(w, r)
 }
 
@@ -138,7 +161,7 @@ func (h *Handler) GetAuthHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		id := existingUser.Id
 
-		session, _ := auth.Store.Get(r, "auth-session")
+		session, _ := auth.Store.Get(r, gothic.SessionName)
 		session.Values["user"] = user.Name
 		session.Values["userId"] = id
 		session.Save(r, w)
@@ -155,7 +178,7 @@ func (h *Handler) GetAuthHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			id = existingUser.Id
 		}
-		session, _ := auth.Store.Get(r, "auth-session")
+		session, _ := auth.Store.Get(r, gothic.SessionName)
 		session.Values["user"] = user.Name
 		session.Values["userId"] = id
 		session.Save(r, w)

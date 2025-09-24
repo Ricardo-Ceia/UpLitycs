@@ -15,11 +15,11 @@ const RetroAuth = () => {
   }, []);
 
   const handleGoogleAuth = (authType) => {
-    setIsLoading(true);
-    setTimeout(() => {
-      window.location.href = `/auth/google?mode=${authType}`;
-    }, 800);
-  };
+  setIsLoading(true);
+  setTimeout(() => {
+    window.location.href = `/auth/google?mode=${authType}`;
+  }, 800);
+};
 
   const formatTime = (date) => {
     return date.toLocaleTimeString('en-US', { 

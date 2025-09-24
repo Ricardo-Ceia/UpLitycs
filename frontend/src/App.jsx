@@ -10,7 +10,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/login" element={<RetroAuth />} />
+        <Route path="/auth" element={<RetroAuth />} />
         <Route path="/onboarding" element={
           <ProtectedRoute>
             <RetroTerminalOnboarding />

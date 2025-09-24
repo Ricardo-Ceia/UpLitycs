@@ -9,11 +9,11 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
 	"github.com/markbates/goth"
+	"github.com/markbates/goth/gothic"
 	"github.com/markbates/goth/providers/google"
 )
 
 const (
-	key    = "uplyticskey12345"
 	MaxAge = 86400 * 30
 	IsProd = false
 )
@@ -29,7 +29,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		userId, ok := session.Values["UserId"].(int)
+		userId, ok := session.Values["userId"].(int)
 
 		if !ok {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
@@ -58,17 +58,21 @@ func NewAuth() {
 
 	googleClientId := os.Getenv("GOOGLE_CLIENT_ID")
 	googleClientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
+	sessionSecret := os.Getenv("SESSION_SECRET")
 
 	if googleClientId == "" || googleClientSecret == "" {
 		log.Fatal("Google client ID or secret not set in environment variables")
 	}
 
-	store := sessions.NewCookieStore([]byte(key))
-	store.MaxAge(MaxAge)
+	os.Setenv("SESSION_SECRET", sessionSecret)
 
-	store.Options.Path = "/"
-	store.Options.HttpOnly = true
-	store.Options.Secure = IsProd
+	Store = sessions.NewCookieStore([]byte(sessionSecret))
+	Store.MaxAge(MaxAge)
+	Store.Options.Path = "/"
+	Store.Options.HttpOnly = true
+	Store.Options.Secure = IsProd
+
+	gothic.Store = Store
 
 	goth.UseProviders(
 		google.New(googleClientId, googleClientSecret, "http://localhost:3333/auth/google/callback", "email", "profile"),
