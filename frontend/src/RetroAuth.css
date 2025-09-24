@@ -1,0 +1,440 @@
+/* filepath: /home/ricardo/go/src/uplytics/frontend/src/Auth.css */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+.retro-auth-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f0f23, #1a1a2e, #16213e);
+  position: relative;
+  overflow: hidden;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.retro-background {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(255,110,199,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,110,199,0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+.grid-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 25% 25%, rgba(140,82,255,0.1) 0%, transparent 50%),
+              radial-gradient(circle at 75% 75%, rgba(0,255,247,0.08) 0%, transparent 50%);
+}
+
+.scan-lines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(255,110,199,0.02) 2px,
+    rgba(255,110,199,0.02) 4px
+  );
+  pointer-events: none;
+}
+
+.auth-system-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: rgba(20,20,40,0.9);
+  border-bottom: 2px solid #8C52FF;
+  backdrop-filter: blur(10px);
+  color: #00fff7;
+  font-size: 0.9rem;
+  z-index: 10;
+  position: relative;
+}
+
+.system-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.system-name {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.7rem;
+  color: #FF6EC7;
+  text-shadow: 0 0 8px #FF6EC7;
+}
+
+.version {
+  color: #8C52FF;
+  opacity: 0.8;
+}
+
+.datetime {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+}
+
+.time {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #00fff7;
+  text-shadow: 0 0 6px #00fff7;
+}
+
+.date {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.auth-main-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  min-height: calc(100vh - 80px);
+}
+
+.auth-window {
+  background: rgba(25,25,50,0.95);
+  border: 3px solid #8C52FF;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 
+    0 0 0 1px rgba(0,255,247,0.3),
+    0 0 40px rgba(140,82,255,0.4),
+    0 0 80px rgba(255,110,199,0.2);
+  backdrop-filter: blur(15px);
+  overflow: hidden;
+}
+
+.window-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(90deg, rgba(140,82,255,0.2), rgba(255,110,199,0.1));
+  border-bottom: 1px solid rgba(140,82,255,0.5);
+}
+
+.window-title {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  color: #00fff7;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.title-icon {
+  font-size: 1.2rem;
+}
+
+.window-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.control-btn {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.control-btn.minimize { background: #ffcc00; color: #000; }
+.control-btn.maximize { background: #00cc00; color: #000; }
+.control-btn.close { background: #cc0000; color: #fff; }
+
+.control-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 8px currentColor;
+}
+
+.window-content {
+  padding: 2rem;
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.retro-logo {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 1.8rem;
+  color: #FF6EC7;
+  text-shadow: 0 0 15px #FF6EC7;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.1em;
+}
+
+.tagline {
+  color: #8C52FF;
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.auth-tabs {
+  display: flex;
+  margin-bottom: 2rem;
+  border: 2px solid rgba(140,82,255,0.3);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.tab-button {
+  flex: 1;
+  padding: 1rem;
+  background: transparent;
+  border: none;
+  color: #8C52FF;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.tab-button:hover {
+  background: rgba(140,82,255,0.1);
+}
+
+.tab-button.active {
+  background: rgba(140,82,255,0.2);
+  color: #00fff7;
+  text-shadow: 0 0 6px #00fff7;
+}
+
+.tab-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tab-icon {
+  font-size: 1rem;
+}
+
+.form-section {
+  text-align: center;
+}
+
+.section-title {
+  font-size: 1.3rem;
+  color: #00fff7;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 0 8px rgba(0,255,247,0.5);
+  letter-spacing: 0.05em;
+}
+
+.section-subtitle {
+  color: #8C52FF;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+  line-height: 1.4;
+}
+
+.provider-section {
+  margin-bottom: 2rem;
+}
+
+.provider-label {
+  font-size: 0.8rem;
+  color: #FF6EC7;
+  margin-bottom: 1rem;
+  letter-spacing: 0.1em;
+  opacity: 0.8;
+}
+
+.google-auth-button {
+  width: 100%;
+  padding: 1.2rem;
+  background: linear-gradient(135deg, rgba(66,133,244,0.1), rgba(52,168,83,0.1));
+  border: 2px solid rgba(66,133,244,0.4);
+  border-radius: 8px;
+  color: #00fff7;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.google-auth-button:hover {
+  border-color: rgba(66,133,244,0.8);
+  background: linear-gradient(135deg, rgba(66,133,244,0.2), rgba(52,168,83,0.2));
+  box-shadow: 0 0 20px rgba(66,133,244,0.3);
+  transform: translateY(-2px);
+}
+
+.google-auth-button:active {
+  transform: translateY(0);
+}
+
+.google-auth-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.button-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.google-icon {
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(135deg, #4285F4, #34A853, #FBBC05, #EA4335);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: white;
+  font-size: 1rem;
+}
+
+.button-text {
+  letter-spacing: 0.05em;
+}
+
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(0,255,247,0.3);
+  border-top: 2px solid #00fff7;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.auth-footer {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(140,82,255,0.3);
+}
+
+.security-notice {
+  color: #00ff00;
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.8;
+}
+
+.terms-notice {
+  color: #8C52FF;
+  font-size: 0.75rem;
+  opacity: 0.7;
+  line-height: 1.4;
+}
+
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,15,35,0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+}
+
+.loading-box {
+  background: rgba(25,25,50,0.95);
+  border: 2px solid #8C52FF;
+  border-radius: 12px;
+  padding: 2rem 3rem;
+  text-align: center;
+  box-shadow: 0 0 30px rgba(140,82,255,0.5);
+}
+
+.loading-title {
+  font-size: 1.1rem;
+  color: #00fff7;
+  margin-bottom: 1.5rem;
+  text-shadow: 0 0 8px #00fff7;
+  letter-spacing: 0.1em;
+}
+
+.progress-bar {
+  width: 250px;
+  height: 6px;
+  background: rgba(140,82,255,0.3);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #8C52FF, #FF6EC7);
+  border-radius: 3px;
+  animation: progress 2s ease-in-out infinite;
+}
+
+.loading-text {
+  color: #8C52FF;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes progress {
+  0% { width: 0%; }
+  50% { width: 70%; }
+  100% { width: 100%; }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .auth-system-bar {
+    padding: 0.8rem 1rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .auth-main-content {
+    padding: 1rem;
+  }
+  
+  .auth-window {
+    max-width: 100%;
+  }
+  
+  .window-content {
+    padding: 1.5rem;
+  }
+  
+  .retro-logo {
+    font-size: 1.4rem;
+  }
+  
+  .tab-button {
+    padding: 0.8rem;
+    font-size: 0.8rem;
+  }
+  
+  .google-auth-button {
+    padding: 1rem;
+  }
+}
