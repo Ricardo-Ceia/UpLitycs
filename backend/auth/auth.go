@@ -40,3 +40,6 @@ func NewAuth() {
 		google.New(googleClientId, googleClientSecret, "http://localhost:3333/auth/google/callback", "email", "profile"),
 	)
 }
+
+
+

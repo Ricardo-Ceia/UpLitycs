@@ -33,16 +33,18 @@ func main() {
 	
 	auth.NewAuth()
 
+	//--- Auth Routes ---
+	r.Route("/auth",func(r chi.Router){
+		r.Get("auth/{provider}",handlers.BeginAuthHandler)
+		r.Get("/{provider}/callback",handlers.GetAuthHandler)
+		r.Get("/logout",handlers.LogoutHandler)
+	})
+
 	// --- API routes ---
 	r.Route("/api", func(r chi.Router) {
 		r.Get("/start-onboarding", handlers.StartOnboardingHandler)
 		r.Post("/go-to-dashboard", appHandlers.GoToDashboardHandler)
 		r.Get("/latest-status", appHandlers.LatestDataStatusHandler)
-	})
-
-	//--- Auth Routes ---
-	r.Route("/auth",func(r chi.Router){
-		r.Get("/{provider}/callback",handlers.GetAuthHandler)
 	})
 
 	// --- React build directory ---

@@ -110,6 +110,10 @@ func (h *Handler) LatestDataStatusHandler(w http.ResponseWriter, r *http.Request
 }
 
 
+func BeginAuthHandler(w http.ResponseWritter, r *http.Request){
+	gothic.BeginAuthHandler(w, r)
+}
+
 func GetAuthHandler (w http.ResponseWriter,r *http.Request){
 	user,	err := gothic.CompleteUserAuth(w,r)
 
@@ -123,6 +127,13 @@ func GetAuthHandler (w http.ResponseWriter,r *http.Request){
 
 
 	http.Redirect(w,r,"http://localhost:3333",http.StatusFound)
+}
+
+func LogoutHandler(w http.ResponseWritter, r *http.Request){
+	session,_ := auth.Store.Get(r,"auth-session")
+	session.Options.MaxAge = -1
+	session.Save(r,w)
+	http.redirect(w,r,"/",http.StatusFound)
 }
 
 
