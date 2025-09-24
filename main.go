@@ -36,7 +36,7 @@ func main() {
 
 	//--- Auth Routes ---
 	r.Route("/auth", func(r chi.Router) {
-		r.Get("auth/{provider}", handlers.BeginAuthHandler)
+		r.Get("/{provider}", handlers.BeginAuthHandler)
 		r.Get("/{provider}/callback", appHandlers.GetAuthHandler)
 		r.Get("/logout", handlers.LogoutHandler)
 	})
