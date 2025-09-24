@@ -9,7 +9,7 @@ import (
 	"strings"
 	"uplytics/backend/handlers"
 	"uplytics/db"
-
+	"uplytics/backend/auth"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -30,12 +30,19 @@ func main() {
 	// Add some useful middleware
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	
+	auth.NewAuth()
 
 	// --- API routes ---
 	r.Route("/api", func(r chi.Router) {
 		r.Get("/start-onboarding", handlers.StartOnboardingHandler)
 		r.Post("/go-to-dashboard", appHandlers.GoToDashboardHandler)
 		r.Get("/latest-status", appHandlers.LatestDataStatusHandler)
+	})
+
+	//--- Auth Routes ---
+	r.Route("/auth",func(r chi.Router){
+		r.Get("/{provider}/callback",handlers.GetAuthHandler)
 	})
 
 	// --- React build directory ---

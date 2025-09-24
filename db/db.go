@@ -9,7 +9,9 @@ import (
 )
 
 type User struct {
-	Username string
+	Name string
+	AvatarUrl string
+	Email string
 	Homepage string
 	Alerts   string
 	Id       int
@@ -45,12 +47,25 @@ func PingDB(conn *sql.DB) error {
 	return nil
 }
 
-func InsertUser(conn *sql.DB, username, homepage, alerts string) error {
-	_, err := conn.Exec("INSERT INTO users (username, homepage, alerts) VALUES ($1, $2, $3)", username, homepage, alerts)
+func InsertUser(conn *sql.DB, name, avatarUrl,email,homepage, alerts string) error {
+	_, err := conn.Exec("INSERT INTO users (name, avatarUrl, email) VALUES ($1, $2, $3,Null,Null)", username, avatarUrl, email,homepage, alerts)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func UpdateUser(conn *sql.DB, email,homepage,alerts string) error{
+    _, err := conn.Exec(
+        "UPDATE users SET homepage = $2, alerts = $3 WHERE email = $1",
+        email,
+        homepage,
+        alerts,
+    )
+    if err != nil {
+        return err
+    }
+    return nil
 }
 
 func GetUserFromContext(conn *sql.DB, ctx context.Context) (User, error) {

@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"uplytics/backend/utils"
 	"uplytics/db"
+	"github.com/go-chi/chi/v5"
+	"github.com/markbates/goth"
 )
 
 type OnboardingRequest struct {
@@ -106,3 +108,21 @@ func (h *Handler) LatestDataStatusHandler(w http.ResponseWriter, r *http.Request
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(LatestStatus)
 }
+
+
+func GetAuthHandler (w http.ResponseWriter,r *http.Request){
+	user,	err := gothic.CompleteUserAuth(w,r)
+
+	if err != nil{
+		log.Println("Gothic authentication failed:%v",err)
+		return
+	}
+
+	err = InsertUser(db,user.Name,user.AvatarURL,user.Email)
+
+
+
+	http.Redirect(w,r,"http://localhost:3333",http.StatusFound)
+}
+
+
