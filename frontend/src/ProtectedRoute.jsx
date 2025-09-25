@@ -12,8 +12,10 @@ const ProtectedRoute = ({children}) => {
     const checkAuth = async () => {
         try {
             const response = await fetch('/api/user-status', {
-            credentials: 'include'
+                method: 'GET',
+                credentials: 'include'
             });
+            
             if (response.ok) {
                 setIsAuthenticated(true);
             }else{

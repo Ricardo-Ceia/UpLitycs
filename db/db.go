@@ -32,7 +32,7 @@ func OpenDB() *sql.DB {
 		log.Fatal(err)
 	}
 
-	log.Println("Connection to DATABSE ESTABLISHED✅")
+	log.Println("Connection to DATABASE ESTABLISHED✅")
 
 	return conn
 }
@@ -48,10 +48,11 @@ func PingDB(conn *sql.DB) error {
 }
 
 func InsertUser(conn *sql.DB, name, avatarUrl, email string) (int, error) {
-	//should return the id of the inserted user
 	var id int
+
+	// First try to insert, if conflict occurs, get the existing user's ID
 	err := conn.QueryRow(
-		"INSERT INTO users (username, avatar_url, email, homepage, alerts) VALUES ($1, $2, $3, Null, Null) ON CONFLICT (email) DO NOTHING RETURNING id",
+		"INSERT INTO users (username, avatar_url, email, homepage, alerts) VALUES ($1, $2, $3, '', '') ON CONFLICT (email) DO UPDATE SET username = EXCLUDED.username, avatar_url = EXCLUDED.avatar_url RETURNING id",
 		name,
 		avatarUrl,
 		email,
@@ -83,28 +84,49 @@ func GetUserFromContext(conn *sql.DB, ctx context.Context) (User, error) {
 	}
 
 	var u User
-	err := conn.QueryRow("SELECT id, username, homepage, alerts FROM users WHERE username=$1", user).Scan(&u.Id, &u.Name, &u.Homepage, &u.Alerts)
+	var homepage, alerts sql.NullString
+
+	err := conn.QueryRow("SELECT id, username, homepage, alerts FROM users WHERE username=$1", user).Scan(&u.Id, &u.Name, &homepage, &alerts)
 	if err != nil {
 		return User{}, err
 	}
+
+	// Handle NULL values
+	u.Homepage = homepage.String
+	u.Alerts = alerts.String
+
 	return u, nil
 }
 
 func GetUserByEmail(conn *sql.DB, email string) (User, error) {
 	var u User
-	err := conn.QueryRow("SELECT id, username, homepage, alerts, email, avatar_url FROM users WHERE email=$1", email).Scan(&u.Id, &u.Name, &u.Homepage, &u.Alerts, &u.Email, &u.AvatarUrl)
+	var homepage, alerts sql.NullString
+
+	err := conn.QueryRow("SELECT id, username, homepage, alerts, email, avatar_url FROM users WHERE email=$1", email).Scan(&u.Id, &u.Name, &homepage, &alerts, &u.Email, &u.AvatarUrl)
 	if err != nil {
 		return User{}, err
 	}
+
+	// Handle NULL values
+	u.Homepage = homepage.String
+	u.Alerts = alerts.String
+
 	return u, nil
 }
 
 func GetUserById(conn *sql.DB, id int) (User, error) {
 	var u User
-	err := conn.QueryRow("SELECT id, username, homepage, alerts, email, avatar_url FROM users WHERE id=$1", id).Scan(&u.Id, &u.Name, &u.Homepage, &u.Alerts, &u.Email, &u.AvatarUrl)
+	var homepage, alerts sql.NullString
+
+	err := conn.QueryRow("SELECT id, username, homepage, alerts, email, avatar_url FROM users WHERE id=$1", id).Scan(&u.Id, &u.Name, &homepage, &alerts, &u.Email, &u.AvatarUrl)
 	if err != nil {
 		return User{}, err
 	}
+
+	// Handle NULL values
+	u.Homepage = homepage.String
+	u.Alerts = alerts.String
+
 	return u, nil
 }
 
@@ -144,11 +166,16 @@ func GetAllUsers(conn *sql.DB) ([]struct {
 			Alerts   string
 			Id       int
 		}
+		var homepage, alerts sql.NullString
 
-		err := rows.Scan(&u.Id, &u.Username, &u.Homepage, &u.Alerts)
+		err := rows.Scan(&u.Id, &u.Username, &homepage, &alerts)
 		if err != nil {
 			return nil, err
 		}
+
+		// Handle NULL values
+		u.Homepage = homepage.String
+		u.Alerts = alerts.String
 
 		users = append(users, u)
 	}
@@ -161,7 +188,7 @@ func GetAllUsers(conn *sql.DB) ([]struct {
 }
 
 func GetUserPage(conn *sql.DB, id int) (string, error) {
-	var homepage string
+	var homepage sql.NullString
 
 	err := conn.QueryRow("SELECT homepage FROM users where id=$1", id).Scan(&homepage)
 
@@ -169,7 +196,7 @@ func GetUserPage(conn *sql.DB, id int) (string, error) {
 		return "", err
 	}
 
-	return homepage, nil
+	return homepage.String, nil
 }
 
 func InsertStatus(conn *sql.DB, userID int, page string, status string, status_code int) error {

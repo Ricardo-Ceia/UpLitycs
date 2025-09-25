@@ -1,7 +1,7 @@
 -- Schema initialization
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
-  username TEXT UNIQUE NOT NULL,
+  username TEXT NOT NULL,
   email TEXT UNIQUE NOT NULL, -- Add email field
   avatar_url TEXT, -- Add avatar_url field  
   homepage TEXT,

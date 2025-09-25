@@ -77,7 +77,7 @@ func main() {
 		r.With(auth.AuthMiddleware).Get("/start-onboarding", handlers.StartOnboardingHandler)
 		r.With(auth.AuthMiddleware).Post("/go-to-dashboard", appHandlers.GoToDashboardHandler)
 		r.With(auth.AuthMiddleware).Get("/latest-status", appHandlers.LatestDataStatusHandler)
-		r.With(auth.AuthMiddleware).Get("/user-status", appHandlers.GetUserStatusHandler)
+		r.With(auth.AuthMiddleware).Get("/user-status", handlers.GetUserStatusHandler)
 	})
 
 	//--- OAuth Auth Routes (must come before catch-all) ---

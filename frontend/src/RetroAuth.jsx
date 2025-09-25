@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import './RetroAuth.css';
 
 const RetroAuth = () => {
-  const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -14,12 +13,12 @@ const RetroAuth = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const handleGoogleAuth = (authType) => {
-  setIsLoading(true);
-  setTimeout(() => {
-    window.location.href = `/auth/google?mode=${authType}`;
-  }, 800);
-};
+  const handleGoogleAuth = () => {
+    setIsLoading(true);
+    setTimeout(() => {
+      window.location.href = '/auth/google';
+    }, 800);
+  };
 
   const formatTime = (date) => {
     return date.toLocaleTimeString('en-US', { 
@@ -66,7 +65,7 @@ const RetroAuth = () => {
             </div>
             <div className="window-controls">
               <div className="control-btn minimize">_</div>
-              <div className="control-btn maximize">□</div>
+              <div className="control-btn maximize">▢</div>
               <div className="control-btn close">×</div>
             </div>
           </div>
@@ -79,35 +78,14 @@ const RetroAuth = () => {
               </div>
             </div>
 
-            <div className="auth-tabs">
-              <button 
-                className={`tab-button ${isLogin ? 'active' : ''}`}
-                onClick={() => setIsLogin(true)}
-                disabled={isLoading}
-              >
-                <span className="tab-icon">👤</span>
-                LOGIN
-              </button>
-              <button 
-                className={`tab-button ${!isLogin ? 'active' : ''}`}
-                onClick={() => setIsLogin(false)}
-                disabled={isLoading}
-              >
-                <span className="tab-icon">✚</span>
-                SIGN UP
-              </button>
-            </div>
-
             <div className="auth-form">
               <div className="form-section">
                 <h2 className="section-title">
-                  {isLogin ? 'WELCOME BACK' : 'CREATE ACCOUNT'}
+                  ACCESS CONTROL
                 </h2>
                 <p className="section-subtitle">
-                  {isLogin 
-                    ? 'Please authenticate to access your dashboard' 
-                    : 'Join UPLYTICS to monitor your websites'
-                  }
+                  Sign in with Google to access your monitoring dashboard.
+                  New users will be automatically registered.
                 </p>
 
                 <div className="provider-section">
@@ -115,13 +93,13 @@ const RetroAuth = () => {
                   
                   <button 
                     className="google-auth-button"
-                    onClick={() => handleGoogleAuth(isLogin ? 'login' : 'signup')}
+                    onClick={handleGoogleAuth}
                     disabled={isLoading}
                   >
                     <div className="button-content">
                       <div className="google-icon">G</div>
                       <span className="button-text">
-                        {isLogin ? 'SIGN IN WITH GOOGLE' : 'SIGN UP WITH GOOGLE'}
+                        CONTINUE WITH GOOGLE
                       </span>
                       {isLoading && <div className="loading-spinner"></div>}
                     </div>

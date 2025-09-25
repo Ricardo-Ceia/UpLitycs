@@ -13,16 +13,11 @@ import (
 	"github.com/markbates/goth/providers/google"
 )
 
-const (
-	MaxAge = 86400 * 30
-	IsProd = false
-)
-
 var Store *sessions.CookieStore
 
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		session, err := Store.Get(r, "auth-session")
+		session, err := Store.Get(r, gothic.SessionName)
 
 		if err != nil {
 			http.Error(w, "Session error", http.StatusInternalServerError)
@@ -67,10 +62,11 @@ func NewAuth() {
 	os.Setenv("SESSION_SECRET", sessionSecret)
 
 	Store = sessions.NewCookieStore([]byte(sessionSecret))
-	Store.MaxAge(MaxAge)
+	Store.MaxAge(86400 * 30)
 	Store.Options.Path = "/"
 	Store.Options.HttpOnly = true
-	Store.Options.Secure = IsProd
+	Store.Options.Secure = false
+	Store.Options.SameSite = http.SameSiteLaxMode
 
 	gothic.Store = Store
 

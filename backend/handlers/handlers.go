@@ -143,67 +143,70 @@ func (h *Handler) GetAuthHandler(w http.ResponseWriter, r *http.Request) {
 	user, err := gothic.CompleteUserAuth(w, r)
 
 	if err != nil {
-		log.Printf("Gothic authentication failed:%v", err)
-		http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
+		log.Printf("Gothic authentication failed: %v", err)
+		http.Redirect(w, r, "/auth?error=auth_failed", http.StatusTemporaryRedirect)
 		return
 	}
 
 	conn := h.conn
-	mode := r.URL.Query().Get("mode")
 
+	// Try to get existing user by email
 	existingUser, err := db.GetUserByEmail(conn, user.Email)
 
-	if mode == "login" {
+	var id int
+	var needsOnboarding bool
+
+	if err != nil {
+		// User doesn't exist, create new user
+		log.Printf("User not found, creating new user: %s", user.Email)
+		id, err = db.InsertUser(conn, user.Name, user.AvatarURL, user.Email)
 		if err != nil {
-			log.Printf("User not found during login: %v", err)
-			http.Redirect(w, r, "/auth?error=user_not_found", http.StatusFound)
+			log.Printf("Error creating user: %v", err)
+			http.Redirect(w, r, "/auth?error=signup_failed", http.StatusTemporaryRedirect)
 			return
 		}
-		id := existingUser.Id
-
-		session, _ := auth.Store.Get(r, gothic.SessionName)
-		session.Values["user"] = user.Name
-		session.Values["userId"] = id
-		session.Save(r, w)
-
-		http.Redirect(w, r, "/dashboard", http.StatusFound)
+		needsOnboarding = true // New users always need onboarding
+		log.Printf("Created new user with ID: %d", id)
 	} else {
-		var id int
-		if err != nil {
-			id, err = db.InsertUser(conn, user.Name, user.AvatarURL, user.Email)
-			if err != nil {
-				log.Printf("Error creating user:%v", err)
-				http.Redirect(w, r, "/auth?error=signup_failed", http.StatusTemporaryRedirect)
-			}
-		} else {
-			id = existingUser.Id
-		}
-		session, _ := auth.Store.Get(r, gothic.SessionName)
-		session.Values["user"] = user.Name
-		session.Values["userId"] = id
-		session.Save(r, w)
+		// User exists, use existing ID
+		id = existingUser.Id
+		// Check if existing user needs onboarding (homepage is empty)
+		needsOnboarding = (existingUser.Homepage == "")
+		log.Printf("Existing user found: ID=%d, Homepage='%s', NeedsOnboarding=%t", id, existingUser.Homepage, needsOnboarding)
+	}
 
-		//check if user needs onboarding
-		dbUser, _ := db.GetUserById(conn, id)
-		if dbUser.Homepage == "" {
-			http.Redirect(w, r, "/onboarding", http.StatusFound)
-		} else {
-			http.Redirect(w, r, "/dashboard", http.StatusFound)
-		}
+	// Set session for both new and existing users
+	session, _ := auth.Store.Get(r, gothic.SessionName)
+	session.Values["user"] = user.Name
+	session.Values["userId"] = id
+	err = session.Save(r, w)
+	if err != nil {
+		log.Printf("Error saving session: %v", err)
+	}
+
+	// Redirect based on onboarding status
+	if needsOnboarding {
+		log.Printf("Redirecting to onboarding for user ID: %d", id)
+		http.Redirect(w, r, "/onboarding", http.StatusFound)
+	} else {
+		log.Printf("Redirecting to dashboard for user ID: %d", id)
+		http.Redirect(w, r, "/dashboard", http.StatusFound)
 	}
 }
 
-func (h *Handler) GetUserStatusHandler(w http.ResponseWriter, r *http.Request) {
+func GetUserStatusHandler(w http.ResponseWriter, r *http.Request) {
 	// This is called by ProtectedRoute to check authentication
-	userID := r.Context().Value("userID")
+	userID := r.Context().Value("userId")
+	log.Printf("GetUserStatusHandler: userId from context: %v", userID)
+	log.Printf("Request headers: %v", r.Header)
+	log.Printf("Cookies: %v", r.Cookies())
 	if userID == nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"authenticated": true}`))
+	json.NewEncoder(w).Encode(map[string]bool{"authenticated": true})
 }
 
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
