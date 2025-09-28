@@ -11,7 +11,6 @@ import (
 	"uplytics/db"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/markbates/goth/gothic"
 )
 
 type OnboardingRequest struct {
@@ -82,43 +81,11 @@ func (h *Handler) GoToDashboardHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"success": true, "message": "Onboarding completed successfully"}`))
 }
 
-func (h *Handler) LatestDataStatusHandler(w http.ResponseWriter, r *http.Request) {
-	//TODO:check if user is logged in
-	conn := h.conn
-	user, err := db.GetUserFromContext(conn, r.Context())
-
-	if err != nil {
-		log.Println("Error getting user from context in LatestDataStatusHandler:", err)
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	id, err := db.GetUserIdFromUser(conn, user)
-
-	if err != nil {
-		log.Println("Error getting user ID from user in LatestDataStatusHandler:", err)
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	LatestStatus, err := db.GetLatestStatus(conn, id, user.Homepage)
-
-	if err != nil {
-		log.Println("Error getting latest status in LatestDataStatusHandler:", err)
-		http.Error(w, "Error fetching latest status", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(LatestStatus)
-}
-
 func BeginAuthHandler(w http.ResponseWriter, r *http.Request) {
-	// try chi param first
+	// Get provider from URL parameter
 	provider := chi.URLParam(r, "provider")
 
-	// fallback: parse path (e.g. /auth/google or /auth/google?mode=login)
+	// Fallback: parse path (e.g. /auth/google)
 	if provider == "" {
 		parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
 		if len(parts) >= 2 && parts[0] == "auth" {
@@ -131,19 +98,35 @@ func BeginAuthHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ensure gothic sees provider via query param
-	q := r.URL.Query()
-	q.Set("provider", provider)
-	r.URL.RawQuery = q.Encode()
-
-	gothic.BeginAuthHandler(w, r)
+	// Currently only supporting Google
+	if provider == "google" {
+		auth.BeginGoogleAuth(w, r)
+	} else {
+		http.Error(w, "unsupported provider", http.StatusBadRequest)
+	}
 }
 
+// GetAuthHandler handles the OAuth callback
 func (h *Handler) GetAuthHandler(w http.ResponseWriter, r *http.Request) {
-	user, err := gothic.CompleteUserAuth(w, r)
+	// Get provider from URL
+	provider := chi.URLParam(r, "provider")
+	if provider == "" {
+		parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
+		if len(parts) >= 3 && parts[0] == "auth" {
+			provider = parts[1]
+		}
+	}
 
+	if provider != "google" {
+		log.Printf("Unsupported provider: %s", provider)
+		http.Redirect(w, r, "/auth?error=unsupported_provider", http.StatusTemporaryRedirect)
+		return
+	}
+
+	// Handle Google OAuth callback
+	userInfo, err := auth.HandleGoogleCallback(w, r)
 	if err != nil {
-		log.Printf("Gothic authentication failed: %v", err)
+		log.Printf("Google authentication failed: %v", err)
 		http.Redirect(w, r, "/auth?error=auth_failed", http.StatusTemporaryRedirect)
 		return
 	}
@@ -151,15 +134,15 @@ func (h *Handler) GetAuthHandler(w http.ResponseWriter, r *http.Request) {
 	conn := h.conn
 
 	// Try to get existing user by email
-	existingUser, err := db.GetUserByEmail(conn, user.Email)
+	existingUser, err := db.GetUserByEmail(conn, userInfo.Email)
 
 	var id int
 	var needsOnboarding bool
 
 	if err != nil {
 		// User doesn't exist, create new user
-		log.Printf("User not found, creating new user: %s", user.Email)
-		id, err = db.InsertUser(conn, user.Name, user.AvatarURL, user.Email)
+		log.Printf("User not found, creating new user: %s", userInfo.Email)
+		id, err = db.InsertUser(conn, userInfo.Name, userInfo.Picture, userInfo.Email)
 		if err != nil {
 			log.Printf("Error creating user: %v", err)
 			http.Redirect(w, r, "/auth?error=signup_failed", http.StatusTemporaryRedirect)
@@ -176,8 +159,8 @@ func (h *Handler) GetAuthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Set session for both new and existing users
-	session, _ := auth.Store.Get(r, gothic.SessionName)
-	session.Values["user"] = user.Name
+	session, _ := auth.Store.Get(r, "auth-session")
+	session.Values["user"] = userInfo.Name
 	session.Values["userId"] = id
 	err = session.Save(r, w)
 	if err != nil {
@@ -194,12 +177,12 @@ func (h *Handler) GetAuthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GetUserStatusHandler checks if user is authenticated
 func GetUserStatusHandler(w http.ResponseWriter, r *http.Request) {
 	// This is called by ProtectedRoute to check authentication
 	userID := r.Context().Value("userId")
 	log.Printf("GetUserStatusHandler: userId from context: %v", userID)
-	log.Printf("Request headers: %v", r.Header)
-	log.Printf("Cookies: %v", r.Cookies())
+
 	if userID == nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
@@ -209,6 +192,7 @@ func GetUserStatusHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]bool{"authenticated": true})
 }
 
+// LogoutHandler clears the user session
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	session, _ := auth.Store.Get(r, "auth-session")
 	session.Options.MaxAge = -1

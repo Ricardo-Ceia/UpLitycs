@@ -6,8 +6,10 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 	"uplytics/backend/auth"
 	"uplytics/backend/handlers"
+	"uplytics/backend/status_checker"
 	"uplytics/db"
 
 	"github.com/go-chi/chi/v5"
@@ -64,19 +66,28 @@ func main() {
 	conn := db.OpenDB()
 	defer conn.Close()
 
+	// Ping database to ensure connection
+	if err := db.PingDB(conn); err != nil {
+		log.Fatal("Failed to ping database:", err)
+	}
+
 	appHandlers := handlers.NewHandler(conn)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
+	// Initialize custom authentication
 	auth.NewAuth()
+
+	// Start status checker (check every 5 minutes)
+	status_checker.StartStatusUpdater(conn, 5*time.Minute)
+	log.Println("Status updater started")
 
 	// --- API routes (must come first) ---
 	r.Route("/api", func(r chi.Router) {
 		r.With(auth.AuthMiddleware).Get("/start-onboarding", handlers.StartOnboardingHandler)
 		r.With(auth.AuthMiddleware).Post("/go-to-dashboard", appHandlers.GoToDashboardHandler)
-		r.With(auth.AuthMiddleware).Get("/latest-status", appHandlers.LatestDataStatusHandler)
 		r.With(auth.AuthMiddleware).Get("/user-status", handlers.GetUserStatusHandler)
 	})
 
