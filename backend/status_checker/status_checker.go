@@ -38,7 +38,7 @@ func UpdateStatuses(conn *sql.DB) {
 			continue
 		}
 
-		err = db.InsertStatus(conn, user.Id, user.Homepage, status, status_code)
+		err = db.InsertStatus(conn, user.Id, user.HealthUrl, status, status_code)
 		if err != nil {
 			log.Printf("Error inserting status for user %s, page %s: %v", user.Username, page, err)
 		}

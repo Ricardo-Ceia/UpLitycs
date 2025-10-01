@@ -97,7 +97,7 @@ func main() {
 		r.Get("/{provider}", handlers.BeginAuthHandler)
 		r.Get("/{provider}/callback", appHandlers.GetAuthHandler)
 		r.Get("/logout", handlers.LogoutHandler)
-		r.Get("check-session", handlers.CheckSessionHandler)
+		r.Get("/check-session", handlers.CheckSessionHandler)
 	})
 
 	// --- Serve React build files ---
