@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS users (
   health_url TEXT,
   theme TEXT DEFAULT 'cyberpunk',
   alerts TEXT,
+  slug TEXT UNIQUE,
+  app_name TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 

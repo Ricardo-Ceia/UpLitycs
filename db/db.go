@@ -15,6 +15,8 @@ type User struct {
 	HealthUrl string
 	Theme     string
 	Alerts    string
+	Slug      string
+	AppName   string
 	Id        int
 }
 
@@ -53,7 +55,7 @@ func InsertUser(conn *sql.DB, name, avatarUrl, email string) (int, error) {
 
 	// First try to insert, if conflict occurs, get the existing user's ID
 	err := conn.QueryRow(
-		"INSERT INTO users (username, avatar_url, email, health_url, theme, alerts) VALUES ($1, $2, $3, '', 'cyberpunk', '') ON CONFLICT (email) DO UPDATE SET username = EXCLUDED.username, avatar_url = EXCLUDED.avatar_url RETURNING id",
+		"INSERT INTO users (username, avatar_url, email, health_url, theme, alerts, slug, app_name) VALUES ($1, $2, $3, '', 'cyberpunk', '', '', '') ON CONFLICT (email) DO UPDATE SET username = EXCLUDED.username, avatar_url = EXCLUDED.avatar_url RETURNING id",
 		name,
 		avatarUrl,
 		email,
@@ -65,13 +67,15 @@ func InsertUser(conn *sql.DB, name, avatarUrl, email string) (int, error) {
 	return id, nil
 }
 
-func UpdateUser(conn *sql.DB, id int, health_url, theme, alerts string) error {
+func UpdateUser(conn *sql.DB, id int, health_url, theme, alerts, slug, appName string) error {
 	_, err := conn.Exec(
-		"UPDATE users SET health_url = $2, theme = $3, alerts = $4 WHERE id = $1",
+		"UPDATE users SET health_url = $2, theme = $3, alerts = $4, slug = $5, app_name = $6 WHERE id = $1",
 		id,
 		health_url,
 		theme,
 		alerts,
+		slug,
+		appName,
 	)
 	if err != nil {
 		return err
@@ -86,9 +90,9 @@ func GetUserFromContext(conn *sql.DB, ctx context.Context) (User, error) {
 	}
 
 	var u User
-	var homepage, theme, alerts sql.NullString
+	var homepage, theme, alerts, slug, appName sql.NullString
 
-	err := conn.QueryRow("SELECT id, username, health_url, theme, alerts FROM users WHERE username=$1", user).Scan(&u.Id, &u.Name, &homepage, &theme, &alerts)
+	err := conn.QueryRow("SELECT id, username, health_url, theme, alerts, slug, app_name FROM users WHERE username=$1", user).Scan(&u.Id, &u.Name, &homepage, &theme, &alerts, &slug, &appName)
 	if err != nil {
 		return User{}, err
 	}
@@ -97,15 +101,17 @@ func GetUserFromContext(conn *sql.DB, ctx context.Context) (User, error) {
 	u.HealthUrl = homepage.String
 	u.Theme = theme.String
 	u.Alerts = alerts.String
+	u.Slug = slug.String
+	u.AppName = appName.String
 
 	return u, nil
 }
 
 func GetUserByEmail(conn *sql.DB, email string) (User, error) {
 	var u User
-	var homepage, theme, alerts sql.NullString
+	var homepage, theme, alerts, slug, appName sql.NullString
 
-	err := conn.QueryRow("SELECT id, username, health_url, theme, alerts, email, avatar_url FROM users WHERE email=$1", email).Scan(&u.Id, &u.Name, &homepage, &theme, &alerts, &u.Email, &u.AvatarUrl)
+	err := conn.QueryRow("SELECT id, username, health_url, theme, alerts, email, avatar_url, slug, app_name FROM users WHERE email=$1", email).Scan(&u.Id, &u.Name, &homepage, &theme, &alerts, &u.Email, &u.AvatarUrl, &slug, &appName)
 	if err != nil {
 		return User{}, err
 	}
@@ -114,15 +120,17 @@ func GetUserByEmail(conn *sql.DB, email string) (User, error) {
 	u.HealthUrl = homepage.String
 	u.Theme = theme.String
 	u.Alerts = alerts.String
+	u.Slug = slug.String
+	u.AppName = appName.String
 
 	return u, nil
 }
 
 func GetUserById(conn *sql.DB, id int) (User, error) {
 	var u User
-	var homepage, theme, alerts sql.NullString
+	var homepage, theme, alerts, slug, appName sql.NullString
 
-	err := conn.QueryRow("SELECT id, username, health_url, theme, alerts, email, avatar_url FROM users WHERE id=$1", id).Scan(&u.Id, &u.Name, &homepage, &theme, &alerts, &u.Email, &u.AvatarUrl)
+	err := conn.QueryRow("SELECT id, username, health_url, theme, alerts, email, avatar_url, slug, app_name FROM users WHERE id=$1", id).Scan(&u.Id, &u.Name, &homepage, &theme, &alerts, &u.Email, &u.AvatarUrl, &slug, &appName)
 	if err != nil {
 		return User{}, err
 	}
@@ -131,6 +139,27 @@ func GetUserById(conn *sql.DB, id int) (User, error) {
 	u.HealthUrl = homepage.String
 	u.Theme = theme.String
 	u.Alerts = alerts.String
+	u.Slug = slug.String
+	u.AppName = appName.String
+
+	return u, nil
+}
+
+func GetUserBySlug(conn *sql.DB, slug string) (User, error) {
+	var u User
+	var homepage, theme, alerts, slugVal, appName sql.NullString
+
+	err := conn.QueryRow("SELECT id, username, health_url, theme, alerts, email, avatar_url, slug, app_name FROM users WHERE slug=$1", slug).Scan(&u.Id, &u.Name, &homepage, &theme, &alerts, &u.Email, &u.AvatarUrl, &slugVal, &appName)
+	if err != nil {
+		return User{}, err
+	}
+
+	// Handle NULL values
+	u.HealthUrl = homepage.String
+	u.Theme = theme.String
+	u.Alerts = alerts.String
+	u.Slug = slugVal.String
+	u.AppName = appName.String
 
 	return u, nil
 }

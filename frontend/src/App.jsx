@@ -3,6 +3,7 @@ import RetroTerminalOnboarding from "./Onboard";
 import Home from "./Home";
 import Dashboard from "./Dashboard";
 import RetroAuth from "./RetroAuth";
+import PublicStatusPage from "./PublicStatusPage";
 import ProtectedRoute from "./ProtectedRoute";
 
 function App() {
@@ -11,6 +12,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/auth" element={<RetroAuth />} />
+        <Route path="/status/:slug" element={<PublicStatusPage />} />
         <Route path="/onboarding" element={
           <ProtectedRoute>
             <RetroTerminalOnboarding />

@@ -8,6 +8,8 @@ const Dashboard = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [userTheme, setUserTheme] = useState('cyberpunk'); // default theme
   const [homepage, setHomepage] = useState('');
+  const [userSlug, setUserSlug] = useState('');
+  const [appName, setAppName] = useState('');
 
   const fetchUserData = async () => {
     try {
@@ -19,6 +21,8 @@ const Dashboard = () => {
         // Assuming the backend returns user data with theme
         setUserTheme(data.theme || 'cyberpunk');
         setHomepage(data.homepage || '');
+        setUserSlug(data.slug || '');
+        setAppName(data.appName || '');
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
@@ -236,6 +240,43 @@ const Dashboard = () => {
               </div>
             )}
           </div>
+
+          {userSlug && (
+            <div className="card-body" style={{borderTop: '1px solid var(--border-color)', paddingTop: '2rem'}}>
+              <div className="public-link-section">
+                <h3 className="section-subtitle">Your Public Status Page</h3>
+                <p className="section-description">Share this link with your users so they can check your service status:</p>
+                <div className="public-link-container">
+                  <input 
+                    type="text" 
+                    value={`${window.location.origin}/status/${userSlug}`}
+                    readOnly
+                    className="public-link-input"
+                  />
+                  <button 
+                    className="copy-link-button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/status/${userSlug}`);
+                    }}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    COPY
+                  </button>
+                  <a 
+                    href={`/status/${userSlug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="view-link-button"
+                  >
+                    VIEW PAGE →
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="card-footer">
             <div className="footer-info">

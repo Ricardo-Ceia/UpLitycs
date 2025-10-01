@@ -7,6 +7,8 @@ const RetroOnboarding = () => {
   const [selectedTheme, setSelectedTheme] = useState('');
   const [emailAlerts, setEmailAlerts] = useState('');
   const [homepageUrl, setHomepageUrl] = useState('');
+  const [appName, setAppName] = useState('');
+  const [slug, setSlug] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [typewriterText, setTypewriterText] = useState('');
   const [copied, setCopied] = useState(false);
@@ -122,7 +124,7 @@ end`
   };
 
   const handleSubmit = async () => {
-    if (selectedTheme && emailAlerts && homepageUrl) {
+    if (selectedTheme && emailAlerts && homepageUrl && appName && slug) {
       setIsSubmitting(true);
       
       // Prepare data for submission
@@ -130,7 +132,9 @@ end`
         name: "User",
         homepage: homepageUrl,
         alerts: emailAlerts === 'yes' ? 'y' : 'n',
-        theme: selectedTheme
+        theme: selectedTheme,
+        appName: appName,
+        slug: slug
       };
       
       try {
@@ -273,7 +277,64 @@ end`
           <div className="space-y-6 animate-fadeIn">
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-cyan-400 mb-2" style={{fontFamily: "'Press Start 2P', monospace"}}>
-                STEP 3: CHOOSE YOUR THEME
+                STEP 3: NAME YOUR STATUS PAGE
+              </h2>
+              <p className="text-purple-400 text-sm">Configure your public status page details</p>
+            </div>
+
+            <div className="bg-black/50 rounded-lg p-8 border border-purple-500/50">
+              <div className="space-y-6">
+                <label className="block">
+                  <span className="text-cyan-300 text-sm font-mono mb-2 block">APP NAME (Display Name)</span>
+                  <input
+                    type="text"
+                    value={appName}
+                    onChange={(e) => setAppName(e.target.value)}
+                    placeholder="My Awesome App"
+                    className="w-full px-4 py-3 bg-gray-950 border-2 border-purple-500/50 rounded-lg text-cyan-300 font-mono focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 transition-all"
+                  />
+                  <p className="text-xs text-gray-400 mt-2">This will be shown on your public status page</p>
+                </label>
+
+                <label className="block">
+                  <span className="text-cyan-300 text-sm font-mono mb-2 block">STATUS PAGE SLUG (URL)</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-400 text-sm">uplytics.com/status/</span>
+                    <input
+                      type="text"
+                      value={slug}
+                      onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                      placeholder="my-app"
+                      className="flex-1 px-4 py-3 bg-gray-950 border-2 border-purple-500/50 rounded-lg text-cyan-300 font-mono focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 transition-all"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-400 mt-2">Only lowercase letters, numbers, and hyphens allowed</p>
+                </label>
+
+                {slug && appName && (
+                  <div className="p-4 bg-gradient-to-r from-cyan-900/20 to-purple-900/20 rounded border border-cyan-500/30">
+                    <p className="text-xs text-cyan-300 mb-2">
+                      <strong>Your public status page will be:</strong>
+                    </p>
+                    <div className="p-3 bg-black/50 rounded font-mono text-sm text-cyan-400">
+                      {window.location.origin}/status/{slug}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2">
+                      Anyone can visit this URL to check your service status
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+
+      case 3:
+        return (
+          <div className="space-y-6 animate-fadeIn">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-cyan-400 mb-2" style={{fontFamily: "'Press Start 2P', monospace"}}>
+                STEP 4: CHOOSE YOUR THEME
               </h2>
               <p className="text-purple-400 text-sm">Select a visual style for your status page</p>
             </div>
@@ -321,12 +382,12 @@ end`
           </div>
         );
 
-      case 3:
+      case 4:
         return (
           <div className="space-y-6 animate-fadeIn">
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-cyan-400 mb-2" style={{fontFamily: "'Press Start 2P', monospace"}}>
-                STEP 4: EMAIL ALERTS
+                STEP 5: EMAIL ALERTS
               </h2>
               <p className="text-purple-400 text-sm">Get notified when your service goes down</p>
             </div>
@@ -420,7 +481,7 @@ end`
         <div className="bg-black/40 backdrop-blur-md rounded-2xl border-2 border-purple-500/50 shadow-2xl shadow-purple-500/20 p-8">
           {/* Progress indicator */}
           <div className="flex items-center justify-between mb-8">
-            {[0, 1, 2, 3].map((step) => (
+            {[0, 1, 2, 3, 4].map((step) => (
               <div key={step} className="flex items-center flex-1">
                 <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center font-mono transition-all ${
                   currentStep >= step 
@@ -429,7 +490,7 @@ end`
                 }`}>
                   {currentStep > step ? '✓' : step + 1}
                 </div>
-                {step < 3 && (
+                {step < 4 && (
                   <div className={`flex-1 h-0.5 mx-2 transition-all ${
                     currentStep > step ? 'bg-cyan-400' : 'bg-gray-700'
                   }`} />
@@ -455,12 +516,13 @@ end`
               ← BACK
             </button>
 
-            {currentStep < 3 ? (
+            {currentStep < 4 ? (
               <button
                 onClick={() => setCurrentStep(currentStep + 1)}
                 disabled={
                   (currentStep === 1 && !homepageUrl) ||
-                  (currentStep === 2 && !selectedTheme)
+                  (currentStep === 2 && (!appName || !slug)) ||
+                  (currentStep === 3 && !selectedTheme)
                 }
                 className="px-6 py-3 rounded-lg font-mono text-sm bg-gradient-to-r from-cyan-500 to-purple-500 text-white hover:from-cyan-400 hover:to-purple-400 transition-all flex items-center gap-2 shadow-lg hover:shadow-cyan-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -469,7 +531,7 @@ end`
             ) : (
               <button
                 onClick={handleSubmit}
-                disabled={!selectedTheme || !emailAlerts || !homepageUrl || isSubmitting}
+                disabled={!selectedTheme || !emailAlerts || !homepageUrl || !appName || !slug || isSubmitting}
                 className="px-8 py-3 rounded-lg font-mono text-sm bg-gradient-to-r from-green-500 to-cyan-500 text-white hover:from-green-400 hover:to-cyan-400 transition-all shadow-lg hover:shadow-green-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
@@ -490,7 +552,7 @@ end`
           <div className="inline-flex items-center gap-3 px-4 py-2 bg-black/40 backdrop-blur-md rounded-full border border-purple-500/30">
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50" />
             <span className="text-xs font-mono text-gray-400">SYSTEM READY</span>
-            <span className="text-xs font-mono text-cyan-400">STEP {currentStep + 1} OF 4</span>
+            <span className="text-xs font-mono text-cyan-400">STEP {currentStep + 1} OF 5</span>
           </div>
         </div>
       </div>

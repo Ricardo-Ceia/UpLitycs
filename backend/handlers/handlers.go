@@ -18,6 +18,8 @@ type OnboardingRequest struct {
 	Homepage string `json:"homepage"`
 	Alerts   string `json:"alerts"`
 	Theme    string `json:"theme"`
+	Slug     string `json:"slug"`
+	AppName  string `json:"appName"`
 }
 
 type Handler struct {
@@ -70,7 +72,7 @@ func (h *Handler) GoToDashboardHandler(w http.ResponseWriter, r *http.Request) {
 	conn := h.conn
 
 	user, err := db.GetUserFromContext(conn, r.Context())
-	err = db.UpdateUser(conn, user.Id, req.Homepage, req.Theme, req.Alerts)
+	err = db.UpdateUser(conn, user.Id, req.Homepage, req.Theme, req.Alerts, req.Slug, req.AppName)
 
 	if err != nil {
 		log.Println("Error updating user on the GoToDashboardHandler", err)
@@ -211,6 +213,8 @@ func (h *Handler) GetUserStatusHandler(w http.ResponseWriter, r *http.Request) {
 		"userName":      userName,
 		"theme":         user.Theme,
 		"homepage":      user.HealthUrl,
+		"slug":          user.Slug,
+		"appName":       user.AppName,
 	})
 }
 
@@ -272,4 +276,52 @@ func (h *Handler) GetLatestStatusHandler(w http.ResponseWriter, r *http.Request)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(latestStatus)
+}
+
+// GetPublicStatusHandler returns public status page data by slug (NO AUTH REQUIRED)
+func (h *Handler) GetPublicStatusHandler(w http.ResponseWriter, r *http.Request) {
+	slug := chi.URLParam(r, "slug")
+
+	if slug == "" {
+		http.Error(w, "Slug required", http.StatusBadRequest)
+		return
+	}
+
+	conn := h.conn
+
+	// Get user by slug
+	user, err := db.GetUserBySlug(conn, slug)
+	if err != nil {
+		log.Printf("User not found for slug %s: %v", slug, err)
+		http.Error(w, "Status page not found", http.StatusNotFound)
+		return
+	}
+
+	// Get latest status
+	var latestStatus db.LatestStatus
+	if user.HealthUrl != "" {
+		latestStatus, err = db.GetLatestStatus(conn, user.Id, user.HealthUrl)
+		if err != nil {
+			log.Printf("No status data for user %d: %v", user.Id, err)
+			// Return empty status instead of error
+			latestStatus = db.LatestStatus{
+				Status:      "No data",
+				Status_code: 0,
+				CheckedAt:   "",
+			}
+		}
+	}
+
+	// Return public data (no sensitive info)
+	response := map[string]interface{}{
+		"user": map[string]interface{}{
+			"AppName":   user.AppName,
+			"Theme":     user.Theme,
+			"HealthUrl": user.HealthUrl,
+		},
+		"latestStatus": latestStatus,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
