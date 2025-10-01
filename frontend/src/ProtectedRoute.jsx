@@ -11,7 +11,7 @@ const ProtectedRoute = ({children}) => {
 
     const checkAuth = async () => {
         try {
-            const response = await fetch('/api/user-status', {
+            const response = await fetch('/auth/check-session', {
                 method: 'GET',
                 credentials: 'include'
             });

@@ -154,8 +154,8 @@ func (h *Handler) GetAuthHandler(w http.ResponseWriter, r *http.Request) {
 		// User exists, use existing ID
 		id = existingUser.Id
 		// Check if existing user needs onboarding (homepage is empty)
-		needsOnboarding = (existingUser.Homepage == "")
-		log.Printf("Existing user found: ID=%d, Homepage='%s', NeedsOnboarding=%t", id, existingUser.Homepage, needsOnboarding)
+		needsOnboarding = (existingUser.HealthUrl == "")
+		log.Printf("Existing user found: ID=%d, Homepage='%s', NeedsOnboarding=%t", id, existingUser.HealthUrl, needsOnboarding)
 	}
 
 	// Set session for both new and existing users
@@ -179,17 +179,40 @@ func (h *Handler) GetAuthHandler(w http.ResponseWriter, r *http.Request) {
 
 // GetUserStatusHandler checks if user is authenticated
 func GetUserStatusHandler(w http.ResponseWriter, r *http.Request) {
-	// This is called by ProtectedRoute to check authentication
-	userID := r.Context().Value("userId")
-	log.Printf("GetUserStatusHandler: userId from context: %v", userID)
+	userId := r.Context().Value("userId")
+	userName := r.Context().Value("user")
 
-	if userID == nil {
+	if userId == nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]bool{"authenticated": true})
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"authenticated": true,
+		"userId":        userId,
+		"userName":      userName,
+	})
+}
+
+func CheckSessionHandler(w http.ResponseWriter, r *http.Request) {
+	session, err := auth.Store.Get(r, "auth-session")
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	userId, ok := session.Values["userId"].(int)
+
+	if !ok || userId == 0 {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"authenticated": true,
+		"userId":        userId,
+	})
 }
 
 // LogoutHandler clears the user session
@@ -198,4 +221,36 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	session.Options.MaxAge = -1
 	session.Save(r, w)
 	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+func (h *Handler) GetLatestStatusHandler(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value("userId")
+
+	if userId == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	conn := h.conn
+
+	user, err := db.GetUserById(conn, userId.(int))
+	if err != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	if user.HealthUrl == "" {
+		http.Error(w, "Health URL not set", http.StatusBadRequest)
+		return
+	}
+
+	latestStatus, err := db.GetLatestStatus(conn, user.Id, user.HealthUrl)
+
+	if err != nil {
+		http.Error(w, "No status data available", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(latestStatus)
 }

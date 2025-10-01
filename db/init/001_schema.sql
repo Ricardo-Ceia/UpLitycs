@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS users (
   username TEXT NOT NULL,
   email TEXT UNIQUE NOT NULL, -- Add email field
   avatar_url TEXT, -- Add avatar_url field  
-  homepage TEXT,
+   TEXT,
   alerts TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );

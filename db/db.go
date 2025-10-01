@@ -12,7 +12,7 @@ type User struct {
 	Name      string
 	AvatarUrl string
 	Email     string
-	Homepage  string
+	HealthUrl string
 	Alerts    string
 	Id        int
 }
@@ -92,7 +92,7 @@ func GetUserFromContext(conn *sql.DB, ctx context.Context) (User, error) {
 	}
 
 	// Handle NULL values
-	u.Homepage = homepage.String
+	u.HealthUrl = homepage.String
 	u.Alerts = alerts.String
 
 	return u, nil
@@ -108,7 +108,7 @@ func GetUserByEmail(conn *sql.DB, email string) (User, error) {
 	}
 
 	// Handle NULL values
-	u.Homepage = homepage.String
+	u.HealthUrl = homepage.String
 	u.Alerts = alerts.String
 
 	return u, nil
@@ -124,7 +124,7 @@ func GetUserById(conn *sql.DB, id int) (User, error) {
 	}
 
 	// Handle NULL values
-	u.Homepage = homepage.String
+	u.HealthUrl = homepage.String
 	u.Alerts = alerts.String
 
 	return u, nil
@@ -140,17 +140,17 @@ func GetUserIdFromUser(conn *sql.DB, u User) (int, error) {
 }
 
 func GetAllUsers(conn *sql.DB) ([]struct {
-	Username string
-	Homepage string
-	Alerts   string
-	Id       int
+	Username  string
+	HealthUrl string
+	Alerts    string
+	Id        int
 }, error) {
 	// Define a slice of the anonymous struct
 	users := []struct {
-		Username string
-		Homepage string
-		Alerts   string
-		Id       int
+		Username  string
+		HealthUrl string
+		Alerts    string
+		Id        int
 	}{}
 
 	rows, err := conn.Query(`SELECT id, username, homepage, alerts FROM users`)
@@ -161,20 +161,20 @@ func GetAllUsers(conn *sql.DB) ([]struct {
 
 	for rows.Next() {
 		var u struct {
-			Username string
-			Homepage string
-			Alerts   string
-			Id       int
+			Username  string
+			HealthUrl string
+			Alerts    string
+			Id        int
 		}
-		var homepage, alerts sql.NullString
+		var healthUrl, alerts sql.NullString
 
-		err := rows.Scan(&u.Id, &u.Username, &homepage, &alerts)
+		err := rows.Scan(&u.Id, &u.Username, &healthUrl, &alerts)
 		if err != nil {
 			return nil, err
 		}
 
 		// Handle NULL values
-		u.Homepage = homepage.String
+		u.HealthUrl = healthUrl.String
 		u.Alerts = alerts.String
 
 		users = append(users, u)

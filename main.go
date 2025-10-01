@@ -89,6 +89,7 @@ func main() {
 		r.With(auth.AuthMiddleware).Get("/start-onboarding", handlers.StartOnboardingHandler)
 		r.With(auth.AuthMiddleware).Post("/go-to-dashboard", appHandlers.GoToDashboardHandler)
 		r.With(auth.AuthMiddleware).Get("/user-status", handlers.GetUserStatusHandler)
+		r.With(auth.AuthMiddleware).Get("/latest-status", appHandlers.GetLatestStatusHandler) // Add this line
 	})
 
 	//--- OAuth Auth Routes (must come before catch-all) ---
@@ -96,6 +97,7 @@ func main() {
 		r.Get("/{provider}", handlers.BeginAuthHandler)
 		r.Get("/{provider}/callback", appHandlers.GetAuthHandler)
 		r.Get("/logout", handlers.LogoutHandler)
+		r.Get("check-session", handlers.CheckSessionHandler)
 	})
 
 	// --- Serve React build files ---

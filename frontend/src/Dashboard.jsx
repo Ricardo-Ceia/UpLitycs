@@ -10,10 +10,13 @@ const Dashboard = () => {
   const [currentTime,setCurrentTime] = useState(new Date());
   const [interval,setInterval] = useState(null);
   
-  const latestStatusData = async () => {
+   const latestStatusData = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/latest-status');
+      // Fixed: added /api prefix
+      const response = await fetch('/api/latest-status', {
+        credentials: 'include' // Important: include cookies
+      });
       if(!response.ok){
         throw new Error('Network response was not ok');
       }
@@ -27,6 +30,7 @@ const Dashboard = () => {
       setLoading(false)
     }
   }
+  
   useEffect(()=>{
     const timer = setInterval(()=>{
       setCurrentTime(new Date());
