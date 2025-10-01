@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import './Dashboard.css';
-import { UNSAFE_DataWithResponseInit } from 'react-router-dom';
 
 const Dashboard = () => {
 
@@ -8,14 +7,12 @@ const Dashboard = () => {
   const [error ,setError] = useState(null);
   const [latestStatus, setLatestStatus] = useState(null);
   const [currentTime,setCurrentTime] = useState(new Date());
-  const [interval,setInterval] = useState(null);
   
    const latestStatusData = async () => {
     try {
       setLoading(true)
-      // Fixed: added /api prefix
       const response = await fetch('/api/latest-status', {
-        credentials: 'include' // Important: include cookies
+        credentials: 'include'
       });
       if(!response.ok){
         throw new Error('Network response was not ok');
@@ -42,12 +39,18 @@ const Dashboard = () => {
     latestStatusData();
     const interval = setInterval(latestStatusData,30000);
     return () => clearInterval(interval);
-  })
+  },[]) // Added dependency array to prevent infinite re-renders
 
   const getStatusColor = (statusCode) => {
-    if(statusCode >= 200 && statusCode < 300) return 'Operational';
-    if(statusCode >=300 && statusCode < 400) return 'Degraded';
-    return 'down';
+    if(statusCode >= 200 && statusCode < 300) return 'green';
+    if(statusCode >=300 && statusCode < 400) return 'yellow';
+    return 'red';
+  }
+
+  const getStatusText = (statusCode) => {
+    if(statusCode >= 200 && statusCode < 300) return 'OPERATIONAL';
+    if(statusCode >=300 && statusCode < 400) return 'DEGRADED';
+    return 'DOWN';
   }
 
   const formatTime = (dateString) => {
@@ -83,7 +86,7 @@ const Dashboard = () => {
 
   const statusCode = latestStatus?.Status_code || 0;
   const status = latestStatus?.Status || 'unknown';
-  const lastChecked = latestStatus?.CheckedAt || new Date().toISOString();     
+  const checkedAt = latestStatus?.CheckedAt || new Date().toISOString(); // Fixed: changed from lastChecked to checkedAt
 
     return (
     <div className="dashboard-container">
