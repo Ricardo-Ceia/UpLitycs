@@ -256,6 +256,7 @@ func (h *Handler) GetLatestStatusHandler(w http.ResponseWriter, r *http.Request)
 
 	conn := h.conn
 
+	// Get user info
 	user, err := db.GetUserById(conn, userId.(int))
 	if err != nil {
 		http.Error(w, "User not found", http.StatusNotFound)
@@ -263,19 +264,48 @@ func (h *Handler) GetLatestStatusHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	if user.HealthUrl == "" {
-		http.Error(w, "Health URL not set", http.StatusBadRequest)
+		http.Error(w, "Health URL not configured", http.StatusBadRequest)
 		return
 	}
 
-	latestStatus, err := db.GetLatestStatus(conn, user.Id, user.HealthUrl)
-
+	// Get latest status check from database
+	latestStatus, err := db.GetLatestStatusByUser(conn, user.Id)
 	if err != nil {
-		http.Error(w, "No status data available", http.StatusNotFound)
+		log.Printf("Error getting latest status: %v", err)
+		http.Error(w, "Error fetching status", http.StatusInternalServerError)
 		return
+	}
+
+	if latestStatus == nil {
+		// No status checks yet - return pending state
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status":      "pending",
+			"status_code": 0,
+			"checked_at":  "",
+			"message":     "Waiting for first health check (runs every 30 seconds)",
+		})
+		return
+	}
+
+	// Get uptime percentage
+	uptime, err := db.GetUptimePercentage(conn, user.Id, 24)
+	if err != nil {
+		log.Printf("Error calculating uptime: %v", err)
+		uptime = 0
+	}
+
+	response := map[string]interface{}{
+		"status_code":      latestStatus.StatusCode,
+		"status":           latestStatus.Status,
+		"checked_at":       latestStatus.CheckedAt,
+		"response_time_ms": latestStatus.ResponseTimeMs,
+		"endpoint":         latestStatus.Endpoint,
+		"uptime_24h":       uptime,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(latestStatus)
+	json.NewEncoder(w).Encode(response)
 }
 
 // GetPublicStatusHandler returns public status page data by slug (NO AUTH REQUIRED)
@@ -297,29 +327,45 @@ func (h *Handler) GetPublicStatusHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Get latest status
-	var latestStatus db.LatestStatus
-	if user.HealthUrl != "" {
-		latestStatus, err = db.GetLatestStatus(conn, user.Id, user.HealthUrl)
-		if err != nil {
-			log.Printf("No status data for user %d: %v", user.Id, err)
-			// Return empty status instead of error
-			latestStatus = db.LatestStatus{
-				Status:      "No data",
-				Status_code: 0,
-				CheckedAt:   "",
-			}
-		}
+	// Get latest status check from database
+	latestStatus, err := db.GetLatestStatusBySlug(conn, slug)
+	if err != nil {
+		log.Printf("Error getting status for slug %s: %v", slug, err)
+		http.Error(w, "Error fetching status", http.StatusInternalServerError)
+		return
 	}
 
-	// Return public data (no sensitive info)
+	if latestStatus == nil {
+		// No status checks yet - return pending state
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"app_name":    user.AppName,
+			"theme":       user.Theme,
+			"endpoint":    user.HealthUrl,
+			"status":      "pending",
+			"status_code": 0,
+			"message":     "Waiting for first health check",
+		})
+		return
+	}
+
+	// Get uptime percentage
+	uptime, err := db.GetUptimePercentage(conn, user.Id, 24)
+	if err != nil {
+		log.Printf("Error calculating uptime: %v", err)
+		uptime = 0
+	}
+
+	// Return public status data (no sensitive info)
 	response := map[string]interface{}{
-		"user": map[string]interface{}{
-			"AppName":   user.AppName,
-			"Theme":     user.Theme,
-			"HealthUrl": user.HealthUrl,
-		},
-		"latestStatus": latestStatus,
+		"app_name":         user.AppName,
+		"theme":            user.Theme,
+		"endpoint":         latestStatus.Endpoint,
+		"status_code":      latestStatus.StatusCode,
+		"status":           latestStatus.Status,
+		"checked_at":       latestStatus.CheckedAt,
+		"response_time_ms": latestStatus.ResponseTimeMs,
+		"uptime_24h":       uptime,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

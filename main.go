@@ -9,7 +9,7 @@ import (
 	"time"
 	"uplytics/backend/auth"
 	"uplytics/backend/handlers"
-	"uplytics/backend/status_checker"
+	"uplytics/backend/worker"
 	"uplytics/db"
 
 	"github.com/go-chi/chi/v5"
@@ -80,9 +80,10 @@ func main() {
 	// Initialize custom authentication
 	auth.NewAuth()
 
-	// Start status checker (check every 5 minutes)
-	status_checker.StartStatusUpdater(conn, 5*time.Minute)
-	log.Println("Status updater started")
+	// Start health checker worker (check every 30 seconds)
+	healthChecker := worker.NewHealthChecker(conn, 30*time.Second)
+	go healthChecker.Start()
+	log.Println("✅ Health checker worker started (checking every 30 seconds)")
 
 	// --- API routes (must come first) ---
 	r.Route("/api", func(r chi.Router) {

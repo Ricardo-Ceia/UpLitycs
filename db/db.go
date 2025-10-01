@@ -270,3 +270,190 @@ func GetLatestStatus(conn *sql.DB, userID int, page string) (LatestStatus, error
 	}
 	return status, nil
 }
+
+// StatusCheck represents a health check result
+type StatusCheck struct {
+	Id             int    `json:"id"`
+	UserId         int    `json:"user_id"`
+	Endpoint       string `json:"endpoint"`
+	StatusCode     int    `json:"status_code"`
+	Status         string `json:"status"`
+	ResponseTimeMs int64  `json:"response_time_ms"`
+	CheckedAt      string `json:"checked_at"`
+}
+
+// InsertStatusCheck records a health check result
+func InsertStatusCheck(conn *sql.DB, userId int, endpoint string, statusCode int, status string, responseTime int64) error {
+	query := `
+		INSERT INTO user_status (user_id, page, status_code, status, response_time_ms, checked_at)
+		VALUES ($1, $2, $3, $4, $5, NOW())
+	`
+	_, err := conn.Exec(query, userId, endpoint, statusCode, status, responseTime)
+	return err
+}
+
+// GetLatestStatusByUser gets the most recent status check for a user
+func GetLatestStatusByUser(conn *sql.DB, userId int) (*StatusCheck, error) {
+	var check StatusCheck
+	query := `
+		SELECT id, user_id, page, status_code, status, COALESCE(response_time_ms, 0), checked_at
+		FROM user_status
+		WHERE user_id = $1
+		ORDER BY checked_at DESC
+		LIMIT 1
+	`
+	err := conn.QueryRow(query, userId).Scan(
+		&check.Id,
+		&check.UserId,
+		&check.Endpoint,
+		&check.StatusCode,
+		&check.Status,
+		&check.ResponseTimeMs,
+		&check.CheckedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return &check, err
+}
+
+// GetLatestStatusBySlug gets the most recent status check for a user by slug
+func GetLatestStatusBySlug(conn *sql.DB, slug string) (*StatusCheck, error) {
+	var check StatusCheck
+	query := `
+		SELECT sc.id, sc.user_id, sc.page, sc.status_code, sc.status, 
+		       COALESCE(sc.response_time_ms, 0), sc.checked_at
+		FROM user_status sc
+		JOIN users u ON sc.user_id = u.id
+		WHERE u.slug = $1
+		ORDER BY sc.checked_at DESC
+		LIMIT 1
+	`
+	err := conn.QueryRow(query, slug).Scan(
+		&check.Id,
+		&check.UserId,
+		&check.Endpoint,
+		&check.StatusCode,
+		&check.Status,
+		&check.ResponseTimeMs,
+		&check.CheckedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return &check, err
+}
+
+// GetStatusHistory gets recent status checks for a user
+func GetStatusHistory(conn *sql.DB, userId int, limit int) ([]StatusCheck, error) {
+	query := `
+		SELECT id, user_id, page, status_code, status, COALESCE(response_time_ms, 0), checked_at
+		FROM user_status
+		WHERE user_id = $1
+		ORDER BY checked_at DESC
+		LIMIT $2
+	`
+	rows, err := conn.Query(query, userId, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var checks []StatusCheck
+	for rows.Next() {
+		var check StatusCheck
+		err := rows.Scan(
+			&check.Id,
+			&check.UserId,
+			&check.Endpoint,
+			&check.StatusCode,
+			&check.Status,
+			&check.ResponseTimeMs,
+			&check.CheckedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		checks = append(checks, check)
+	}
+	return checks, nil
+}
+
+// GetUptimePercentage calculates uptime for the last N hours
+func GetUptimePercentage(conn *sql.DB, userId int, hours int) (float64, error) {
+	query := `
+		SELECT 
+			COUNT(*) as total,
+			COUNT(*) FILTER (WHERE status_code >= 200 AND status_code < 300) as successful
+		FROM user_status
+		WHERE user_id = $1
+		AND checked_at > NOW() - INTERVAL '1 hour' * $2
+	`
+	var total, successful int
+	err := conn.QueryRow(query, userId, hours).Scan(&total, &successful)
+	if err != nil {
+		return 0, err
+	}
+	if total == 0 {
+		return 0, nil
+	}
+	return float64(successful) / float64(total) * 100, nil
+}
+
+// GetAllUsersForHealthCheck gets all users with their health URLs for the health checker
+func GetAllUsersForHealthCheck(conn *sql.DB) ([]User, error) {
+	query := `SELECT id, username, email, avatar_url, health_url, theme, slug, app_name, alerts FROM users WHERE health_url IS NOT NULL AND health_url != ''`
+	rows, err := conn.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []User
+	for rows.Next() {
+		var user User
+		var healthUrl, theme, slug, appName, alerts sql.NullString
+		err := rows.Scan(
+			&user.Id,
+			&user.Name,
+			&user.Email,
+			&user.AvatarUrl,
+			&healthUrl,
+			&theme,
+			&slug,
+			&appName,
+			&alerts,
+		)
+		if err != nil {
+			return nil, err
+		}
+		user.HealthUrl = healthUrl.String
+		user.Theme = theme.String
+		if !theme.Valid || theme.String == "" {
+			user.Theme = "cyberpunk"
+		}
+		user.Slug = slug.String
+		user.AppName = appName.String
+		user.Alerts = alerts.String
+		users = append(users, user)
+	}
+	return users, nil
+}
+
+// InsertAlert records an alert
+func InsertAlert(conn *sql.DB, userId int, status string, statusCode int) error {
+	query := `
+		INSERT INTO alerts (user_id, status, status_code, sent_at)
+		VALUES ($1, $2, $3, NOW())
+	`
+	_, err := conn.Exec(query, userId, status, statusCode)
+	return err
+}
+
+// GetLastAlert gets the time of the last alert for a user
+func GetLastAlert(conn *sql.DB, userId int) (string, error) {
+	var sentAt string
+	query := `SELECT sent_at FROM alerts WHERE user_id = $1 ORDER BY sent_at DESC LIMIT 1`
+	err := conn.QueryRow(query, userId).Scan(&sentAt)
+	return sentAt, err
+}
