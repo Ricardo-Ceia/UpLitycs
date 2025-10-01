@@ -17,6 +17,7 @@ type OnboardingRequest struct {
 	Name     string `json:"name"`
 	Homepage string `json:"homepage"`
 	Alerts   string `json:"alerts"`
+	Theme    string `json:"theme"`
 }
 
 type Handler struct {
@@ -61,10 +62,15 @@ func (h *Handler) GoToDashboardHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Set default theme if not provided
+	if req.Theme == "" {
+		req.Theme = "cyberpunk"
+	}
+
 	conn := h.conn
 
 	user, err := db.GetUserFromContext(conn, r.Context())
-	err = db.UpdateUser(conn, user.Id, req.Homepage, req.Alerts)
+	err = db.UpdateUser(conn, user.Id, req.Homepage, req.Theme, req.Alerts)
 
 	if err != nil {
 		log.Println("Error updating user on the GoToDashboardHandler", err)
@@ -178,20 +184,33 @@ func (h *Handler) GetAuthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetUserStatusHandler checks if user is authenticated
-func GetUserStatusHandler(w http.ResponseWriter, r *http.Request) {
-	userId := r.Context().Value("userId")
+func (h *Handler) GetUserStatusHandler(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value("userId")
 	userName := r.Context().Value("user")
 
-	if userId == nil {
+	log.Printf("GetUserStatusHandler: userId=%v, userName=%v", userID, userName)
+
+	if userID == nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Get user from database to fetch theme
+	conn := h.conn
+	user, err := db.GetUserById(conn, userID.(int))
+	if err != nil {
+		log.Printf("Error getting user: %v", err)
+		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"authenticated": true,
-		"userId":        userId,
+		"userId":        userID,
 		"userName":      userName,
+		"theme":         user.Theme,
+		"homepage":      user.HealthUrl,
 	})
 }
 

@@ -6,6 +6,7 @@ const RetroOnboarding = () => {
   const [selectedLanguage, setSelectedLanguage] = useState('javascript');
   const [selectedTheme, setSelectedTheme] = useState('');
   const [emailAlerts, setEmailAlerts] = useState('');
+  const [homepageUrl, setHomepageUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [typewriterText, setTypewriterText] = useState('');
   const [copied, setCopied] = useState(false);
@@ -67,28 +68,36 @@ end`
 
   const themes = [
     {
-      id: 'retro',
-      name: 'Retro Theme',
+      id: 'cyberpunk',
+      name: 'Cyberpunk Theme',
       icon: <Zap className="w-8 h-8" />,
       preview: 'bg-gradient-to-br from-purple-900 via-pink-900 to-indigo-900',
       description: 'Synthwave vibes with neon colors',
       colors: ['#FF6EC7', '#8C52FF', '#00FFF7']
     },
     {
-      id: 'modern',
-      name: 'Modern Theme',
+      id: 'matrix',
+      name: 'Matrix Theme',
       icon: <Monitor className="w-8 h-8" />,
-      preview: 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900',
-      description: 'Clean and minimalist design',
-      colors: ['#64748b', '#0ea5e9', '#10b981']
+      preview: 'bg-gradient-to-br from-green-900 via-green-800 to-black',
+      description: 'Green terminal matrix aesthetic',
+      colors: ['#00ff41', '#008f11', '#003300']
     },
     {
-      id: 'fun',
-      name: 'Fun Theme',
+      id: 'retro',
+      name: 'Retro Theme',
+      icon: <Monitor className="w-8 h-8" />,
+      preview: 'bg-gradient-to-br from-orange-900 via-yellow-800 to-red-900',
+      description: 'Vintage 80s computer vibes',
+      colors: ['#ff6b35', '#f7931e', '#fdc500']
+    },
+    {
+      id: 'minimal',
+      name: 'Minimal Theme',
       icon: <Sparkles className="w-8 h-8" />,
-      preview: 'bg-gradient-to-br from-orange-500 via-pink-500 to-purple-600',
-      description: 'Playful and colorful experience',
-      colors: ['#f97316', '#ec4899', '#a855f7']
+      preview: 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900',
+      description: 'Clean and minimalist design',
+      colors: ['#ffffff', '#a0a0a0', '#606060']
     }
   ];
 
@@ -113,13 +122,13 @@ end`
   };
 
   const handleSubmit = async () => {
-    if (selectedTheme && emailAlerts) {
+    if (selectedTheme && emailAlerts && homepageUrl) {
       setIsSubmitting(true);
       
       // Prepare data for submission
       const onboardingData = {
-        name: "User", // You might want to get this from context or previous step
-        homepage: window.location.origin + "/health", // Using health endpoint as homepage
+        name: "User",
+        homepage: homepageUrl,
         alerts: emailAlerts === 'yes' ? 'y' : 'n',
         theme: selectedTheme
       };
@@ -130,6 +139,7 @@ end`
           headers: {
             'Content-Type': 'application/json'
           },
+          credentials: 'include',
           body: JSON.stringify(onboardingData)
         });
         
@@ -211,7 +221,59 @@ end`
           <div className="space-y-6 animate-fadeIn">
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-cyan-400 mb-2" style={{fontFamily: "'Press Start 2P', monospace"}}>
-                STEP 2: CHOOSE YOUR THEME
+                STEP 2: ENTER YOUR SERVICE URL
+              </h2>
+              <p className="text-purple-400 text-sm">Provide the health check endpoint URL to monitor</p>
+            </div>
+
+            <div className="bg-black/50 rounded-lg p-8 border border-purple-500/50">
+              <div className="flex justify-center mb-6">
+                <div className="p-6 bg-gradient-to-br from-purple-600/20 to-cyan-600/20 rounded-full">
+                  <Globe className="w-16 h-16 text-cyan-400" />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <label className="block">
+                  <span className="text-cyan-300 text-sm font-mono mb-2 block">HEALTH CHECK URL</span>
+                  <input
+                    type="url"
+                    value={homepageUrl}
+                    onChange={(e) => setHomepageUrl(e.target.value)}
+                    placeholder="https://your-service.com/health"
+                    className="w-full px-4 py-3 bg-gray-950 border-2 border-purple-500/50 rounded-lg text-cyan-300 font-mono focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 transition-all"
+                  />
+                </label>
+
+                <div className="p-4 bg-gradient-to-r from-cyan-900/20 to-purple-900/20 rounded border border-cyan-500/30">
+                  <p className="text-xs text-cyan-300 mb-2">
+                    <strong>Examples:</strong>
+                  </p>
+                  <ul className="text-xs text-gray-400 space-y-1 font-mono">
+                    <li>• https://api.myapp.com/health</li>
+                    <li>• https://myservice.herokuapp.com/status</li>
+                    <li>• https://example.com/api/v1/health</li>
+                  </ul>
+                </div>
+
+                {homepageUrl && (
+                  <div className="p-3 bg-green-900/20 rounded border border-green-500/50">
+                    <p className="text-xs text-green-400">
+                      ✓ URL looks good! We'll check this endpoint every 30 seconds.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+
+      case 2:
+        return (
+          <div className="space-y-6 animate-fadeIn">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-cyan-400 mb-2" style={{fontFamily: "'Press Start 2P', monospace"}}>
+                STEP 3: CHOOSE YOUR THEME
               </h2>
               <p className="text-purple-400 text-sm">Select a visual style for your status page</p>
             </div>
@@ -259,12 +321,12 @@ end`
           </div>
         );
 
-      case 2:
+      case 3:
         return (
           <div className="space-y-6 animate-fadeIn">
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-cyan-400 mb-2" style={{fontFamily: "'Press Start 2P', monospace"}}>
-                STEP 3: EMAIL ALERTS
+                STEP 4: EMAIL ALERTS
               </h2>
               <p className="text-purple-400 text-sm">Get notified when your service goes down</p>
             </div>
@@ -358,7 +420,7 @@ end`
         <div className="bg-black/40 backdrop-blur-md rounded-2xl border-2 border-purple-500/50 shadow-2xl shadow-purple-500/20 p-8">
           {/* Progress indicator */}
           <div className="flex items-center justify-between mb-8">
-            {[0, 1, 2].map((step) => (
+            {[0, 1, 2, 3].map((step) => (
               <div key={step} className="flex items-center flex-1">
                 <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center font-mono transition-all ${
                   currentStep >= step 
@@ -367,7 +429,7 @@ end`
                 }`}>
                   {currentStep > step ? '✓' : step + 1}
                 </div>
-                {step < 2 && (
+                {step < 3 && (
                   <div className={`flex-1 h-0.5 mx-2 transition-all ${
                     currentStep > step ? 'bg-cyan-400' : 'bg-gray-700'
                   }`} />
@@ -393,21 +455,21 @@ end`
               ← BACK
             </button>
 
-            {currentStep < 2 ? (
+            {currentStep < 3 ? (
               <button
                 onClick={() => setCurrentStep(currentStep + 1)}
                 disabled={
-                  (currentStep === 1 && !selectedTheme) ||
-                  (currentStep === 2 && !emailAlerts)
+                  (currentStep === 1 && !homepageUrl) ||
+                  (currentStep === 2 && !selectedTheme)
                 }
-                className="px-6 py-3 rounded-lg font-mono text-sm bg-gradient-to-r from-cyan-500 to-purple-500 text-white hover:from-cyan-400 hover:to-purple-400 transition-all flex items-center gap-2 shadow-lg hover:shadow-cyan-400/50"
+                className="px-6 py-3 rounded-lg font-mono text-sm bg-gradient-to-r from-cyan-500 to-purple-500 text-white hover:from-cyan-400 hover:to-purple-400 transition-all flex items-center gap-2 shadow-lg hover:shadow-cyan-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 NEXT <ChevronRight className="w-4 h-4" />
               </button>
             ) : (
               <button
                 onClick={handleSubmit}
-                disabled={!selectedTheme || !emailAlerts || isSubmitting}
+                disabled={!selectedTheme || !emailAlerts || !homepageUrl || isSubmitting}
                 className="px-8 py-3 rounded-lg font-mono text-sm bg-gradient-to-r from-green-500 to-cyan-500 text-white hover:from-green-400 hover:to-cyan-400 transition-all shadow-lg hover:shadow-green-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
@@ -428,7 +490,7 @@ end`
           <div className="inline-flex items-center gap-3 px-4 py-2 bg-black/40 backdrop-blur-md rounded-full border border-purple-500/30">
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50" />
             <span className="text-xs font-mono text-gray-400">SYSTEM READY</span>
-            <span className="text-xs font-mono text-cyan-400">STEP {currentStep + 1} OF 3</span>
+            <span className="text-xs font-mono text-cyan-400">STEP {currentStep + 1} OF 4</span>
           </div>
         </div>
       </div>

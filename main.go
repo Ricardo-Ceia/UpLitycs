@@ -88,8 +88,8 @@ func main() {
 	r.Route("/api", func(r chi.Router) {
 		r.With(auth.AuthMiddleware).Get("/start-onboarding", handlers.StartOnboardingHandler)
 		r.With(auth.AuthMiddleware).Post("/go-to-dashboard", appHandlers.GoToDashboardHandler)
-		r.With(auth.AuthMiddleware).Get("/user-status", handlers.GetUserStatusHandler)
-		r.With(auth.AuthMiddleware).Get("/latest-status", appHandlers.GetLatestStatusHandler) // Add this line
+		r.With(auth.AuthMiddleware).Get("/user-status", appHandlers.GetUserStatusHandler)
+		r.With(auth.AuthMiddleware).Get("/latest-status", appHandlers.GetLatestStatusHandler)
 	})
 
 	//--- OAuth Auth Routes (must come before catch-all) ---

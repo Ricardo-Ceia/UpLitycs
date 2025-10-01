@@ -13,6 +13,7 @@ type User struct {
 	AvatarUrl string
 	Email     string
 	HealthUrl string
+	Theme     string
 	Alerts    string
 	Id        int
 }
@@ -52,7 +53,7 @@ func InsertUser(conn *sql.DB, name, avatarUrl, email string) (int, error) {
 
 	// First try to insert, if conflict occurs, get the existing user's ID
 	err := conn.QueryRow(
-		"INSERT INTO users (username, avatar_url, email, homepage, alerts) VALUES ($1, $2, $3, '', '') ON CONFLICT (email) DO UPDATE SET username = EXCLUDED.username, avatar_url = EXCLUDED.avatar_url RETURNING id",
+		"INSERT INTO users (username, avatar_url, email, health_url, theme, alerts) VALUES ($1, $2, $3, '', 'cyberpunk', '') ON CONFLICT (email) DO UPDATE SET username = EXCLUDED.username, avatar_url = EXCLUDED.avatar_url RETURNING id",
 		name,
 		avatarUrl,
 		email,
@@ -64,11 +65,12 @@ func InsertUser(conn *sql.DB, name, avatarUrl, email string) (int, error) {
 	return id, nil
 }
 
-func UpdateUser(conn *sql.DB, id int, homepage, alerts string) error {
+func UpdateUser(conn *sql.DB, id int, health_url, theme, alerts string) error {
 	_, err := conn.Exec(
-		"UPDATE users SET homepage = $2, alerts = $3 WHERE id = $1",
+		"UPDATE users SET health_url = $2, theme = $3, alerts = $4 WHERE id = $1",
 		id,
-		homepage,
+		health_url,
+		theme,
 		alerts,
 	)
 	if err != nil {
@@ -84,15 +86,16 @@ func GetUserFromContext(conn *sql.DB, ctx context.Context) (User, error) {
 	}
 
 	var u User
-	var homepage, alerts sql.NullString
+	var homepage, theme, alerts sql.NullString
 
-	err := conn.QueryRow("SELECT id, username, homepage, alerts FROM users WHERE username=$1", user).Scan(&u.Id, &u.Name, &homepage, &alerts)
+	err := conn.QueryRow("SELECT id, username, health_url, theme, alerts FROM users WHERE username=$1", user).Scan(&u.Id, &u.Name, &homepage, &theme, &alerts)
 	if err != nil {
 		return User{}, err
 	}
 
 	// Handle NULL values
 	u.HealthUrl = homepage.String
+	u.Theme = theme.String
 	u.Alerts = alerts.String
 
 	return u, nil
@@ -100,15 +103,16 @@ func GetUserFromContext(conn *sql.DB, ctx context.Context) (User, error) {
 
 func GetUserByEmail(conn *sql.DB, email string) (User, error) {
 	var u User
-	var homepage, alerts sql.NullString
+	var homepage, theme, alerts sql.NullString
 
-	err := conn.QueryRow("SELECT id, username, homepage, alerts, email, avatar_url FROM users WHERE email=$1", email).Scan(&u.Id, &u.Name, &homepage, &alerts, &u.Email, &u.AvatarUrl)
+	err := conn.QueryRow("SELECT id, username, health_url, theme, alerts, email, avatar_url FROM users WHERE email=$1", email).Scan(&u.Id, &u.Name, &homepage, &theme, &alerts, &u.Email, &u.AvatarUrl)
 	if err != nil {
 		return User{}, err
 	}
 
 	// Handle NULL values
 	u.HealthUrl = homepage.String
+	u.Theme = theme.String
 	u.Alerts = alerts.String
 
 	return u, nil
@@ -116,15 +120,16 @@ func GetUserByEmail(conn *sql.DB, email string) (User, error) {
 
 func GetUserById(conn *sql.DB, id int) (User, error) {
 	var u User
-	var homepage, alerts sql.NullString
+	var homepage, theme, alerts sql.NullString
 
-	err := conn.QueryRow("SELECT id, username, homepage, alerts, email, avatar_url FROM users WHERE id=$1", id).Scan(&u.Id, &u.Name, &homepage, &alerts, &u.Email, &u.AvatarUrl)
+	err := conn.QueryRow("SELECT id, username, health_url, theme, alerts, email, avatar_url FROM users WHERE id=$1", id).Scan(&u.Id, &u.Name, &homepage, &theme, &alerts, &u.Email, &u.AvatarUrl)
 	if err != nil {
 		return User{}, err
 	}
 
 	// Handle NULL values
 	u.HealthUrl = homepage.String
+	u.Theme = theme.String
 	u.Alerts = alerts.String
 
 	return u, nil
@@ -153,7 +158,7 @@ func GetAllUsers(conn *sql.DB) ([]struct {
 		Id        int
 	}{}
 
-	rows, err := conn.Query(`SELECT id, username, homepage, alerts FROM users`)
+	rows, err := conn.Query(`SELECT id, username, health_url, alerts FROM users`)
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +195,7 @@ func GetAllUsers(conn *sql.DB) ([]struct {
 func GetUserPage(conn *sql.DB, id int) (string, error) {
 	var homepage sql.NullString
 
-	err := conn.QueryRow("SELECT homepage FROM users where id=$1", id).Scan(&homepage)
+	err := conn.QueryRow("SELECT health_url FROM users where id=$1", id).Scan(&homepage)
 
 	if err != nil {
 		return "", err
