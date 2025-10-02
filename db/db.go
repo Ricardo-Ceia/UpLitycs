@@ -457,3 +457,98 @@ func GetLastAlert(conn *sql.DB, userId int) (string, error) {
 	err := conn.QueryRow(query, userId).Scan(&sentAt)
 	return sentAt, err
 }
+
+// DailyUptime represents uptime data for a single day
+type DailyUptime struct {
+	Date            string  `json:"date"`
+	UptimePercentage float64 `json:"uptime_percentage"`
+	TotalChecks     int     `json:"total_checks"`
+	SuccessfulChecks int    `json:"successful_checks"`
+}
+
+// GetDailyUptimeHistory gets uptime percentage for each of the last N days
+func GetDailyUptimeHistory(conn *sql.DB, userId int, days int) ([]DailyUptime, error) {
+	query := `
+		SELECT 
+			DATE(checked_at) as date,
+			COUNT(*) as total,
+			COUNT(*) FILTER (WHERE status_code >= 200 AND status_code < 300) as successful
+		FROM user_status
+		WHERE user_id = $1
+		AND checked_at > NOW() - INTERVAL '1 day' * $2
+		GROUP BY DATE(checked_at)
+		ORDER BY date DESC
+	`
+	rows, err := conn.Query(query, userId, days)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var history []DailyUptime
+	for rows.Next() {
+		var daily DailyUptime
+		err := rows.Scan(
+			&daily.Date,
+			&daily.TotalChecks,
+			&daily.SuccessfulChecks,
+		)
+		if err != nil {
+			return nil, err
+		}
+		
+		// Calculate uptime percentage
+		if daily.TotalChecks > 0 {
+			daily.UptimePercentage = float64(daily.SuccessfulChecks) / float64(daily.TotalChecks) * 100
+		} else {
+			daily.UptimePercentage = 0
+		}
+		
+		history = append(history, daily)
+	}
+	return history, nil
+}
+
+// GetDailyUptimeHistoryBySlug gets uptime history for a user by slug
+func GetDailyUptimeHistoryBySlug(conn *sql.DB, slug string, days int) ([]DailyUptime, error) {
+	query := `
+		SELECT 
+			DATE(sc.checked_at) as date,
+			COUNT(*) as total,
+			COUNT(*) FILTER (WHERE sc.status_code >= 200 AND sc.status_code < 300) as successful
+		FROM user_status sc
+		JOIN users u ON sc.user_id = u.id
+		WHERE u.slug = $1
+		AND sc.checked_at > NOW() - INTERVAL '1 day' * $2
+		GROUP BY DATE(sc.checked_at)
+		ORDER BY date DESC
+	`
+	rows, err := conn.Query(query, slug, days)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var history []DailyUptime
+	for rows.Next() {
+		var daily DailyUptime
+		err := rows.Scan(
+			&daily.Date,
+			&daily.TotalChecks,
+			&daily.SuccessfulChecks,
+		)
+		if err != nil {
+			return nil, err
+		}
+		
+		// Calculate uptime percentage
+		if daily.TotalChecks > 0 {
+			daily.UptimePercentage = float64(daily.SuccessfulChecks) / float64(daily.TotalChecks) * 100
+		} else {
+			daily.UptimePercentage = 0
+		}
+		
+		history = append(history, daily)
+	}
+	return history, nil
+}

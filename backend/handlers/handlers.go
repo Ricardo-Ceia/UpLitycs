@@ -356,6 +356,13 @@ func (h *Handler) GetPublicStatusHandler(w http.ResponseWriter, r *http.Request)
 		uptime = 0
 	}
 
+	// Get 30-day uptime history for bar graph
+	uptimeHistory, err := db.GetDailyUptimeHistoryBySlug(conn, slug, 30)
+	if err != nil {
+		log.Printf("Error getting uptime history: %v", err)
+		uptimeHistory = []db.DailyUptime{}
+	}
+
 	// Return public status data (no sensitive info)
 	response := map[string]interface{}{
 		"app_name":         user.AppName,
@@ -366,8 +373,70 @@ func (h *Handler) GetPublicStatusHandler(w http.ResponseWriter, r *http.Request)
 		"checked_at":       latestStatus.CheckedAt,
 		"response_time_ms": latestStatus.ResponseTimeMs,
 		"uptime_24h":       uptime,
+		"uptime_history":   uptimeHistory,
+		"user_id":          user.Id, // Include user ID for owner detection
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+// UpdateThemeHandler allows authenticated users to update their theme
+func (h *Handler) UpdateThemeHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "PUT" && r.Method != "POST" {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+
+	userId := r.Context().Value("userId")
+	if userId == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var req struct {
+		Theme string `json:"theme"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Validate theme
+	validThemes := []string{"cyberpunk", "matrix", "retro", "minimal"}
+	isValid := false
+	for _, t := range validThemes {
+		if req.Theme == t {
+			isValid = true
+			break
+		}
+	}
+
+	if !isValid {
+		http.Error(w, "Invalid theme. Valid themes: cyberpunk, matrix, retro, minimal", http.StatusBadRequest)
+		return
+	}
+
+	conn := h.conn
+	user, err := db.GetUserById(conn, userId.(int))
+	if err != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	// Update only the theme, keep other fields the same
+	err = db.UpdateUser(conn, user.Id, user.HealthUrl, req.Theme, user.Alerts, user.Slug, user.AppName)
+	if err != nil {
+		log.Printf("Error updating theme: %v", err)
+		http.Error(w, "Failed to update theme", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success": true,
+		"theme":   req.Theme,
+	})
 }

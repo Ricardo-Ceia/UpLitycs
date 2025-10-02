@@ -91,6 +91,7 @@ func main() {
 		r.With(auth.AuthMiddleware).Post("/go-to-dashboard", appHandlers.GoToDashboardHandler)
 		r.With(auth.AuthMiddleware).Get("/user-status", appHandlers.GetUserStatusHandler)
 		r.With(auth.AuthMiddleware).Get("/latest-status", appHandlers.GetLatestStatusHandler)
+		r.With(auth.AuthMiddleware).Post("/update-theme", appHandlers.UpdateThemeHandler)
 
 		// Public API - no authentication required
 		r.Get("/public/status/{slug}", appHandlers.GetPublicStatusHandler)
