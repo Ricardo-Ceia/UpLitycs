@@ -5,6 +5,7 @@ import Home from "./Home";
 import StatusPage from "./StatusPage";
 import RetroAuth from "./RetroAuth";
 import ProtectedRoute from "./ProtectedRoute";
+import Pricing from "./Pricing";
 
 // Dashboard redirect component
 function DashboardRedirect() {
@@ -47,6 +48,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/auth" element={<RetroAuth />} />
+        <Route path="/pricing" element={<Pricing />} />
         {/* Single unified status page - public for everyone, owners can control theme */}
         <Route path="/status/:slug" element={<StatusPage />} />
         <Route path="/onboarding" element={
