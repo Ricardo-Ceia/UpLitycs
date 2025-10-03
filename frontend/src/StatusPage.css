@@ -445,6 +445,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .metric-label {
@@ -463,6 +464,32 @@
 
 .metric-value-small {
   font-size: 1.2rem;
+}
+
+.refresh-ping-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--primary-color);
+  font-size: 1.2rem;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  opacity: 0.6;
+}
+
+.refresh-ping-btn:hover {
+  opacity: 1;
+  background: var(--border-color);
+  color: var(--background);
+  transform: rotate(180deg);
 }
 
 .metric-value.status-operational {

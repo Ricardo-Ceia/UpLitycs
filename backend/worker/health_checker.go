@@ -67,30 +67,21 @@ func (hc *HealthChecker) checkUserHealth(user db.User) {
 
 	responseTime := time.Since(startTime).Milliseconds()
 	statusCode := 0
-	status := "down"
 
 	if err != nil {
 		log.Printf("❌ %s | User: %s (ID: %d) | Error: %v",
 			user.HealthUrl, user.Name, user.Id, err)
 		statusCode = 0
-		status = "error"
 	} else {
 		defer resp.Body.Close()
 		statusCode = resp.StatusCode
-
-		if statusCode >= 200 && statusCode < 300 {
-			status = "up"
-		} else if statusCode >= 300 && statusCode < 400 {
-			status = "degraded"
-		} else if statusCode >= 400 && statusCode < 500 {
-			status = "client_error"
-		} else if statusCode >= 500 {
-			status = "down"
-		}
 	}
 
-	// Save to database
-	err = db.InsertStatusCheck(hc.conn, user.Id, user.HealthUrl, statusCode, status, responseTime)
+	// Derive status from status code
+	status := db.GetStatusFromCode(statusCode)
+
+	// Save to database (simplified - only statusCode)
+	err = db.InsertStatusCheck(hc.conn, user.Id, statusCode)
 	if err != nil {
 		log.Printf("❌ Error saving status check for user %s (ID: %d): %v", user.Name, user.Id, err)
 	} else {
@@ -128,8 +119,8 @@ func (hc *HealthChecker) checkAndSendAlert(user db.User, statusCode int, status 
 	log.Printf("🚨 ALERT: User %s (%s) - Service %s is %s (HTTP %d)",
 		user.Name, user.Email, user.HealthUrl, status, statusCode)
 
-	// Save alert record
-	err = db.InsertAlert(hc.conn, user.Id, status, statusCode)
+	// Save alert record (simplified - just tracks when sent)
+	err = db.InsertAlert(hc.conn, user.Id)
 	if err != nil {
 		log.Printf("❌ Error saving alert for user %d: %v", user.Id, err)
 	}

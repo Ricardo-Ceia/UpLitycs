@@ -95,6 +95,7 @@ func main() {
 
 		// Public API - no authentication required
 		r.Get("/public/status/{slug}", appHandlers.GetPublicStatusHandler)
+		r.Get("/public/ping/{slug}", appHandlers.GetCurrentResponseTimeHandler)
 	})
 
 	//--- OAuth Auth Routes (must come before catch-all) ---

@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 	"uplytics/backend/auth"
 	"uplytics/backend/utils"
 	"uplytics/db"
@@ -238,6 +239,54 @@ func CheckSessionHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// GetCurrentResponseTimeHandler pings an endpoint and returns real-time response time
+// Does NOT store the result - just for live display on status page
+func (h *Handler) GetCurrentResponseTimeHandler(w http.ResponseWriter, r *http.Request) {
+	slug := chi.URLParam(r, "slug")
+	if slug == "" {
+		http.Error(w, "Slug required", http.StatusBadRequest)
+		return
+	}
+
+	// Get user by slug to find their health URL
+	user, err := db.GetUserBySlug(h.conn, slug)
+	if err != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	if user.HealthUrl == "" {
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"error":         "Health URL not configured",
+			"response_time": 0,
+		})
+		return
+	}
+
+	// Ping the endpoint and measure response time
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	startTime := time.Now()
+	resp, err := client.Get(user.HealthUrl)
+	responseTime := time.Since(startTime).Milliseconds()
+
+	statusCode := 0
+	if err == nil {
+		defer resp.Body.Close()
+		statusCode = resp.StatusCode
+	}
+
+	// Return real-time response data (not stored in database)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"response_time": responseTime,
+		"status_code":   statusCode,
+		"timestamp":     time.Now().UTC(),
+	})
+}
+
 // LogoutHandler clears the user session
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	session, _ := auth.Store.Get(r, "auth-session")
@@ -296,12 +345,10 @@ func (h *Handler) GetLatestStatusHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	response := map[string]interface{}{
-		"status_code":      latestStatus.StatusCode,
-		"status":           latestStatus.Status,
-		"checked_at":       latestStatus.CheckedAt,
-		"response_time_ms": latestStatus.ResponseTimeMs,
-		"endpoint":         latestStatus.Endpoint,
-		"uptime_24h":       uptime,
+		"status_code": latestStatus.StatusCode,
+		"status":      latestStatus.Status,
+		"checked_at":  latestStatus.CheckedAt,
+		"uptime_24h":  uptime,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -365,16 +412,14 @@ func (h *Handler) GetPublicStatusHandler(w http.ResponseWriter, r *http.Request)
 
 	// Return public status data (no sensitive info)
 	response := map[string]interface{}{
-		"app_name":         user.AppName,
-		"theme":            user.Theme,
-		"endpoint":         latestStatus.Endpoint,
-		"status_code":      latestStatus.StatusCode,
-		"status":           latestStatus.Status,
-		"checked_at":       latestStatus.CheckedAt,
-		"response_time_ms": latestStatus.ResponseTimeMs,
-		"uptime_24h":       uptime,
-		"uptime_history":   uptimeHistory,
-		"user_id":          user.Id, // Include user ID for owner detection
+		"app_name":       user.AppName,
+		"theme":          user.Theme,
+		"status_code":    latestStatus.StatusCode,
+		"status":         latestStatus.Status,
+		"checked_at":     latestStatus.CheckedAt,
+		"uptime_24h":     uptime,
+		"uptime_history": uptimeHistory,
+		"user_id":        user.Id, // Include user ID for owner detection
 	}
 
 	w.Header().Set("Content-Type", "application/json")

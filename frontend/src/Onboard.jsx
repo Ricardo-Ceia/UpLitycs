@@ -18,86 +18,44 @@ const RetroOnboarding = () => {
       name: 'Node.js + Express',
       description: 'Add this to your Express app',
       code: `// Health Check Endpoint - Node.js/Express
-// 1. Install dependencies: npm install express
-// 2. Add this route to your server file (e.g., app.js or server.js)
+// All we need is a simple endpoint that returns HTTP 200
 
 const express = require('express');
 const app = express();
 
-// Track when the server started
-const startTime = Date.now();
-
 // Health check endpoint
 app.get('/health', (req, res) => {
-  const healthData = {
-    status: 'UP',
-    timestamp: new Date().toISOString(),
-    service: 'my-service',
-    version: '1.0.0',
-    uptime: Math.floor((Date.now() - startTime) / 1000), // seconds
-    memory: {
-      used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024), // MB
-      total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) // MB
-    },
-    environment: process.env.NODE_ENV || 'development'
-  };
-  
-  res.status(200).json(healthData);
+  res.status(200).json({ status: 'ok' });
 });
 
 // Start your server
 app.listen(3000, () => console.log('Server running on port 3000'));`,
       setup: [
-        'Install Express: npm install express',
-        'Create or open your server file (app.js or server.js)',
-        'Copy the health check route into your file',
-        'Make sure the endpoint is accessible at /health',
-        'Test: curl http://localhost:3000/health'
+        'Add this route to your Express app',
+        'Endpoint just needs to return HTTP 200 when your app is healthy',
+        'Test: curl http://localhost:3000/health',
+        'Use the full URL (e.g., https://yourdomain.com/health) in the next step'
       ]
     },
     'node-nextjs': {
       name: 'Next.js API Route',
       description: 'Create this in your Next.js app',
       code: `// Health Check - Next.js API Route
-// 1. Create file: pages/api/health.js (Pages Router)
-//    OR: app/api/health/route.js (App Router - see below)
+// All we need is a simple endpoint that returns HTTP 200
 
 // ----- For Pages Router (pages/api/health.js) -----
-const startTime = Date.now();
-
 export default function handler(req, res) {
-  const healthData = {
-    status: 'UP',
-    timestamp: new Date().toISOString(),
-    service: 'my-nextjs-app',
-    version: '1.0.0',
-    uptime: Math.floor((Date.now() - startTime) / 1000),
-    environment: process.env.NODE_ENV
-  };
-  
-  res.status(200).json(healthData);
+  res.status(200).json({ status: 'ok' });
 }
 
 // ----- For App Router (app/api/health/route.js) -----
-const startTime = Date.now();
-
 export async function GET(request) {
-  const healthData = {
-    status: 'UP',
-    timestamp: new Date().toISOString(),
-    service: 'my-nextjs-app',
-    version: '1.0.0',
-    uptime: Math.floor((Date.now() - startTime) / 1000),
-    environment: process.env.NODE_ENV
-  };
-  
-  return Response.json(healthData);
+  return Response.json({ status: 'ok' });
 }`,
       setup: [
         'Pages Router: Create pages/api/health.js',
         'App Router: Create app/api/health/route.js',
-        'Copy the appropriate code for your router type',
-        'Deploy your app',
+        'Endpoint just needs to return HTTP 200 when your app is healthy',
         'Test: https://yourdomain.com/api/health'
       ]
     },
@@ -105,49 +63,19 @@ export async function GET(request) {
       name: 'Python + Flask',
       description: 'Add this to your Flask app',
       code: `# Health Check - Python/Flask
-# 1. Install: pip install flask psutil
-# 2. Add this to your Flask app (e.g., app.py)
+# All we need is a simple endpoint that returns HTTP 200
 
 from flask import Flask, jsonify
-from datetime import datetime
-import time
-import psutil
-import os
 
 app = Flask(__name__)
 
-# Track when the server started
-start_time = time.time()
-
 @app.route('/health', methods=['GET'])
 def health_check():
-    """Health check endpoint for monitoring"""
-    current_time = time.time()
-    uptime_seconds = int(current_time - start_time)
-    
-    # Get memory usage
-    process = psutil.Process()
-    memory_info = process.memory_info()
-    
-    health_data = {
-        'status': 'UP',
-        'timestamp': datetime.now().isoformat(),
-        'service': 'my-flask-app',
-        'version': '1.0.0',
-        'uptime': uptime_seconds,
-        'memory': {
-            'used_mb': round(memory_info.rss / 1024 / 1024, 2),
-            'percent': psutil.virtual_memory().percent
-        },
-        'environment': os.environ.get('FLASK_ENV', 'production')
-    }
-    
-    return jsonify(health_data), 200
+    return jsonify({'status': 'ok'}), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)`,
       setup: [
-        'Install dependencies: pip install flask psutil',
         'Create or open your Flask app file',
         'Add the health check route',
         'Run your app: python app.py',
@@ -158,62 +86,21 @@ if __name__ == '__main__':
       name: 'Python + FastAPI',
       description: 'Add this to your FastAPI app',
       code: `# Health Check - Python/FastAPI
-# 1. Install: pip install fastapi uvicorn psutil
-# 2. Add this to your main.py
+# All we need is a simple endpoint that returns HTTP 200
 
 from fastapi import FastAPI
-from datetime import datetime
-from pydantic import BaseModel
-import time
-import psutil
-import os
 
 app = FastAPI()
 
-# Track when the server started
-start_time = time.time()
-
-class HealthResponse(BaseModel):
-    status: str
-    timestamp: str
-    service: str
-    version: str
-    uptime: int
-    memory: dict
-    environment: str
-
-@app.get("/health", response_model=HealthResponse)
+@app.get("/health")
 async def health_check():
-    """
-    Health check endpoint for monitoring service status
-    Returns service health metrics including uptime and memory
-    """
-    current_time = time.time()
-    uptime_seconds = int(current_time - start_time)
-    
-    # Get memory usage
-    process = psutil.Process()
-    memory_info = process.memory_info()
-    
-    return {
-        "status": "UP",
-        "timestamp": datetime.now().isoformat(),
-        "service": "my-fastapi-app",
-        "version": "1.0.0",
-        "uptime": uptime_seconds,
-        "memory": {
-            "used_mb": round(memory_info.rss / 1024 / 1024, 2),
-            "percent": psutil.virtual_memory().percent
-        },
-        "environment": os.environ.get("ENV", "production")
-    }
+    return {"status": "ok"}
 
 # Run with: uvicorn main:app --host 0.0.0.0 --port 8000`,
       setup: [
-        'Install: pip install fastapi uvicorn psutil',
-        'Create or open your main.py',
-        'Add the health check endpoint',
-        'Run: uvicorn main:app --reload',
+        'Install: pip install fastapi uvicorn',
+        'Add this route to your FastAPI app',
+        'Endpoint just needs to return HTTP 200 when your app is healthy',
         'Test: curl http://localhost:8000/health'
       ]
     },
@@ -221,68 +108,25 @@ async def health_check():
       name: 'Go + Gin',
       description: 'Add this to your Gin application',
       code: `// Health Check - Go/Gin Framework
-// 1. Install: go get -u github.com/gin-gonic/gin
-// 2. Add this to your main.go
+// All we need is a simple endpoint that returns HTTP 200
 
 package main
 
-import (
-    "github.com/gin-gonic/gin"
-    "runtime"
-    "time"
-    "os"
-)
-
-var startTime = time.Now()
-
-type HealthResponse struct {
-    Status      string            \`json:"status"\`
-    Timestamp   string            \`json:"timestamp"\`
-    Service     string            \`json:"service"\`
-    Version     string            \`json:"version"\`
-    Uptime      int64             \`json:"uptime"\`
-    Memory      map[string]uint64 \`json:"memory"\`
-    Environment string            \`json:"environment"\`
-}
-
-func HealthCheck(c *gin.Context) {
-    var memStats runtime.MemStats
-    runtime.ReadMemStats(&memStats)
-    
-    health := HealthResponse{
-        Status:    "UP",
-        Timestamp: time.Now().Format(time.RFC3339),
-        Service:   "my-go-service",
-        Version:   "1.0.0",
-        Uptime:    int64(time.Since(startTime).Seconds()),
-        Memory: map[string]uint64{
-            "alloc_mb":    memStats.Alloc / 1024 / 1024,
-            "total_mb":    memStats.TotalAlloc / 1024 / 1024,
-            "sys_mb":      memStats.Sys / 1024 / 1024,
-        },
-        Environment: getEnv("ENV", "production"),
-    }
-    
-    c.JSON(200, health)
-}
-
-func getEnv(key, fallback string) string {
-    if value := os.Getenv(key); value != "" {
-        return value
-    }
-    return fallback
-}
+import "github.com/gin-gonic/gin"
 
 func main() {
     r := gin.Default()
-    r.GET("/health", HealthCheck)
-    r.Run(":8080") // listen on port 8080
+    
+    r.GET("/health", func(c *gin.Context) {
+        c.JSON(200, gin.H{"status": "ok"})
+    })
+    
+    r.Run(":8080")
 }`,
       setup: [
         'Install Gin: go get -u github.com/gin-gonic/gin',
-        'Create or open your main.go',
-        'Add the health check handler',
-        'Run: go run main.go',
+        'Add this route to your Gin app',
+        'Endpoint just needs to return HTTP 200 when your app is healthy',
         'Test: curl http://localhost:8080/health'
       ]
     },
@@ -290,64 +134,19 @@ func main() {
       name: 'Go Standard Library',
       description: 'Using only Go standard library',
       code: `// Health Check - Go Standard Library
-// No external dependencies required!
-// Add this to your main.go
+// All we need is a simple endpoint that returns HTTP 200
 
 package main
 
 import (
     "encoding/json"
     "net/http"
-    "runtime"
-    "time"
-    "os"
 )
 
-var startTime = time.Now()
-
-type HealthResponse struct {
-    Status      string            \`json:"status"\`
-    Timestamp   string            \`json:"timestamp"\`
-    Service     string            \`json:"service"\`
-    Version     string            \`json:"version"\`
-    Uptime      int64             \`json:"uptime"\`
-    Memory      map[string]uint64 \`json:"memory"\`
-    Environment string            \`json:"environment"\`
-}
-
 func healthHandler(w http.ResponseWriter, r *http.Request) {
-    // Only accept GET requests
-    if r.Method != http.MethodGet {
-        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-        return
-    }
-    
-    var memStats runtime.MemStats
-    runtime.ReadMemStats(&memStats)
-    
-    health := HealthResponse{
-        Status:    "UP",
-        Timestamp: time.Now().Format(time.RFC3339),
-        Service:   "my-go-service",
-        Version:   "1.0.0",
-        Uptime:    int64(time.Since(startTime).Seconds()),
-        Memory: map[string]uint64{
-            "alloc_mb": memStats.Alloc / 1024 / 1024,
-            "total_mb": memStats.TotalAlloc / 1024 / 1024,
-            "sys_mb":   memStats.Sys / 1024 / 1024,
-        },
-        Environment: getEnv("ENV", "production"),
-    }
-    
     w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(health)
-}
-
-func getEnv(key, fallback string) string {
-    if value := os.Getenv(key); value != "" {
-        return value
-    }
-    return fallback
+    w.WriteHeader(http.StatusOK)
+    json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
 
 func main() {
@@ -356,9 +155,8 @@ func main() {
 }`,
       setup: [
         'No dependencies needed - pure Go!',
-        'Create or open your main.go',
-        'Add the health check handler',
-        'Run: go run main.go',
+        'Add this route to your Go app',
+        'Endpoint just needs to return HTTP 200 when your app is healthy',
         'Test: curl http://localhost:8080/health'
       ]
     },
@@ -366,48 +164,26 @@ func main() {
       name: 'Ruby on Rails',
       description: 'Add this to your Rails app',
       code: `# Health Check - Ruby on Rails
+# All we need is a simple endpoint that returns HTTP 200
+
 # 1. Create a controller: rails generate controller Health
-# 2. Add this to app/controllers/health_controller.rb
+# 2. Add this to app/controllers/health_controller.rb:
 
 class HealthController < ApplicationController
-  # Skip authentication for health checks
   skip_before_action :verify_authenticity_token
-  skip_before_action :authenticate_user!, if: :devise_installed?
-  
-  # Track when the server started
-  @@start_time = Time.now
   
   def check
-    health_data = {
-      status: 'UP',
-      timestamp: Time.now.iso8601,
-      service: 'my-rails-app',
-      version: '1.0.0',
-      uptime: (Time.now - @@start_time).to_i,
-      memory: {
-        used_mb: (\`ps -o rss= -p #{Process.pid}\`.to_i / 1024.0).round(2)
-      },
-      environment: Rails.env,
-      rails_version: Rails::VERSION::STRING
-    }
-    
-    render json: health_data, status: :ok
-  end
-  
-  private
-  
-  def devise_installed?
-    defined?(Devise)
+    render json: { status: 'ok' }, status: :ok
   end
 end
 
-# 3. Add this to config/routes.rb:
+# 3. Add to config/routes.rb:
 # get '/health', to: 'health#check'`,
       setup: [
         'Generate controller: rails generate controller Health',
         'Add the code to app/controllers/health_controller.rb',
-        'Add route to config/routes.rb: get \'/health\', to: \'health#check\'',
-        'Restart server: rails server',
+        'Add route to config/routes.rb',
+        'Endpoint just needs to return HTTP 200 when your app is healthy',
         'Test: curl http://localhost:3000/health'
       ]
     },
@@ -415,42 +191,15 @@ end
       name: 'Ruby + Sinatra',
       description: 'Add this to your Sinatra app',
       code: `# Health Check - Ruby/Sinatra
-# 1. Install: gem install sinatra
-# 2. Add this to your app.rb
+# All we need is a simple endpoint that returns HTTP 200
 
 require 'sinatra'
 require 'json'
 
-# Track when the server started
-START_TIME = Time.now
-
 get '/health' do
   content_type :json
-  
-  # Get memory usage (works on Unix-like systems)
-  memory_usage = begin
-    \`ps -o rss= -p #{Process.pid}\`.to_i / 1024.0
-  rescue
-    0
-  end
-  
-  health_data = {
-    status: 'UP',
-    timestamp: Time.now.iso8601,
-    service: 'my-sinatra-app',
-    version: '1.0.0',
-    uptime: (Time.now - START_TIME).to_i,
-    memory: {
-      used_mb: memory_usage.round(2)
-    },
-    environment: ENV['RACK_ENV'] || 'development',
-    ruby_version: RUBY_VERSION
-  }
-  
-  health_data.to_json
-end
-
-# Run with: ruby app.rb
+  { status: 'ok' }.to_json
+end# Run with: ruby app.rb
 # Or with rackup: rackup -p 4567`,
       setup: [
         'Install Sinatra: gem install sinatra',

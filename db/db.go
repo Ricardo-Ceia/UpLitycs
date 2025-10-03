@@ -273,22 +273,34 @@ func GetLatestStatus(conn *sql.DB, userID int, page string) (LatestStatus, error
 
 // StatusCheck represents a health check result
 type StatusCheck struct {
-	Id             int    `json:"id"`
-	UserId         int    `json:"user_id"`
-	Endpoint       string `json:"endpoint"`
-	StatusCode     int    `json:"status_code"`
-	Status         string `json:"status"`
-	ResponseTimeMs int64  `json:"response_time_ms"`
-	CheckedAt      string `json:"checked_at"`
+	Id         int    `json:"id"`
+	UserId     int    `json:"user_id"`
+	StatusCode int    `json:"status_code"`
+	Status     string `json:"status"` // Derived from status_code
+	CheckedAt  string `json:"checked_at"`
+}
+
+// GetStatusFromCode derives status text from HTTP status code
+func GetStatusFromCode(statusCode int) string {
+	if statusCode >= 200 && statusCode < 300 {
+		return "up"
+	} else if statusCode >= 300 && statusCode < 400 {
+		return "degraded"
+	} else if statusCode >= 400 && statusCode < 500 {
+		return "client_error"
+	} else if statusCode >= 500 {
+		return "down"
+	}
+	return "error" // 0 or other invalid codes
 }
 
 // InsertStatusCheck records a health check result
-func InsertStatusCheck(conn *sql.DB, userId int, endpoint string, statusCode int, status string, responseTime int64) error {
+func InsertStatusCheck(conn *sql.DB, userId int, statusCode int) error {
 	query := `
-		INSERT INTO user_status (user_id, page, status_code, status, response_time_ms, checked_at)
-		VALUES ($1, $2, $3, $4, $5, NOW())
+		INSERT INTO user_status (user_id, status_code, checked_at)
+		VALUES ($1, $2, NOW())
 	`
-	_, err := conn.Exec(query, userId, endpoint, statusCode, status, responseTime)
+	_, err := conn.Exec(query, userId, statusCode)
 	return err
 }
 
@@ -296,7 +308,7 @@ func InsertStatusCheck(conn *sql.DB, userId int, endpoint string, statusCode int
 func GetLatestStatusByUser(conn *sql.DB, userId int) (*StatusCheck, error) {
 	var check StatusCheck
 	query := `
-		SELECT id, user_id, page, status_code, status, COALESCE(response_time_ms, 0), checked_at
+		SELECT id, user_id, status_code, checked_at
 		FROM user_status
 		WHERE user_id = $1
 		ORDER BY checked_at DESC
@@ -305,15 +317,14 @@ func GetLatestStatusByUser(conn *sql.DB, userId int) (*StatusCheck, error) {
 	err := conn.QueryRow(query, userId).Scan(
 		&check.Id,
 		&check.UserId,
-		&check.Endpoint,
 		&check.StatusCode,
-		&check.Status,
-		&check.ResponseTimeMs,
 		&check.CheckedAt,
 	)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
+	// Derive status from status code
+	check.Status = GetStatusFromCode(check.StatusCode)
 	return &check, err
 }
 
@@ -321,8 +332,7 @@ func GetLatestStatusByUser(conn *sql.DB, userId int) (*StatusCheck, error) {
 func GetLatestStatusBySlug(conn *sql.DB, slug string) (*StatusCheck, error) {
 	var check StatusCheck
 	query := `
-		SELECT sc.id, sc.user_id, sc.page, sc.status_code, sc.status, 
-		       COALESCE(sc.response_time_ms, 0), sc.checked_at
+		SELECT sc.id, sc.user_id, sc.status_code, sc.checked_at
 		FROM user_status sc
 		JOIN users u ON sc.user_id = u.id
 		WHERE u.slug = $1
@@ -332,22 +342,21 @@ func GetLatestStatusBySlug(conn *sql.DB, slug string) (*StatusCheck, error) {
 	err := conn.QueryRow(query, slug).Scan(
 		&check.Id,
 		&check.UserId,
-		&check.Endpoint,
 		&check.StatusCode,
-		&check.Status,
-		&check.ResponseTimeMs,
 		&check.CheckedAt,
 	)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
+	// Derive status from status code
+	check.Status = GetStatusFromCode(check.StatusCode)
 	return &check, err
 }
 
 // GetStatusHistory gets recent status checks for a user
 func GetStatusHistory(conn *sql.DB, userId int, limit int) ([]StatusCheck, error) {
 	query := `
-		SELECT id, user_id, page, status_code, status, COALESCE(response_time_ms, 0), checked_at
+		SELECT id, user_id, status_code, checked_at
 		FROM user_status
 		WHERE user_id = $1
 		ORDER BY checked_at DESC
@@ -365,15 +374,14 @@ func GetStatusHistory(conn *sql.DB, userId int, limit int) ([]StatusCheck, error
 		err := rows.Scan(
 			&check.Id,
 			&check.UserId,
-			&check.Endpoint,
 			&check.StatusCode,
-			&check.Status,
-			&check.ResponseTimeMs,
 			&check.CheckedAt,
 		)
 		if err != nil {
 			return nil, err
 		}
+		// Derive status from status code
+		check.Status = GetStatusFromCode(check.StatusCode)
 		checks = append(checks, check)
 	}
 	return checks, nil
@@ -440,13 +448,13 @@ func GetAllUsersForHealthCheck(conn *sql.DB) ([]User, error) {
 	return users, nil
 }
 
-// InsertAlert records an alert
-func InsertAlert(conn *sql.DB, userId int, status string, statusCode int) error {
+// InsertAlert records an alert (simplified - just tracks when alerts were sent)
+func InsertAlert(conn *sql.DB, userId int) error {
 	query := `
-		INSERT INTO alerts (user_id, status, status_code, sent_at)
-		VALUES ($1, $2, $3, NOW())
+		INSERT INTO alerts (user_id, sent_at)
+		VALUES ($1, NOW())
 	`
-	_, err := conn.Exec(query, userId, status, statusCode)
+	_, err := conn.Exec(query, userId)
 	return err
 }
 

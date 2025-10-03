@@ -14,6 +14,8 @@ const StatusPage = () => {
   const [showThemeSelector, setShowThemeSelector] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [userTheme, setUserTheme] = useState(null); // User's local theme preference
+  const [responseTime, setResponseTime] = useState(null); // Real-time response time
+  const [pingLoading, setPingLoading] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -97,6 +99,30 @@ const StatusPage = () => {
       setLoading(false);
     }
   };
+
+  const fetchResponseTime = async () => {
+    try {
+      setPingLoading(true);
+      const response = await fetch(`/api/public/ping/${slug}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setResponseTime(data.response_time);
+      }
+    } catch (err) {
+      console.error('Error fetching response time:', err);
+      setResponseTime(null);
+    } finally {
+      setPingLoading(false);
+    }
+  };
+
+  // Fetch response time on initial load
+  useEffect(() => {
+    if (statusData) {
+      fetchResponseTime();
+    }
+  }, [statusData, slug]);
 
   const handleThemeChange = async (newTheme, isPermanent = false) => {
     console.log('Theme change requested:', { newTheme, isPermanent, isOwner });
@@ -352,8 +378,23 @@ const StatusPage = () => {
             <div className="metric-content">
               <span className="metric-label">Response Time</span>
               <span className="metric-value metric-value-small">
-                {statusData?.response_time_ms || 0} ms
+                {pingLoading ? (
+                  'Checking...'
+                ) : responseTime !== null ? (
+                  `${responseTime} ms`
+                ) : (
+                  'N/A'
+                )}
               </span>
+              {!pingLoading && responseTime !== null && (
+                <button 
+                  onClick={fetchResponseTime}
+                  className="refresh-ping-btn"
+                  title="Refresh response time"
+                >
+                  ↻
+                </button>
+              )}
             </div>
           </div>
 
