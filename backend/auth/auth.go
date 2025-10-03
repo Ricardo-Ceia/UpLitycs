@@ -97,6 +97,7 @@ func NewAuth() {
 	Store.Options.HttpOnly = true
 	Store.Options.Secure = false // Set to true in production with HTTPS
 	Store.Options.SameSite = http.SameSiteLaxMode
+	Store.Options.MaxAge = 86400 * 30 // 30 days - ensures cookie persists across browser sessions
 
 	// Initialize Google OAuth config
 	googleConfig = GoogleOAuthConfig{
