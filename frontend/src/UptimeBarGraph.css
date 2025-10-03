@@ -8,25 +8,32 @@
   --uptime-critical: #ff0000;
 }
 
+.theme-cyberpunk {
+  --uptime-excellent: #00FFF7;
+  --uptime-good: #8C52FF;
+  --uptime-warning: #f7931e;
+  --uptime-critical: #FF6EC7;
+}
+
 .theme-matrix {
-  --uptime-excellent: #00ff00;
-  --uptime-good: #00dd00;
+  --uptime-excellent: #00ff41;
+  --uptime-good: #008f11;
   --uptime-warning: #ffff00;
   --uptime-critical: #ff0000;
 }
 
 .theme-retro {
-  --uptime-excellent: #ff00ff;
-  --uptime-good: #cc00ff;
-  --uptime-warning: #ff6600;
+  --uptime-excellent: #fdc500;
+  --uptime-good: #f7931e;
+  --uptime-warning: #ff6b35;
   --uptime-critical: #ff0000;
 }
 
 .theme-minimal {
-  --uptime-excellent: #27ae60;
-  --uptime-good: #2ecc71;
-  --uptime-warning: #f39c12;
-  --uptime-critical: #e74c3c;
+  --uptime-excellent: #ffffff;
+  --uptime-good: #a0a0a0;
+  --uptime-warning: #ff9800;
+  --uptime-critical: #ff0000;
 }
 
 .uptime-graph-container {

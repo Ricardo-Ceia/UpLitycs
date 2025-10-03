@@ -1,48 +1,56 @@
 /* StatusPage.css - Unified status page styles */
 
-/* Theme Variables */
+/* Theme Variables - Matching Onboarding Themes */
 .theme-cyberpunk {
-  --background: #0a0e27;
-  --card-background: #1a1f3a;
+  --background: #1a0a2e;
+  --card-background: #2d1b4e;
   --text-color: #e0e6ff;
-  --text-secondary: #8b92b0;
-  --primary-color: #00ff41;
-  --glow-color: rgba(0, 255, 65, 0.5);
-  --border-color: #00ff41;
-  --grid-color: #00ff41;
+  --text-secondary: #a0a8c0;
+  --primary-color: #FF6EC7;
+  --secondary-color: #8C52FF;
+  --accent-color: #00FFF7;
+  --glow-color: rgba(255, 110, 199, 0.5);
+  --border-color: #FF6EC7;
+  --grid-color: #8C52FF;
 }
 
 .theme-matrix {
   --background: #000000;
   --card-background: #001a00;
-  --text-color: #00ff00;
-  --text-secondary: #008800;
-  --primary-color: #00ff00;
-  --glow-color: rgba(0, 255, 0, 0.6);
-  --border-color: #00ff00;
+  --text-color: #00ff41;
+  --text-secondary: #008f11;
+  --primary-color: #00ff41;
+  --secondary-color: #008f11;
+  --accent-color: #003300;
+  --glow-color: rgba(0, 255, 65, 0.6);
+  --border-color: #00ff41;
   --grid-color: #003300;
 }
 
 .theme-retro {
-  --background: #1a0033;
-  --card-background: #2d004d;
-  --text-color: #ff00ff;
-  --text-secondary: #cc00cc;
-  --primary-color: #ff00ff;
-  --glow-color: rgba(255, 0, 255, 0.5);
-  --border-color: #ff00ff;
-  --grid-color: #ff00ff;
+  --background: #1a0a00;
+  --card-background: #2d1500;
+  --text-color: #fdc500;
+  --text-secondary: #f7931e;
+  --primary-color: #ff6b35;
+  --secondary-color: #f7931e;
+  --accent-color: #fdc500;
+  --glow-color: rgba(255, 107, 53, 0.5);
+  --border-color: #ff6b35;
+  --grid-color: #f7931e;
 }
 
 .theme-minimal {
-  --background: #f5f5f5;
-  --card-background: #ffffff;
-  --text-color: #2c3e50;
-  --text-secondary: #7f8c8d;
-  --primary-color: #3498db;
-  --glow-color: rgba(52, 152, 219, 0.3);
-  --border-color: #bdc3c7;
-  --grid-color: #ecf0f1;
+  --background: #1e293b;
+  --card-background: #334155;
+  --text-color: #ffffff;
+  --text-secondary: #a0a0a0;
+  --primary-color: #ffffff;
+  --secondary-color: #a0a0a0;
+  --accent-color: #606060;
+  --glow-color: rgba(255, 255, 255, 0.3);
+  --border-color: #606060;
+  --grid-color: #475569;
 }
 
 /* Base Styles */
@@ -256,19 +264,19 @@
 }
 
 .cyberpunk-preview {
-  background: linear-gradient(135deg, #0a0e27 0%, #00ff41 100%);
+  background: linear-gradient(135deg, #FF6EC7 0%, #8C52FF 50%, #00FFF7 100%);
 }
 
 .matrix-preview {
-  background: linear-gradient(135deg, #000000 0%, #00ff00 100%);
+  background: linear-gradient(135deg, #00ff41 0%, #008f11 50%, #003300 100%);
 }
 
 .retro-preview {
-  background: linear-gradient(135deg, #1a0033 0%, #ff00ff 100%);
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 50%, #fdc500 100%);
 }
 
 .minimal-preview {
-  background: linear-gradient(135deg, #f5f5f5 0%, #3498db 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #a0a0a0 50%, #606060 100%);
 }
 
 .dropdown-section-header {
