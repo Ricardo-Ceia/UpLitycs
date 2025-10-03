@@ -13,6 +13,7 @@ const StatusPage = () => {
   const [isOwner, setIsOwner] = useState(false);
   const [showThemeSelector, setShowThemeSelector] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [userTheme, setUserTheme] = useState(null); // User's local theme preference
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -46,12 +47,33 @@ const StatusPage = () => {
     return () => clearInterval(interval);
   }, [slug]);
 
+  // Load user's theme preference from localStorage
+  useEffect(() => {
+    const savedTheme = localStorage.getItem(`theme-preference-${slug}`);
+    if (savedTheme) {
+      setUserTheme(savedTheme);
+    }
+  }, [slug]);
+
   // Check ownership when both currentUserId and statusData are available
   useEffect(() => {
     if (currentUserId && statusData?.user_id) {
       setIsOwner(currentUserId === statusData.user_id);
     }
   }, [currentUserId, statusData]);
+
+  // Close theme selector when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showThemeSelector && !event.target.closest('.theme-selector-wrapper')) {
+        console.log('Clicking outside, closing theme selector');
+        setShowThemeSelector(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showThemeSelector]);
 
   const fetchStatusData = async () => {
     try {
@@ -76,26 +98,42 @@ const StatusPage = () => {
     }
   };
 
-  const handleThemeChange = async (newTheme) => {
-    try {
-      const response = await fetch('/api/update-theme', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ theme: newTheme }),
-      });
+  const handleThemeChange = async (newTheme, isPermanent = false) => {
+    console.log('Theme change requested:', { newTheme, isPermanent, isOwner });
+    
+    // If owner is changing theme permanently
+    if (isPermanent && isOwner) {
+      try {
+        const response = await fetch('/api/update-theme', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({ theme: newTheme }),
+        });
 
-      if (response.ok) {
-        // Refresh status data to get new theme
-        await fetchStatusData();
-        setShowThemeSelector(false);
-      } else {
-        console.error('Failed to update theme');
+        if (response.ok) {
+          console.log('Owner theme updated successfully');
+          // Refresh status data to get new theme
+          await fetchStatusData();
+          setShowThemeSelector(false);
+          // Clear user preference since owner changed default
+          localStorage.removeItem(`theme-preference-${slug}`);
+          setUserTheme(null);
+        } else {
+          console.error('Failed to update theme');
+        }
+      } catch (err) {
+        console.error('Error updating theme:', err);
       }
-    } catch (err) {
-      console.error('Error updating theme:', err);
+    } else {
+      // Regular user changing theme locally
+      console.log('Setting user theme locally:', newTheme);
+      setUserTheme(newTheme);
+      localStorage.setItem(`theme-preference-${slug}`, newTheme);
+      setShowThemeSelector(false);
+      console.log('User theme set, localStorage updated');
     }
   };
 
@@ -164,7 +202,8 @@ const StatusPage = () => {
 
   const statusCode = statusData?.status_code || 0;
   const statusColor = getStatusColor(statusCode);
-  const theme = statusData?.theme || 'cyberpunk';
+  // Use user's local theme preference if set, otherwise use owner's theme
+  const theme = userTheme || statusData?.theme || 'cyberpunk';
 
   return (
     <div className={`status-container theme-${theme}`}>
@@ -186,26 +225,84 @@ const StatusPage = () => {
               <Clock className="clock-icon" />
               <span>{currentTime.toLocaleTimeString('en-US', { hour12: false })}</span>
             </div>
-            {isOwner && (
-              <div className="theme-selector-wrapper">
-                <button 
-                  className="theme-toggle-btn"
-                  onClick={() => setShowThemeSelector(!showThemeSelector)}
-                  title="Change Theme"
-                >
-                  <Settings className="settings-icon" />
-                  <span className="btn-text">Theme</span>
-                </button>
-                {showThemeSelector && (
-                  <div className="theme-dropdown">
-                    <button onClick={() => handleThemeChange('cyberpunk')}>Cyberpunk</button>
-                    <button onClick={() => handleThemeChange('matrix')}>Matrix</button>
-                    <button onClick={() => handleThemeChange('retro')}>Retro</button>
-                    <button onClick={() => handleThemeChange('minimal')}>Minimal</button>
+            {/* Theme selector available for everyone */}
+            <div className="theme-selector-wrapper">
+              <button 
+                className="theme-toggle-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  console.log('Theme button clicked, current state:', showThemeSelector);
+                  setShowThemeSelector(!showThemeSelector);
+                }}
+                title={isOwner ? "Change Theme (Owner - changes for everyone)" : "Change Theme (for your view)"}
+              >
+                <Settings className="settings-icon" />
+                <span className="btn-text">Theme</span>
+              </button>
+              {showThemeSelector && (
+                <div className="theme-dropdown" onClick={(e) => e.stopPropagation()}>
+                  <div className="dropdown-section-header">
+                    {isOwner ? '👑 Choose Theme (applies to all)' : '🎨 Choose Your Theme'}
                   </div>
-                )}
-              </div>
-            )}
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleThemeChange('cyberpunk', isOwner);
+                    }}
+                    className={theme === 'cyberpunk' ? 'active' : ''}
+                  >
+                    <span className="theme-preview cyberpunk-preview"></span>
+                    Cyberpunk {theme === 'cyberpunk' && '✓'}
+                  </button>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleThemeChange('matrix', isOwner);
+                    }}
+                    className={theme === 'matrix' ? 'active' : ''}
+                  >
+                    <span className="theme-preview matrix-preview"></span>
+                    Matrix {theme === 'matrix' && '✓'}
+                  </button>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleThemeChange('retro', isOwner);
+                    }}
+                    className={theme === 'retro' ? 'active' : ''}
+                  >
+                    <span className="theme-preview retro-preview"></span>
+                    Retro {theme === 'retro' && '✓'}
+                  </button>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleThemeChange('minimal', isOwner);
+                    }}
+                    className={theme === 'minimal' ? 'active' : ''}
+                  >
+                    <span className="theme-preview minimal-preview"></span>
+                    Minimal {theme === 'minimal' && '✓'}
+                  </button>
+                  {userTheme && !isOwner && (
+                    <>
+                      <div className="dropdown-divider"></div>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          localStorage.removeItem(`theme-preference-${slug}`);
+                          setUserTheme(null);
+                          setShowThemeSelector(false);
+                        }}
+                        className="reset-theme-btn"
+                      >
+                        ↺ Reset to Default
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>

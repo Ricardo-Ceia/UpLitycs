@@ -1,5 +1,50 @@
 /* StatusPage.css - Unified status page styles */
 
+/* Theme Variables */
+.theme-cyberpunk {
+  --background: #0a0e27;
+  --card-background: #1a1f3a;
+  --text-color: #e0e6ff;
+  --text-secondary: #8b92b0;
+  --primary-color: #00ff41;
+  --glow-color: rgba(0, 255, 65, 0.5);
+  --border-color: #00ff41;
+  --grid-color: #00ff41;
+}
+
+.theme-matrix {
+  --background: #000000;
+  --card-background: #001a00;
+  --text-color: #00ff00;
+  --text-secondary: #008800;
+  --primary-color: #00ff00;
+  --glow-color: rgba(0, 255, 0, 0.6);
+  --border-color: #00ff00;
+  --grid-color: #003300;
+}
+
+.theme-retro {
+  --background: #1a0033;
+  --card-background: #2d004d;
+  --text-color: #ff00ff;
+  --text-secondary: #cc00cc;
+  --primary-color: #ff00ff;
+  --glow-color: rgba(255, 0, 255, 0.5);
+  --border-color: #ff00ff;
+  --grid-color: #ff00ff;
+}
+
+.theme-minimal {
+  --background: #f5f5f5;
+  --card-background: #ffffff;
+  --text-color: #2c3e50;
+  --text-secondary: #7f8c8d;
+  --primary-color: #3498db;
+  --glow-color: rgba(52, 152, 219, 0.3);
+  --border-color: #bdc3c7;
+  --grid-color: #ecf0f1;
+}
+
 /* Base Styles */
 .status-container {
   min-height: 100vh;
@@ -8,6 +53,7 @@
   font-family: 'Courier New', monospace;
   position: relative;
   overflow-x: hidden;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 /* Effects */
@@ -20,7 +66,7 @@
   background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
   background-size: 100% 2px, 3px 100%;
   pointer-events: none;
-  z-index: 2;
+  z-index: 1;
 }
 
 .scan-lines {
@@ -67,7 +113,7 @@
 /* Header */
 .status-header {
   position: relative;
-  z-index: 10;
+  z-index: 100;
   padding: 2rem;
   background: var(--card-background);
   border-bottom: 2px solid var(--primary-color);
@@ -165,13 +211,17 @@
   background: var(--card-background);
   border: 2px solid var(--primary-color);
   border-radius: 4px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-  z-index: 1000;
-  min-width: 150px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+  z-index: 10000;
+  min-width: 200px;
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .theme-dropdown button {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   width: 100%;
   padding: 0.75rem 1rem;
   background: none;
@@ -181,11 +231,74 @@
   cursor: pointer;
   font-family: 'Courier New', monospace;
   transition: all 0.2s ease;
+  font-size: 0.95rem;
 }
 
 .theme-dropdown button:hover {
   background: var(--primary-color);
   color: var(--background);
+  transform: translateX(4px);
+}
+
+.theme-dropdown button.active {
+  background: rgba(0, 255, 65, 0.1);
+  border-left: 3px solid var(--primary-color);
+  font-weight: bold;
+}
+
+.theme-preview {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.cyberpunk-preview {
+  background: linear-gradient(135deg, #0a0e27 0%, #00ff41 100%);
+}
+
+.matrix-preview {
+  background: linear-gradient(135deg, #000000 0%, #00ff00 100%);
+}
+
+.retro-preview {
+  background: linear-gradient(135deg, #1a0033 0%, #ff00ff 100%);
+}
+
+.minimal-preview {
+  background: linear-gradient(135deg, #f5f5f5 0%, #3498db 100%);
+}
+
+.dropdown-section-header {
+  padding: 0.75rem 1rem;
+  font-size: 0.7rem;
+  color: var(--primary-color);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  border-bottom: 1px solid var(--border-color);
+  background: rgba(0, 0, 0, 0.4);
+  font-weight: bold;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 0.5rem 0;
+  opacity: 0.3;
+}
+
+.reset-theme-btn {
+  color: #ff6b6b !important;
+  font-weight: bold;
+  justify-content: center;
+}
+
+.reset-theme-btn:hover {
+  background: #ff6b6b !important;
+  color: white !important;
+  transform: translateX(0) !important;
 }
 
 /* Main Status */

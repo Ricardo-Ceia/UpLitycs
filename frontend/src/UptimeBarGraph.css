@@ -1,10 +1,32 @@
 /* UptimeBarGraph.css */
 
+/* Uptime status colors - work across all themes */
 :root {
   --uptime-excellent: #00ff41;
-  --uptime-good: #ffff00;
+  --uptime-good: #4caf50;
   --uptime-warning: #ff9800;
   --uptime-critical: #ff0000;
+}
+
+.theme-matrix {
+  --uptime-excellent: #00ff00;
+  --uptime-good: #00dd00;
+  --uptime-warning: #ffff00;
+  --uptime-critical: #ff0000;
+}
+
+.theme-retro {
+  --uptime-excellent: #ff00ff;
+  --uptime-good: #cc00ff;
+  --uptime-warning: #ff6600;
+  --uptime-critical: #ff0000;
+}
+
+.theme-minimal {
+  --uptime-excellent: #27ae60;
+  --uptime-good: #2ecc71;
+  --uptime-warning: #f39c12;
+  --uptime-critical: #e74c3c;
 }
 
 .uptime-graph-container {
@@ -81,6 +103,12 @@
   box-shadow: 0 0 8px var(--uptime-critical);
 }
 
+.legend-dot.unmonitored {
+  background-color: #555555;
+  box-shadow: 0 0 8px rgba(85, 85, 85, 0.5);
+  border: 2px dashed #888888;
+}
+
 .legend-label {
   font-family: 'Courier New', monospace;
 }
@@ -94,13 +122,14 @@
 .graph-bars {
   display: flex;
   align-items: flex-end;
-  gap: 4px;
-  height: 200px;
-  background: rgba(0, 0, 0, 0.2);
-  padding: 1rem;
+  gap: 2px;
+  height: 180px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 1rem 0.5rem 3.5rem 0.5rem;
   border-radius: 8px;
-  border: 1px solid rgba(0, 255, 65, 0.2);
+  border: 1px solid rgba(0, 255, 65, 0.15);
   overflow-x: auto;
+  position: relative;
 }
 
 .bar-wrapper {
@@ -108,7 +137,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 20px;
+  justify-content: flex-end;
+  min-width: 16px;
+  max-width: 32px;
+  position: relative;
 }
 
 .bar-container {
@@ -117,51 +149,110 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
+  position: relative;
 }
 
 .bar {
   width: 100%;
-  min-height: 2px;
-  background: var(--uptime-excellent);
-  border-radius: 4px 4px 0 0;
-  transition: all 0.3s ease;
+  min-height: 5px;
+  border-radius: 3px 3px 0 0;
+  transition: all 0.2s ease;
   cursor: pointer;
   position: relative;
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding-top: 4px;
+  padding-top: 2px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.bar:hover {
-  transform: scaleY(1.05);
+.bar-monitored {
+  background: var(--uptime-excellent);
+}
+
+.bar-monitored:hover {
+  transform: scaleY(1.08) scaleX(1.1);
   filter: brightness(1.3);
-  box-shadow: 0 -4px 12px currentColor;
+  box-shadow: 0 -2px 16px currentColor;
+  z-index: 10;
 }
 
 .bar-percentage {
-  font-size: 0.65rem;
-  color: rgba(0, 0, 0, 0.8);
+  font-size: 0.55rem;
+  color: rgba(0, 0, 0, 0.9);
   font-weight: bold;
   font-family: 'Courier New', monospace;
-  text-shadow: 0 0 2px rgba(255, 255, 255, 0.5);
-  display: none;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.8);
+  letter-spacing: -0.5px;
 }
 
-.bar:hover .bar-percentage {
-  display: block;
-}
-
-.bar-label {
+.bar-date {
+  position: absolute;
+  bottom: -1.8rem;
   font-size: 0.7rem;
   color: var(--text-secondary);
-  margin-top: 0.5rem;
   font-family: 'Courier New', monospace;
-  writing-mode: horizontal-tb;
   white-space: nowrap;
-  transform: rotate(-45deg);
-  transform-origin: center;
+  opacity: 0.9;
+  font-weight: 500;
 }
+
+.bar-month {
+  position: absolute;
+  bottom: -3rem;
+  font-size: 0.65rem;
+  color: var(--primary-color);
+  font-family: 'Courier New', monospace;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: bold;
+  opacity: 0.7;
+}
+
+/* Unmonitored bar styles */
+.bar-unmonitored {
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(85, 85, 85, 0.3),
+    rgba(85, 85, 85, 0.3) 3px,
+    rgba(68, 68, 68, 0.3) 3px,
+    rgba(68, 68, 68, 0.3) 6px
+  );
+  border: 1px solid rgba(136, 136, 136, 0.4);
+  height: 30px !important;
+  opacity: 0.5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.bar-unmonitored:hover {
+  opacity: 0.7;
+  transform: scaleX(1.1);
+  box-shadow: 0 0 12px rgba(136, 136, 136, 0.4), inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.bar-icon {
+  font-size: 0.75rem;
+  color: #999999;
+  animation: warning-pulse 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 2px rgba(153, 153, 153, 0.5));
+}
+
+@keyframes warning-pulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+}
+
+
 
 .graph-stats {
   display: grid;

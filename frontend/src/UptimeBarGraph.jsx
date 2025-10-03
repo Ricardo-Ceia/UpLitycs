@@ -7,8 +7,30 @@ const UptimeBarGraph = ({ uptimeHistory }) => {
     new Date(a.date) - new Date(b.date)
   );
 
-  // Get last 30 days
-  const last30Days = sortedHistory.slice(-30);
+  // Create a full 30-day array including unmonitored days
+  const today = new Date();
+  const thirtyDaysAgo = new Date(today);
+  thirtyDaysAgo.setDate(today.getDate() - 29); // 29 days ago + today = 30 days
+
+  const full30Days = [];
+  for (let i = 0; i < 30; i++) {
+    const currentDate = new Date(thirtyDaysAgo);
+    currentDate.setDate(thirtyDaysAgo.getDate() + i);
+    const dateString = currentDate.toISOString().split('T')[0];
+    
+    // Find if we have data for this date
+    const dataForDate = sortedHistory.find(d => d.date.split('T')[0] === dateString);
+    
+    full30Days.push({
+      date: dateString,
+      uptime_percentage: dataForDate?.uptime_percentage || 0,
+      total_checks: dataForDate?.total_checks || 0,
+      successful_checks: dataForDate?.successful_checks || 0,
+      isMonitored: !!dataForDate
+    });
+  }
+
+  const last30Days = full30Days;
 
   // If no data, show empty state
   if (last30Days.length === 0) {
@@ -63,6 +85,10 @@ const UptimeBarGraph = ({ uptimeHistory }) => {
             <span className="legend-dot critical"></span>
             <span className="legend-label">&lt;90%</span>
           </div>
+          <div className="legend-item">
+            <span className="legend-dot unmonitored"></span>
+            <span className="legend-label">Not Monitored</span>
+          </div>
         </div>
       </div>
 
@@ -76,23 +102,49 @@ const UptimeBarGraph = ({ uptimeHistory }) => {
               month: 'short', 
               day: 'numeric' 
             });
+            const dayOfMonth = date.getDate();
+            const monthLabel = date.toLocaleDateString('en-US', { month: 'short' });
+            
+            // Check if this is the first day of a month or first bar
+            const isStartOfMonth = dayOfMonth === 1 || index === 0;
+
+            // Render differently for unmonitored days
+            if (!day.isMonitored) {
+              return (
+                <div key={index} className="bar-wrapper">
+                  <div className="bar-container">
+                    <div 
+                      className="bar bar-unmonitored"
+                      title={`${dayLabel}: Not monitored yet`}
+                    >
+                      <span className="bar-icon">⚠</span>
+                    </div>
+                  </div>
+                  <div className="bar-date">{dayOfMonth}</div>
+                  {isStartOfMonth && (
+                    <div className="bar-month">{monthLabel}</div>
+                  )}
+                </div>
+              );
+            }
 
             return (
               <div key={index} className="bar-wrapper">
                 <div className="bar-container">
                   <div 
-                    className="bar"
+                    className="bar bar-monitored"
                     style={{
-                      height: `${Math.max(height, 2)}%`,
+                      height: `${Math.max(height, 5)}%`,
                       backgroundColor: getBarColor(percentage),
                     }}
                     title={`${dayLabel}: ${percentage.toFixed(2)}% uptime (${day.successful_checks}/${day.total_checks} checks)`}
                   >
-                    <span className="bar-percentage">{percentage.toFixed(0)}%</span>
+                    <span className="bar-percentage">{percentage >= 10 ? percentage.toFixed(0) + '%' : ''}</span>
                   </div>
                 </div>
-                {index % 5 === 0 && (
-                  <div className="bar-label">{dayLabel}</div>
+                <div className="bar-date">{dayOfMonth}</div>
+                {isStartOfMonth && (
+                  <div className="bar-month">{monthLabel}</div>
                 )}
               </div>
             );
@@ -103,7 +155,11 @@ const UptimeBarGraph = ({ uptimeHistory }) => {
           <div className="stat-card">
             <span className="stat-label">Average Uptime</span>
             <span className="stat-value">
-              {(last30Days.reduce((sum, day) => sum + (day.uptime_percentage || 0), 0) / last30Days.length).toFixed(2)}%
+              {(() => {
+                const monitoredDays = last30Days.filter(d => d.isMonitored);
+                if (monitoredDays.length === 0) return '0.00';
+                return (monitoredDays.reduce((sum, day) => sum + (day.uptime_percentage || 0), 0) / monitoredDays.length).toFixed(2);
+              })()}%
             </span>
           </div>
           <div className="stat-card">
@@ -114,7 +170,7 @@ const UptimeBarGraph = ({ uptimeHistory }) => {
           </div>
           <div className="stat-card">
             <span className="stat-label">Days Monitored</span>
-            <span className="stat-value">{last30Days.length}</span>
+            <span className="stat-value">{last30Days.filter(d => d.isMonitored).length} / 30</span>
           </div>
         </div>
       </div>
