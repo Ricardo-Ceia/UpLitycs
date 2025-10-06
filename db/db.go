@@ -18,6 +18,27 @@ type User struct {
 	Slug      string
 	AppName   string
 	Id        int
+	Plan      string
+}
+
+type App struct {
+	Id        int    `json:"id"`
+	UserId    int    `json:"user_id"`
+	AppName   string `json:"app_name"`
+	Slug      string `json:"slug"`
+	HealthUrl string `json:"health_url"`
+	Theme     string `json:"theme"`
+	Alerts    string `json:"alerts"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+}
+
+type AppWithStatus struct {
+	App
+	Status      string  `json:"status"`
+	StatusCode  int     `json:"status_code"`
+	Uptime24h   float64 `json:"uptime_24h"`
+	LastChecked string  `json:"last_checked"`
 }
 
 type LatestStatus struct {
@@ -468,10 +489,10 @@ func GetLastAlert(conn *sql.DB, userId int) (string, error) {
 
 // DailyUptime represents uptime data for a single day
 type DailyUptime struct {
-	Date            string  `json:"date"`
+	Date             string  `json:"date"`
 	UptimePercentage float64 `json:"uptime_percentage"`
-	TotalChecks     int     `json:"total_checks"`
-	SuccessfulChecks int    `json:"successful_checks"`
+	TotalChecks      int     `json:"total_checks"`
+	SuccessfulChecks int     `json:"successful_checks"`
 }
 
 // GetDailyUptimeHistory gets uptime percentage for each of the last N days
@@ -504,14 +525,14 @@ func GetDailyUptimeHistory(conn *sql.DB, userId int, days int) ([]DailyUptime, e
 		if err != nil {
 			return nil, err
 		}
-		
+
 		// Calculate uptime percentage
 		if daily.TotalChecks > 0 {
 			daily.UptimePercentage = float64(daily.SuccessfulChecks) / float64(daily.TotalChecks) * 100
 		} else {
 			daily.UptimePercentage = 0
 		}
-		
+
 		history = append(history, daily)
 	}
 	return history, nil
@@ -548,15 +569,247 @@ func GetDailyUptimeHistoryBySlug(conn *sql.DB, slug string, days int) ([]DailyUp
 		if err != nil {
 			return nil, err
 		}
-		
+
 		// Calculate uptime percentage
 		if daily.TotalChecks > 0 {
 			daily.UptimePercentage = float64(daily.SuccessfulChecks) / float64(daily.TotalChecks) * 100
 		} else {
 			daily.UptimePercentage = 0
 		}
-		
+
 		history = append(history, daily)
 	}
 	return history, nil
+}
+
+// ========== APP MANAGEMENT ==========
+
+// CreateApp creates a new app for a user
+func CreateApp(conn *sql.DB, userId int, appName, slug, healthUrl, theme, alerts string) (int, error) {
+	var appId int
+	err := conn.QueryRow(
+		"INSERT INTO apps (user_id, app_name, slug, health_url, theme, alerts) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
+		userId, appName, slug, healthUrl, theme, alerts,
+	).Scan(&appId)
+
+	if err != nil {
+		return 0, err
+	}
+	return appId, nil
+}
+
+// GetUserApps returns all apps for a user
+func GetUserApps(conn *sql.DB, userId int) ([]App, error) {
+	rows, err := conn.Query(
+		"SELECT id, user_id, app_name, slug, health_url, theme, alerts, created_at, updated_at FROM apps WHERE user_id = $1 ORDER BY created_at DESC",
+		userId,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var apps []App
+	for rows.Next() {
+		var app App
+		var updatedAt sql.NullString
+		err := rows.Scan(&app.Id, &app.UserId, &app.AppName, &app.Slug, &app.HealthUrl, &app.Theme, &app.Alerts, &app.CreatedAt, &updatedAt)
+		if err != nil {
+			return nil, err
+		}
+		if updatedAt.Valid {
+			app.UpdatedAt = updatedAt.String
+		}
+		apps = append(apps, app)
+	}
+	return apps, nil
+}
+
+// GetUserAppsWithStatus returns all apps for a user with their current status
+func GetUserAppsWithStatus(conn *sql.DB, userId int) ([]AppWithStatus, error) {
+	query := `
+		SELECT 
+			a.id, a.user_id, a.app_name, a.slug, a.health_url, a.theme, a.alerts, a.created_at, a.updated_at,
+			COALESCE(ls.status_code, 0) as status_code,
+			ls.checked_at as last_checked,
+			COALESCE(uptime.uptime_24h, 0) as uptime_24h
+		FROM apps a
+		LEFT JOIN LATERAL (
+			SELECT status_code, checked_at 
+			FROM user_status 
+			WHERE app_id = a.id 
+			ORDER BY checked_at DESC 
+			LIMIT 1
+		) ls ON true
+		LEFT JOIN LATERAL (
+			SELECT 
+				ROUND(
+					CAST(COUNT(*) FILTER (WHERE status_code >= 200 AND status_code < 300) AS NUMERIC) / 
+					NULLIF(COUNT(*), 0) * 100, 
+					2
+				) as uptime_24h
+			FROM user_status
+			WHERE app_id = a.id AND checked_at > NOW() - INTERVAL '24 hours'
+		) uptime ON true
+		WHERE a.user_id = $1
+		ORDER BY a.created_at DESC
+	`
+
+	rows, err := conn.Query(query, userId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var apps []AppWithStatus
+	for rows.Next() {
+		var app AppWithStatus
+		var updatedAt, lastChecked sql.NullString
+		var statusCode sql.NullInt64
+		var uptime24h sql.NullFloat64
+
+		err := rows.Scan(
+			&app.Id, &app.UserId, &app.AppName, &app.Slug, &app.HealthUrl, &app.Theme, &app.Alerts,
+			&app.CreatedAt, &updatedAt, &statusCode, &lastChecked, &uptime24h,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		if updatedAt.Valid {
+			app.UpdatedAt = updatedAt.String
+		}
+		if statusCode.Valid {
+			app.StatusCode = int(statusCode.Int64)
+			app.Status = GetStatusFromCode(app.StatusCode)
+		} else {
+			app.StatusCode = 0
+			app.Status = "unknown"
+		}
+		if lastChecked.Valid {
+			app.LastChecked = lastChecked.String
+		}
+		if uptime24h.Valid {
+			app.Uptime24h = uptime24h.Float64
+		}
+
+		apps = append(apps, app)
+	}
+	return apps, nil
+}
+
+// GetAppBySlug returns an app by its slug
+func GetAppBySlug(conn *sql.DB, slug string) (*App, error) {
+	var app App
+	var updatedAt sql.NullString
+
+	err := conn.QueryRow(
+		"SELECT id, user_id, app_name, slug, health_url, theme, alerts, created_at, updated_at FROM apps WHERE slug = $1",
+		slug,
+	).Scan(&app.Id, &app.UserId, &app.AppName, &app.Slug, &app.HealthUrl, &app.Theme, &app.Alerts, &app.CreatedAt, &updatedAt)
+
+	if err != nil {
+		return nil, err
+	}
+	if updatedAt.Valid {
+		app.UpdatedAt = updatedAt.String
+	}
+	return &app, nil
+}
+
+// DeleteApp deletes an app and all associated data
+func DeleteApp(conn *sql.DB, appId, userId int) error {
+	// Verify ownership before deleting
+	_, err := conn.Exec("DELETE FROM apps WHERE id = $1 AND user_id = $2", appId, userId)
+	return err
+}
+
+// GetAppCount returns the number of apps a user has
+func GetAppCount(conn *sql.DB, userId int) (int, error) {
+	var count int
+	err := conn.QueryRow("SELECT COUNT(*) FROM apps WHERE user_id = $1", userId).Scan(&count)
+	return count, err
+}
+
+// GetUserPlan returns the user's current plan
+func GetUserPlan(conn *sql.DB, userId int) (string, error) {
+	var plan string
+	err := conn.QueryRow("SELECT plan FROM users WHERE id = $1", userId).Scan(&plan)
+	if err != nil {
+		return "free", err
+	}
+	return plan, nil
+}
+
+// GetPlanLimit returns the app limit for a plan
+func GetPlanLimit(plan string) int {
+	limits := map[string]int{
+		"free":     1,
+		"pro":      10,
+		"business": 50,
+	}
+
+	limit, ok := limits[plan]
+	if !ok {
+		return 1 // Default to free plan limit
+	}
+	return limit
+}
+
+// GetAllAppsForHealthCheck returns all apps that need health checking
+func GetAllAppsForHealthCheck(conn *sql.DB) ([]App, error) {
+	rows, err := conn.Query(
+		"SELECT id, user_id, app_name, slug, health_url, theme, alerts, created_at FROM apps WHERE health_url != '' ORDER BY id",
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var apps []App
+	for rows.Next() {
+		var app App
+		err := rows.Scan(&app.Id, &app.UserId, &app.AppName, &app.Slug, &app.HealthUrl, &app.Theme, &app.Alerts, &app.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		apps = append(apps, app)
+	}
+	return apps, nil
+}
+
+// GetUserEmailById returns user email by ID (for alerts)
+func GetUserEmailById(conn *sql.DB, userId int) (string, error) {
+	var email string
+	err := conn.QueryRow("SELECT email FROM users WHERE id = $1", userId).Scan(&email)
+	return email, err
+}
+
+// GetAppById returns an app by its ID
+func GetAppById(conn *sql.DB, appId int) (*App, error) {
+	var app App
+	var updatedAt sql.NullString
+
+	err := conn.QueryRow(
+		"SELECT id, user_id, app_name, slug, health_url, theme, alerts, created_at, updated_at FROM apps WHERE id = $1",
+		appId,
+	).Scan(&app.Id, &app.UserId, &app.AppName, &app.Slug, &app.HealthUrl, &app.Theme, &app.Alerts, &app.CreatedAt, &updatedAt)
+
+	if err != nil {
+		return nil, err
+	}
+	if updatedAt.Valid {
+		app.UpdatedAt = updatedAt.String
+	}
+	return &app, nil
+}
+
+// UpdateAppTheme updates the theme for a specific app
+func UpdateAppTheme(conn *sql.DB, appId int, theme string) error {
+	_, err := conn.Exec(
+		"UPDATE apps SET theme = $1, updated_at = NOW() WHERE id = $2",
+		theme,
+		appId,
+	)
+	return err
 }

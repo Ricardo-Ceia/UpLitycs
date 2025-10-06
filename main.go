@@ -93,6 +93,11 @@ func main() {
 		r.With(auth.AuthMiddleware).Get("/latest-status", appHandlers.GetLatestStatusHandler)
 		r.With(auth.AuthMiddleware).Post("/update-theme", appHandlers.UpdateThemeHandler)
 
+		// Multi-app dashboard routes
+		r.With(auth.AuthMiddleware).Get("/user-apps", appHandlers.GetUserAppsHandler)
+		r.With(auth.AuthMiddleware).Delete("/apps/{appId}", appHandlers.DeleteAppHandler)
+		r.With(auth.AuthMiddleware).Get("/check-plan-limit", appHandlers.CheckPlanLimitHandler)
+
 		// Public API - no authentication required
 		r.Get("/public/status/{slug}", appHandlers.GetPublicStatusHandler)
 		r.Get("/public/ping/{slug}", appHandlers.GetCurrentResponseTimeHandler)

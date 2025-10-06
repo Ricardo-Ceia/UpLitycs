@@ -6,6 +6,7 @@ import StatusPage from "./StatusPage";
 import RetroAuth from "./RetroAuth";
 import ProtectedRoute from "./ProtectedRoute";
 import Pricing from "./Pricing";
+import Dashboard from "./Dashboard";
 
 // Dashboard redirect component
 function DashboardRedirect() {
@@ -56,10 +57,10 @@ function App() {
             <RetroTerminalOnboarding />
           </ProtectedRoute>
         } />
-        {/* Redirect /dashboard to user's status page */}
+        {/* Multi-app dashboard */}
         <Route path="/dashboard" element={
           <ProtectedRoute>
-            <DashboardRedirect />
+            <Dashboard />
           </ProtectedRoute>
         } />
       </Routes>

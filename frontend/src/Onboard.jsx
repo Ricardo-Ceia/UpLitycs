@@ -12,6 +12,8 @@ const RetroOnboarding = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [typewriterText, setTypewriterText] = useState('');
   const [copied, setCopied] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [planInfo, setPlanInfo] = useState(null);
   
   const codeExamples = {
     'node-express': {
@@ -474,17 +476,33 @@ public class HealthController {
     if (selectedTheme && emailAlerts && homepageUrl && appName && slug) {
       setIsSubmitting(true);
       
-      // Prepare data for submission
-      const onboardingData = {
-        name: "User",
-        homepage: homepageUrl,
-        alerts: emailAlerts === 'yes' ? 'y' : 'n',
-        theme: selectedTheme,
-        appName: appName,
-        slug: slug
-      };
-      
       try {
+        // First check if user can add more apps
+        const limitResponse = await fetch('/api/check-plan-limit', {
+          credentials: 'include'
+        });
+        
+        if (limitResponse.ok) {
+          const limitData = await limitResponse.json();
+          setPlanInfo(limitData);
+          
+          if (!limitData.can_add) {
+            setShowUpgradeModal(true);
+            setIsSubmitting(false);
+            return;
+          }
+        }
+        
+        // Prepare data for submission
+        const onboardingData = {
+          name: "User",
+          homepage: homepageUrl,
+          alerts: emailAlerts === 'yes' ? 'y' : 'n',
+          theme: selectedTheme,
+          appName: appName,
+          slug: slug
+        };
+        
         const response = await fetch('/api/go-to-dashboard', {
           method: 'POST',
           headers: {
@@ -498,6 +516,15 @@ public class HealthController {
           setTimeout(() => {
             window.location.href = "/dashboard";
           }, 1500);
+        } else if (response.status === 403) {
+          // Plan limit reached
+          const errorData = await response.json().catch(() => ({}));
+          if (errorData.error === 'plan_limit_reached') {
+            setShowUpgradeModal(true);
+          } else {
+            console.error('Onboarding failed: Forbidden');
+          }
+          setIsSubmitting(false);
         } else {
           console.error('Onboarding failed');
           setIsSubmitting(false);
@@ -1052,6 +1079,63 @@ public class HealthController {
           </div>
         </div>
       </div>
+
+      {/* Upgrade Modal */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gradient-to-br from-purple-900/90 to-pink-900/90 rounded-xl border-2 border-cyan-400 max-w-2xl w-full p-8 shadow-2xl">
+            <h3 className="text-3xl font-bold text-cyan-400 mb-4" style={{fontFamily: "'Press Start 2P', monospace"}}>
+              PLAN LIMIT REACHED
+            </h3>
+            <p className="text-gray-300 mb-6 text-lg">
+              You've reached the maximum number of monitors for your {planInfo?.plan || 'free'} plan 
+              ({planInfo?.app_count || 0}/{planInfo?.plan_limit || 1} monitors used).
+            </p>
+            
+            <div className="bg-black/40 rounded-lg p-6 mb-6">
+              <h4 className="text-xl font-bold text-purple-300 mb-4">Upgrade to get more monitors:</h4>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="bg-gradient-to-br from-cyan-600/20 to-purple-600/20 rounded-lg p-4 border border-cyan-500/50">
+                  <h5 className="text-lg font-bold text-cyan-400 mb-2">PRO - $12/mo</h5>
+                  <ul className="text-sm text-gray-300 space-y-1">
+                    <li>✓ Up to 10 monitors</li>
+                    <li>✓ 1-minute checks</li>
+                    <li>✓ Custom slugs</li>
+                    <li>✓ Unlimited alerts</li>
+                  </ul>
+                </div>
+                <div className="bg-gradient-to-br from-purple-600/20 to-pink-600/20 rounded-lg p-4 border border-purple-500/50">
+                  <h5 className="text-lg font-bold text-purple-400 mb-2">BUSINESS - $29/mo</h5>
+                  <ul className="text-sm text-gray-300 space-y-1">
+                    <li>✓ Up to 50 monitors</li>
+                    <li>✓ 30-second checks</li>
+                    <li>✓ Webhooks</li>
+                    <li>✓ Priority support</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <button
+                onClick={() => window.location.href = '/pricing'}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-lg font-bold hover:from-cyan-400 hover:to-purple-400 transition-all"
+              >
+                UPGRADE NOW
+              </button>
+              <button
+                onClick={() => {
+                  setShowUpgradeModal(false);
+                  window.location.href = '/dashboard';
+                }}
+                className="flex-1 px-6 py-3 bg-gray-700 text-gray-300 rounded-lg font-bold hover:bg-gray-600 transition-all"
+              >
+                GO TO DASHBOARD
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');

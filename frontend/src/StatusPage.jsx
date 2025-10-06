@@ -16,6 +16,7 @@ const StatusPage = () => {
   const [userTheme, setUserTheme] = useState(null); // User's local theme preference
   const [responseTime, setResponseTime] = useState(null); // Real-time response time
   const [pingLoading, setPingLoading] = useState(false);
+  const isValidSlug = slug && slug !== 'undefined';
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -44,18 +45,26 @@ const StatusPage = () => {
   }, []);
 
   useEffect(() => {
+    if (!isValidSlug) {
+      setStatusData(null);
+      setError('No status page specified');
+      return;
+    }
+
     fetchStatusData();
     const interval = setInterval(fetchStatusData, 30000); // Refresh every 30 seconds
     return () => clearInterval(interval);
-  }, [slug]);
+  }, [slug, isValidSlug]);
 
   // Load user's theme preference from localStorage
   useEffect(() => {
+    if (!isValidSlug) return;
+
     const savedTheme = localStorage.getItem(`theme-preference-${slug}`);
     if (savedTheme) {
       setUserTheme(savedTheme);
     }
-  }, [slug]);
+  }, [slug, isValidSlug]);
 
   // Check ownership when both currentUserId and statusData are available
   useEffect(() => {
@@ -78,6 +87,13 @@ const StatusPage = () => {
   }, [showThemeSelector]);
 
   const fetchStatusData = async () => {
+    if (!isValidSlug) {
+      setStatusData(null);
+      setError('No status page specified');
+      setLoading(false);
+      return;
+    }
+    
     try {
       setLoading(true);
       const response = await fetch(`/api/public/status/${slug}`);
@@ -101,6 +117,11 @@ const StatusPage = () => {
   };
 
   const fetchResponseTime = async () => {
+    if (!isValidSlug) {
+      setResponseTime(null);
+      return;
+    }
+
     try {
       setPingLoading(true);
       const response = await fetch(`/api/public/ping/${slug}`);
@@ -119,10 +140,10 @@ const StatusPage = () => {
 
   // Fetch response time on initial load
   useEffect(() => {
-    if (statusData) {
+    if (statusData && isValidSlug) {
       fetchResponseTime();
     }
-  }, [statusData, slug]);
+  }, [statusData, slug, isValidSlug]);
 
   const handleThemeChange = async (newTheme, isPermanent = false) => {
     console.log('Theme change requested:', { newTheme, isPermanent, isOwner });
@@ -136,7 +157,10 @@ const StatusPage = () => {
             'Content-Type': 'application/json',
           },
           credentials: 'include',
-          body: JSON.stringify({ theme: newTheme }),
+          body: JSON.stringify({ 
+            theme: newTheme,
+            slug: slug  // Add slug to identify which app to update
+          }),
         });
 
         if (response.ok) {
@@ -212,15 +236,18 @@ const StatusPage = () => {
   }
 
   if (error) {
+    const missingSlug = error === 'No status page specified';
     return (
       <div className={`status-container theme-cyberpunk`}>
         <div className="crt-overlay"></div>
         <div className="scan-lines"></div>
         <div className="error-container">
           <XCircle className="error-icon-large" />
-          <h1>Status Page Not Found</h1>
-          <p>{error}</p>
-          <p className="error-hint">Please check the URL and try again</p>
+          <h1>{missingSlug ? 'No Monitors Yet' : 'Status Page Not Found'}</h1>
+          <p>{missingSlug ? 'Add your first app to generate a public status page.' : error}</p>
+          <p className="error-hint">
+            {missingSlug ? 'Head to your dashboard to create a monitor and choose a slug.' : 'Please check the URL and try again.'}
+          </p>
         </div>
       </div>
     );

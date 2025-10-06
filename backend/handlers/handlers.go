@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -36,7 +37,6 @@ func StartOnboardingHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GoToDashboardHandler(w http.ResponseWriter, r *http.Request) {
-	//TODO ADD LOGIN VERIFICATION BEFORE REDIRECTING USER
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
@@ -65,6 +65,17 @@ func (h *Handler) GoToDashboardHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate app name and slug are not empty
+	if req.AppName == "" {
+		http.Error(w, "App name is required", http.StatusBadRequest)
+		return
+	}
+
+	if req.Slug == "" {
+		http.Error(w, "Slug is required", http.StatusBadRequest)
+		return
+	}
+
 	// Set default theme if not provided
 	if req.Theme == "" {
 		req.Theme = "cyberpunk"
@@ -73,21 +84,61 @@ func (h *Handler) GoToDashboardHandler(w http.ResponseWriter, r *http.Request) {
 	conn := h.conn
 
 	user, err := db.GetUserFromContext(conn, r.Context())
-	err = db.UpdateUser(conn, user.Id, req.Homepage, req.Theme, req.Alerts, req.Slug, req.AppName)
-
 	if err != nil {
-		log.Println("Error updating user on the GoToDashboardHandler", err)
-		if err == sql.ErrNoRows {
-			http.Error(w, "User already exists", http.StatusConflict)
+		log.Println("Error getting user from context", err)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Check plan limit before creating app
+	plan, _ := db.GetUserPlan(conn, user.Id)
+	planLimit := db.GetPlanLimit(plan)
+	appCount, err := db.GetAppCount(conn, user.Id)
+	if err != nil {
+		log.Println("Error getting app count", err)
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+
+	if appCount >= planLimit {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": false,
+			"error":   "plan_limit_reached",
+			"message": fmt.Sprintf("You've reached your %s plan limit (%d apps)", plan, planLimit),
+			"plan":    plan,
+			"limit":   planLimit,
+		})
+		return
+	}
+
+	// Create new app
+	log.Printf("Creating app: user_id=%d, app_name=%s, slug=%s, health_url=%s, theme=%s, alerts=%s", 
+		user.Id, req.AppName, req.Slug, req.Homepage, req.Theme, req.Alerts)
+	
+	appId, err := db.CreateApp(conn, user.Id, req.AppName, req.Slug, req.Homepage, req.Theme, req.Alerts)
+	if err != nil {
+		log.Println("Error creating app in GoToDashboardHandler", err)
+		if strings.Contains(err.Error(), "duplicate") {
+			http.Error(w, "Slug already exists", http.StatusConflict)
 		} else {
 			http.Error(w, "Database error", http.StatusInternalServerError)
 		}
 		return
 	}
-	// Return success JSON instead of redirect
+
+	log.Printf("Successfully created app with ID: %d", appId)
+
+	// Return success JSON
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"success": true, "message": "Onboarding completed successfully"}`))
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success": true,
+		"message": "App created successfully",
+		"app_id":  appId,
+		"slug":    req.Slug,
+	})
 }
 
 func BeginAuthHandler(w http.ResponseWriter, r *http.Request) {
@@ -198,7 +249,7 @@ func (h *Handler) GetUserStatusHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get user from database to fetch theme
+	// Get user from database to fetch theme and ensure they exist
 	conn := h.conn
 	user, err := db.GetUserById(conn, userID.(int))
 	if err != nil {
@@ -207,15 +258,44 @@ func (h *Handler) GetUserStatusHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Fetch user apps to determine default slug/app info in multi-app world
+	apps, err := db.GetUserApps(conn, userID.(int))
+	if err != nil {
+		log.Printf("Error getting user apps: %v", err)
+		http.Error(w, "Failed to load apps", http.StatusInternalServerError)
+		return
+	}
+
+	var defaultSlug string
+	var defaultHomepage string
+	var defaultAppName string
+	var defaultTheme string
+
+	if len(apps) > 0 {
+		defaultSlug = apps[0].Slug
+		defaultHomepage = apps[0].HealthUrl
+		defaultAppName = apps[0].AppName
+		defaultTheme = apps[0].Theme
+	}
+
+	if defaultTheme == "" {
+		defaultTheme = user.Theme
+	}
+
+	if defaultTheme == "" {
+		defaultTheme = "cyberpunk"
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"authenticated": true,
 		"userId":        userID,
 		"userName":      userName,
-		"theme":         user.Theme,
-		"homepage":      user.HealthUrl,
-		"slug":          user.Slug,
-		"appName":       user.AppName,
+		"theme":         defaultTheme,
+		"homepage":      defaultHomepage,
+		"slug":          defaultSlug,
+		"appName":       defaultAppName,
+		"apps":          apps,
 	})
 }
 
@@ -248,14 +328,14 @@ func (h *Handler) GetCurrentResponseTimeHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// Get user by slug to find their health URL
-	user, err := db.GetUserBySlug(h.conn, slug)
+	// Get app by slug to find the health URL
+	app, err := db.GetAppBySlug(h.conn, slug)
 	if err != nil {
-		http.Error(w, "User not found", http.StatusNotFound)
+		http.Error(w, "App not found", http.StatusNotFound)
 		return
 	}
 
-	if user.HealthUrl == "" {
+	if app.HealthUrl == "" {
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"error":         "Health URL not configured",
 			"response_time": 0,
@@ -269,7 +349,7 @@ func (h *Handler) GetCurrentResponseTimeHandler(w http.ResponseWriter, r *http.R
 	}
 
 	startTime := time.Now()
-	resp, err := client.Get(user.HealthUrl)
+	resp, err := client.Get(app.HealthUrl)
 	responseTime := time.Since(startTime).Milliseconds()
 
 	statusCode := 0
@@ -366,67 +446,118 @@ func (h *Handler) GetPublicStatusHandler(w http.ResponseWriter, r *http.Request)
 
 	conn := h.conn
 
-	// Get user by slug
-	user, err := db.GetUserBySlug(conn, slug)
+	// Get app by slug (now using apps table)
+	app, err := db.GetAppBySlug(conn, slug)
 	if err != nil {
-		log.Printf("User not found for slug %s: %v", slug, err)
+		log.Printf("App not found for slug %s: %v", slug, err)
 		http.Error(w, "Status page not found", http.StatusNotFound)
 		return
 	}
 
-	// Get latest status check from database
-	latestStatus, err := db.GetLatestStatusBySlug(conn, slug)
+	// Get latest status check from database using app_id
+	query := `
+		SELECT status_code, checked_at 
+		FROM user_status 
+		WHERE app_id = $1 
+		ORDER BY checked_at DESC 
+		LIMIT 1
+	`
+	var statusCode int
+	var checkedAt string
+	err = conn.QueryRow(query, app.Id).Scan(&statusCode, &checkedAt)
+
 	if err != nil {
-		log.Printf("Error getting status for slug %s: %v", slug, err)
+		if err == sql.ErrNoRows {
+			// No status checks yet - return pending state
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"app_name":    app.AppName,
+				"theme":       app.Theme,
+				"endpoint":    app.HealthUrl,
+				"status":      "pending",
+				"status_code": 0,
+				"message":     "Waiting for first health check",
+				"user_id":     app.UserId,
+			})
+			return
+		}
+		log.Printf("Error getting status for app %s: %v", slug, err)
 		http.Error(w, "Error fetching status", http.StatusInternalServerError)
 		return
 	}
 
-	if latestStatus == nil {
-		// No status checks yet - return pending state
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"app_name":    user.AppName,
-			"theme":       user.Theme,
-			"endpoint":    user.HealthUrl,
-			"status":      "pending",
-			"status_code": 0,
-			"message":     "Waiting for first health check",
-		})
-		return
-	}
+	// Derive status from status code
+	status := db.GetStatusFromCode(statusCode)
 
-	// Get uptime percentage
-	uptime, err := db.GetUptimePercentage(conn, user.Id, 24)
+	// Get uptime percentage for this app
+	uptimeQuery := `
+		SELECT 
+			ROUND(
+				CAST(COUNT(*) FILTER (WHERE status_code >= 200 AND status_code < 300) AS NUMERIC) / 
+				NULLIF(COUNT(*), 0) * 100, 
+				2
+			) as uptime_24h
+		FROM user_status
+		WHERE app_id = $1 AND checked_at > NOW() - INTERVAL '24 hours'
+	`
+	var uptime float64
+	err = conn.QueryRow(uptimeQuery, app.Id).Scan(&uptime)
 	if err != nil {
 		log.Printf("Error calculating uptime: %v", err)
 		uptime = 0
 	}
 
 	// Get 30-day uptime history for bar graph
-	uptimeHistory, err := db.GetDailyUptimeHistoryBySlug(conn, slug, 30)
+	historyQuery := `
+		SELECT 
+			DATE(checked_at) as date,
+			COUNT(*) as total_checks,
+			COUNT(*) FILTER (WHERE status_code >= 200 AND status_code < 300) as successful_checks
+		FROM user_status
+		WHERE app_id = $1
+		AND checked_at > NOW() - INTERVAL '1 day' * $2
+		GROUP BY DATE(checked_at)
+		ORDER BY date DESC
+	`
+	rows, err := conn.Query(historyQuery, app.Id, 30)
 	if err != nil {
 		log.Printf("Error getting uptime history: %v", err)
-		uptimeHistory = []db.DailyUptime{}
+	}
+	defer rows.Close()
+
+	var uptimeHistory []db.DailyUptime
+	if rows != nil {
+		for rows.Next() {
+			var daily db.DailyUptime
+			err := rows.Scan(&daily.Date, &daily.TotalChecks, &daily.SuccessfulChecks)
+			if err != nil {
+				log.Printf("Error scanning uptime history: %v", err)
+				continue
+			}
+			if daily.TotalChecks > 0 {
+				daily.UptimePercentage = float64(daily.SuccessfulChecks) / float64(daily.TotalChecks) * 100
+			}
+			uptimeHistory = append(uptimeHistory, daily)
+		}
 	}
 
 	// Return public status data (no sensitive info)
 	response := map[string]interface{}{
-		"app_name":       user.AppName,
-		"theme":          user.Theme,
-		"status_code":    latestStatus.StatusCode,
-		"status":         latestStatus.Status,
-		"checked_at":     latestStatus.CheckedAt,
+		"app_name":       app.AppName,
+		"theme":          app.Theme,
+		"status_code":    statusCode,
+		"status":         status,
+		"checked_at":     checkedAt,
 		"uptime_24h":     uptime,
 		"uptime_history": uptimeHistory,
-		"user_id":        user.Id, // Include user ID for owner detection
+		"user_id":        app.UserId, // Include user ID for owner detection
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
 
-// UpdateThemeHandler allows authenticated users to update their theme
+// UpdateThemeHandler allows authenticated users to update their app theme
 func (h *Handler) UpdateThemeHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "PUT" && r.Method != "POST" {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
@@ -441,6 +572,8 @@ func (h *Handler) UpdateThemeHandler(w http.ResponseWriter, r *http.Request) {
 
 	var req struct {
 		Theme string `json:"theme"`
+		Slug  string `json:"slug"`  // Add slug to identify which app to update
+		AppId int    `json:"app_id"` // Alternative: use app_id
 	}
 
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -465,16 +598,36 @@ func (h *Handler) UpdateThemeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	conn := h.conn
-	user, err := db.GetUserById(conn, userId.(int))
-	if err != nil {
-		http.Error(w, "User not found", http.StatusNotFound)
+	
+	// Get the app to update - either by slug or app_id
+	var app *db.App
+	if req.Slug != "" {
+		app, err = db.GetAppBySlug(conn, req.Slug)
+		if err != nil {
+			http.Error(w, "App not found", http.StatusNotFound)
+			return
+		}
+	} else if req.AppId != 0 {
+		app, err = db.GetAppById(conn, req.AppId)
+		if err != nil {
+			http.Error(w, "App not found", http.StatusNotFound)
+			return
+		}
+	} else {
+		http.Error(w, "Either slug or app_id must be provided", http.StatusBadRequest)
 		return
 	}
 
-	// Update only the theme, keep other fields the same
-	err = db.UpdateUser(conn, user.Id, user.HealthUrl, req.Theme, user.Alerts, user.Slug, user.AppName)
+	// Verify the user owns this app
+	if app.UserId != userId.(int) {
+		http.Error(w, "Unauthorized - you don't own this app", http.StatusForbidden)
+		return
+	}
+
+	// Update the app's theme
+	err = db.UpdateAppTheme(conn, app.Id, req.Theme)
 	if err != nil {
-		log.Printf("Error updating theme: %v", err)
+		log.Printf("Error updating app theme: %v", err)
 		http.Error(w, "Failed to update theme", http.StatusInternalServerError)
 		return
 	}
@@ -483,5 +636,99 @@ func (h *Handler) UpdateThemeHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"success": true,
 		"theme":   req.Theme,
+	})
+}
+
+// ========== MULTI-APP DASHBOARD HANDLERS ==========
+
+// GetUserAppsHandler returns all apps for the authenticated user with their status
+func (h *Handler) GetUserAppsHandler(w http.ResponseWriter, r *http.Request) {
+	user, err := db.GetUserFromContext(h.conn, r.Context())
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	apps, err := db.GetUserAppsWithStatus(h.conn, user.Id)
+	if err != nil {
+		log.Printf("Error fetching user apps: %v", err)
+		http.Error(w, "Failed to fetch apps", http.StatusInternalServerError)
+		return
+	}
+
+	// Get user's plan info
+	plan, _ := db.GetUserPlan(h.conn, user.Id)
+	planLimit := db.GetPlanLimit(plan)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"apps":       apps,
+		"plan":       plan,
+		"plan_limit": planLimit,
+		"app_count":  len(apps),
+	})
+}
+
+// DeleteAppHandler deletes an app
+func (h *Handler) DeleteAppHandler(w http.ResponseWriter, r *http.Request) {
+	user, err := db.GetUserFromContext(h.conn, r.Context())
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	appId := chi.URLParam(r, "appId")
+	if appId == "" {
+		http.Error(w, "App ID required", http.StatusBadRequest)
+		return
+	}
+
+	var id int
+	_, err = fmt.Sscanf(appId, "%d", &id)
+	if err != nil {
+		http.Error(w, "Invalid app ID", http.StatusBadRequest)
+		return
+	}
+
+	err = db.DeleteApp(h.conn, id, user.Id)
+	if err != nil {
+		log.Printf("Error deleting app: %v", err)
+		http.Error(w, "Failed to delete app", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success": true,
+		"message": "App deleted successfully",
+	})
+}
+
+// CheckPlanLimitHandler checks if user can add more apps
+func (h *Handler) CheckPlanLimitHandler(w http.ResponseWriter, r *http.Request) {
+	user, err := db.GetUserFromContext(h.conn, r.Context())
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	plan, _ := db.GetUserPlan(h.conn, user.Id)
+	planLimit := db.GetPlanLimit(plan)
+	appCount, err := db.GetAppCount(h.conn, user.Id)
+	if err != nil {
+		log.Printf("Error getting app count: %v", err)
+		http.Error(w, "Failed to check limit", http.StatusInternalServerError)
+		return
+	}
+
+	canAdd := appCount < planLimit
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"can_add":    canAdd,
+		"plan":       plan,
+		"plan_limit": planLimit,
+		"app_count":  appCount,
+		"remaining":  planLimit - appCount,
 	})
 }
