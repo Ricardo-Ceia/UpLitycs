@@ -16,70 +16,43 @@ const Pricing = () => {
       features: [
         { text: '1 monitor', included: true },
         { text: '5-minute checks', included: true },
-        { text: '7-day history', included: true },
         { text: 'Public status page', included: true },
-        { text: '5 email alerts/month', included: true },
-        { text: 'All 4 themes', included: true },
-        { text: 'Community support', included: true },
+        { text: 'Email alerts', included: true },
       ],
       cta: 'Get Started Free',
       highlight: false,
       tier: 'free'
     },
     {
-      name: 'Indie',
+      name: 'Pro',
       icon: '⚡',
-      price: { monthly: 9, yearly: 90 },
-      description: 'For indie developers and side projects',
+      price: { monthly: 12, yearly: 120 },
+      description: 'For serious projects',
       features: [
-        { text: '5 monitors', included: true },
+        { text: '10 monitors', included: true },
         { text: '1-minute checks', included: true },
-        { text: '30-day history', included: true },
-        { text: 'Public status pages', included: true },
-        { text: 'Unlimited email alerts', included: true },
         { text: 'Custom slugs', included: true },
-        { text: 'Email support', included: true },
-      ],
-      cta: 'Start 7-Day Trial',
-      highlight: false,
-      tier: 'indie'
-    },
-    {
-      name: 'Startup',
-      icon: '🚀',
-      price: { monthly: 19, yearly: 190 },
-      description: 'For growing teams and agencies',
-      features: [
-        { text: '15 monitors', included: true },
-        { text: '30-second checks', included: true },
-        { text: '90-day history', included: true },
-        { text: 'Custom domain support', included: true },
-        { text: 'Webhook alerts (Slack, Discord)', included: true },
-        { text: 'Priority support', included: true },
-        { text: 'Early access to features', included: true },
+        { text: 'Unlimited alerts', included: true },
       ],
       cta: 'Start 7-Day Trial',
       highlight: true,
       popular: true,
-      tier: 'startup'
+      tier: 'pro'
     },
     {
-      name: 'Pro',
-      icon: '👑',
-      price: { monthly: 49, yearly: 490 },
-      description: 'For serious businesses',
+      name: 'Business',
+      icon: '🚀',
+      price: { monthly: 29, yearly: 290 },
+      description: 'For teams and agencies',
       features: [
         { text: '50 monitors', included: true },
-        { text: '15-second checks', included: true },
-        { text: '1-year history', included: true },
-        { text: 'API access', included: true },
-        { text: 'SMS alerts (coming soon)', included: true },
-        { text: 'Remove "Powered by UpLitycs"', included: true },
-        { text: 'White-label options', included: true },
+        { text: '30-second checks', included: true },
+        { text: 'Webhook alerts', included: true },
+        { text: 'Priority support', included: true },
       ],
       cta: 'Start 7-Day Trial',
       highlight: false,
-      tier: 'pro'
+      tier: 'business'
     }
   ];
 
@@ -197,19 +170,15 @@ const Pricing = () => {
         <div className="faq-grid">
           <div className="faq-item">
             <h3>What's a monitor?</h3>
-            <p>A monitor is a single endpoint/service you want to track (e.g., your API, website, or app health endpoint).</p>
+            <p>A monitor is a single endpoint you want to track (e.g., your API or website health check).</p>
           </div>
           <div className="faq-item">
-            <h3>Can I change plans later?</h3>
-            <p>Yes! Upgrade or downgrade anytime. When you upgrade, you'll be charged prorated for the remainder of the month.</p>
+            <h3>How does the trial work?</h3>
+            <p>All paid plans include a 7-day free trial. No credit card required to start. Cancel anytime during the trial.</p>
           </div>
           <div className="faq-item">
-            <h3>What happens after the trial?</h3>
-            <p>After 7 days, you'll automatically drop to the Free plan (1 monitor). Upgrade anytime to add more monitors.</p>
-          </div>
-          <div className="faq-item">
-            <h3>Do you offer refunds?</h3>
-            <p>Yes! If you're not satisfied within the first 30 days, we'll give you a full refund, no questions asked.</p>
+            <h3>Can I upgrade later?</h3>
+            <p>Yes! Upgrade or downgrade anytime. Changes take effect immediately with prorated billing.</p>
           </div>
         </div>
       </div>
