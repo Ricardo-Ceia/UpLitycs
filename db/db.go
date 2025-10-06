@@ -12,11 +12,6 @@ type User struct {
 	Name      string
 	AvatarUrl string
 	Email     string
-	HealthUrl string
-	Theme     string
-	Alerts    string
-	Slug      string
-	AppName   string
 	Id        int
 	Plan      string
 }
@@ -88,22 +83,6 @@ func InsertUser(conn *sql.DB, name, avatarUrl, email string) (int, error) {
 	return id, nil
 }
 
-func UpdateUser(conn *sql.DB, id int, health_url, theme, alerts, slug, appName string) error {
-	_, err := conn.Exec(
-		"UPDATE users SET health_url = $2, theme = $3, alerts = $4, slug = $5, app_name = $6 WHERE id = $1",
-		id,
-		health_url,
-		theme,
-		alerts,
-		slug,
-		appName,
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func GetUserFromContext(conn *sql.DB, ctx context.Context) (User, error) {
 	user, ok := ctx.Value("user").(string)
 	if !ok {
@@ -111,76 +90,30 @@ func GetUserFromContext(conn *sql.DB, ctx context.Context) (User, error) {
 	}
 
 	var u User
-	var homepage, theme, alerts, slug, appName sql.NullString
-
-	err := conn.QueryRow("SELECT id, username, health_url, theme, alerts, slug, app_name FROM users WHERE username=$1", user).Scan(&u.Id, &u.Name, &homepage, &theme, &alerts, &slug, &appName)
+	err := conn.QueryRow("SELECT id, username FROM users WHERE username=$1", user).Scan(&u.Id, &u.Name)
 	if err != nil {
 		return User{}, err
 	}
-
-	// Handle NULL values
-	u.HealthUrl = homepage.String
-	u.Theme = theme.String
-	u.Alerts = alerts.String
-	u.Slug = slug.String
-	u.AppName = appName.String
 
 	return u, nil
 }
 
 func GetUserByEmail(conn *sql.DB, email string) (User, error) {
 	var u User
-	var homepage, theme, alerts, slug, appName sql.NullString
-
-	err := conn.QueryRow("SELECT id, username, health_url, theme, alerts, email, avatar_url, slug, app_name FROM users WHERE email=$1", email).Scan(&u.Id, &u.Name, &homepage, &theme, &alerts, &u.Email, &u.AvatarUrl, &slug, &appName)
+	err := conn.QueryRow("SELECT id, username, email, avatar_url FROM users WHERE email=$1", email).Scan(&u.Id, &u.Name, &u.Email, &u.AvatarUrl)
 	if err != nil {
 		return User{}, err
 	}
-
-	// Handle NULL values
-	u.HealthUrl = homepage.String
-	u.Theme = theme.String
-	u.Alerts = alerts.String
-	u.Slug = slug.String
-	u.AppName = appName.String
 
 	return u, nil
 }
 
 func GetUserById(conn *sql.DB, id int) (User, error) {
 	var u User
-	var homepage, theme, alerts, slug, appName sql.NullString
-
-	err := conn.QueryRow("SELECT id, username, health_url, theme, alerts, email, avatar_url, slug, app_name FROM users WHERE id=$1", id).Scan(&u.Id, &u.Name, &homepage, &theme, &alerts, &u.Email, &u.AvatarUrl, &slug, &appName)
+	err := conn.QueryRow("SELECT id, username, email, avatar_url FROM users WHERE id=$1", id).Scan(&u.Id, &u.Name, &u.Email, &u.AvatarUrl)
 	if err != nil {
 		return User{}, err
 	}
-
-	// Handle NULL values
-	u.HealthUrl = homepage.String
-	u.Theme = theme.String
-	u.Alerts = alerts.String
-	u.Slug = slug.String
-	u.AppName = appName.String
-
-	return u, nil
-}
-
-func GetUserBySlug(conn *sql.DB, slug string) (User, error) {
-	var u User
-	var homepage, theme, alerts, slugVal, appName sql.NullString
-
-	err := conn.QueryRow("SELECT id, username, health_url, theme, alerts, email, avatar_url, slug, app_name FROM users WHERE slug=$1", slug).Scan(&u.Id, &u.Name, &homepage, &theme, &alerts, &u.Email, &u.AvatarUrl, &slugVal, &appName)
-	if err != nil {
-		return User{}, err
-	}
-
-	// Handle NULL values
-	u.HealthUrl = homepage.String
-	u.Theme = theme.String
-	u.Alerts = alerts.String
-	u.Slug = slugVal.String
-	u.AppName = appName.String
 
 	return u, nil
 }
@@ -429,57 +362,8 @@ func GetUptimePercentage(conn *sql.DB, userId int, hours int) (float64, error) {
 	return float64(successful) / float64(total) * 100, nil
 }
 
-// GetAllUsersForHealthCheck gets all users with their health URLs for the health checker
-func GetAllUsersForHealthCheck(conn *sql.DB) ([]User, error) {
-	query := `SELECT id, username, email, avatar_url, health_url, theme, slug, app_name, alerts FROM users WHERE health_url IS NOT NULL AND health_url != ''`
-	rows, err := conn.Query(query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var users []User
-	for rows.Next() {
-		var user User
-		var healthUrl, theme, slug, appName, alerts sql.NullString
-		err := rows.Scan(
-			&user.Id,
-			&user.Name,
-			&user.Email,
-			&user.AvatarUrl,
-			&healthUrl,
-			&theme,
-			&slug,
-			&appName,
-			&alerts,
-		)
-		if err != nil {
-			return nil, err
-		}
-		user.HealthUrl = healthUrl.String
-		user.Theme = theme.String
-		if !theme.Valid || theme.String == "" {
-			user.Theme = "cyberpunk"
-		}
-		user.Slug = slug.String
-		user.AppName = appName.String
-		user.Alerts = alerts.String
-		users = append(users, user)
-	}
-	return users, nil
-}
-
-// InsertAlert records an alert (simplified - just tracks when alerts were sent)
-func InsertAlert(conn *sql.DB, userId int) error {
-	query := `
-		INSERT INTO alerts (user_id, sent_at)
-		VALUES ($1, NOW())
-	`
-	_, err := conn.Exec(query, userId)
-	return err
-}
-
 // GetLastAlert gets the time of the last alert for a user
+// Note: This is now deprecated, use app-specific alerts instead
 func GetLastAlert(conn *sql.DB, userId int) (string, error) {
 	var sentAt string
 	query := `SELECT sent_at FROM alerts WHERE user_id = $1 ORDER BY sent_at DESC LIMIT 1`

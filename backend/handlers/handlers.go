@@ -213,9 +213,13 @@ func (h *Handler) GetAuthHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		// User exists, use existing ID
 		id = existingUser.Id
-		// Check if existing user needs onboarding (homepage is empty)
-		needsOnboarding = (existingUser.HealthUrl == "")
-		log.Printf("Existing user found: ID=%d, Homepage='%s', NeedsOnboarding=%t", id, existingUser.HealthUrl, needsOnboarding)
+		// Check if existing user needs onboarding (no apps created yet)
+		appCount, err := db.GetAppCount(conn, id)
+		if err != nil {
+			appCount = 0
+		}
+		needsOnboarding = (appCount == 0)
+		log.Printf("Existing user found: ID=%d, AppCount=%d, NeedsOnboarding=%t", id, appCount, needsOnboarding)
 	}
 
 	// Set session for both new and existing users
@@ -249,9 +253,9 @@ func (h *Handler) GetUserStatusHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get user from database to fetch theme and ensure they exist
+	// Get user from database to ensure they exist
 	conn := h.conn
-	user, err := db.GetUserById(conn, userID.(int))
+	_, err := db.GetUserById(conn, userID.(int))
 	if err != nil {
 		log.Printf("Error getting user: %v", err)
 		http.Error(w, "User not found", http.StatusNotFound)
@@ -278,10 +282,7 @@ func (h *Handler) GetUserStatusHandler(w http.ResponseWriter, r *http.Request) {
 		defaultTheme = apps[0].Theme
 	}
 
-	if defaultTheme == "" {
-		defaultTheme = user.Theme
-	}
-
+	// Default theme if no apps or app has no theme
 	if defaultTheme == "" {
 		defaultTheme = "cyberpunk"
 	}
@@ -385,20 +386,16 @@ func (h *Handler) GetLatestStatusHandler(w http.ResponseWriter, r *http.Request)
 
 	conn := h.conn
 
-	// Get user info
-	user, err := db.GetUserById(conn, userId.(int))
+	// Get user info to verify they exist
+	_, err := db.GetUserById(conn, userId.(int))
 	if err != nil {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
 
-	if user.HealthUrl == "" {
-		http.Error(w, "Health URL not configured", http.StatusBadRequest)
-		return
-	}
-
-	// Get latest status check from database
-	latestStatus, err := db.GetLatestStatusByUser(conn, user.Id)
+	// Get latest status check from database (this is now per-app, this handler is deprecated)
+	// TODO: Remove this handler and use app-specific status endpoints
+	latestStatus, err := db.GetLatestStatusByUser(conn, userId.(int))
 	if err != nil {
 		log.Printf("Error getting latest status: %v", err)
 		http.Error(w, "Error fetching status", http.StatusInternalServerError)
@@ -418,7 +415,7 @@ func (h *Handler) GetLatestStatusHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Get uptime percentage
-	uptime, err := db.GetUptimePercentage(conn, user.Id, 24)
+	uptime, err := db.GetUptimePercentage(conn, userId.(int), 24)
 	if err != nil {
 		log.Printf("Error calculating uptime: %v", err)
 		uptime = 0
