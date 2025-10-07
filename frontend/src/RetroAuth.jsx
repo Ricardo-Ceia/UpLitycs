@@ -47,7 +47,7 @@ const RetroAuth = () => {
 
       <div className="auth-system-bar">
         <div className="system-info">
-          <span className="system-name">UPLYTICS OS</span>
+          <span className="system-name">STATUSFRAME OS</span>
           <span className="version">v2.1.3</span>
         </div>
         <div className="datetime">
@@ -73,7 +73,7 @@ const RetroAuth = () => {
           <div className="window-content">
             <div className="auth-header">
               <div className="logo-section">
-                <div className="retro-logo">UPLYTICS</div>
+                <div className="retro-logo">STATUSFRAME</div>
                 <div className="tagline">Website Status Monitoring System</div>
               </div>
             </div>

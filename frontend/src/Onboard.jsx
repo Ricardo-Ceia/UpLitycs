@@ -823,7 +823,7 @@ public class HealthController {
                 <label className="block">
                   <span className="text-cyan-300 text-sm font-mono mb-2 block">STATUS PAGE SLUG (URL)</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-gray-400 text-sm">uplytics.com/status/</span>
+                    <span className="text-gray-400 text-sm">statusframe.com/status/</span>
                     <input
                       type="text"
                       value={slug}
@@ -993,7 +993,7 @@ public class HealthController {
             color: 'transparent',
             textShadow: '0 0 30px rgba(255,110,199,0.5)'
           }}>
-            UPLYTICS
+            STATUSFRAME
           </h1>
           <div className="text-cyan-400 text-sm font-mono opacity-80">
             {typewriterText}

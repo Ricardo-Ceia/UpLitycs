@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"uplytics/backend/status_checker"
+	"statusframe/backend/status_checker"
 )
 
 func TestGetPageStatus(t *testing.T) {

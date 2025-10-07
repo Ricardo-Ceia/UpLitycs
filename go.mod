@@ -1,4 +1,4 @@
-module uplytics
+module statusframe
 
 go 1.24.1
 

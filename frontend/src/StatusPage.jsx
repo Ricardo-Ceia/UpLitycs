@@ -475,7 +475,7 @@ const StatusPage = () => {
       <footer className="status-footer">
         <div className="footer-container">
           <div className="footer-text">
-            Powered by <span className="footer-brand">UPLYTICS</span>
+            Powered by <span className="footer-brand">STATUSFRAME</span>
           </div>
           <div className="footer-status">
             <span className={`footer-dot status-${statusColor}`}></span>

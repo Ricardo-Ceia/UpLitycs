@@ -44,7 +44,7 @@ type LatestStatus struct {
 }
 
 func OpenDB() *sql.DB {
-	connStr := "user=postgres dbname=uplytics password=example host=localhost port=5432 sslmode=disable"
+	connStr := "user=postgres dbname=statusframe password=example host=localhost port=5432 sslmode=disable"
 
 	conn, err := sql.Open("postgres", connStr)
 

@@ -3,7 +3,7 @@ package tests
 import (
 	"fmt"
 	"testing"
-	"uplytics/backend/utils"
+	"statusframe/backend/utils"
 )
 
 func TestMapStatusCode(t *testing.T) {

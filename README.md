@@ -1,4 +1,4 @@
-# UpLitycs 📊
+# StatusFrame 📊
 
 A modern uptime monitoring SaaS platform with real-time status tracking, beautiful dashboards, and multi-tier subscription plans.
 

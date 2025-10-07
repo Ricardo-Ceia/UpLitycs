@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"strings"
 	"time"
-	"uplytics/backend/auth"
-	"uplytics/backend/utils"
-	"uplytics/db"
+	"statusframe/backend/auth"
+	"statusframe/backend/utils"
+	"statusframe/db"
 
 	"github.com/go-chi/chi/v5"
 )

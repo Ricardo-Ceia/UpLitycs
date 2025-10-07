@@ -6,8 +6,8 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"uplytics/backend/stripe_config"
-	"uplytics/db"
+	"statusframe/backend/stripe_config"
+	"statusframe/db"
 
 	"github.com/stripe/stripe-go/v81"
 	billingportalsession "github.com/stripe/stripe-go/v81/billingportal/session"

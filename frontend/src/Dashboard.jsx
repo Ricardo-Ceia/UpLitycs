@@ -147,7 +147,7 @@ const Dashboard = () => {
         <div className="header-content">
           <div className="brand-section">
             <h1 className="dashboard-title">
-              <span className="glitch" data-text="UPLYTICS">UPLYTICS</span>
+              <span className="glitch" data-text="STATUSFRAME">STATUSFRAME</span>
             </h1>
             <p className="dashboard-subtitle">Your Monitoring Dashboard</p>
           </div>

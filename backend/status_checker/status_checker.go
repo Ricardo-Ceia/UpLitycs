@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 	"time"
-	"uplytics/backend/utils"
-	"uplytics/db"
+	"statusframe/backend/utils"
+	"statusframe/db"
 )
 
 func GetPageStatus(url string) (string, int, error) {

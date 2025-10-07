@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 	"time"
-	"uplytics/db"
+	"statusframe/db"
 )
 
 type HealthChecker struct {

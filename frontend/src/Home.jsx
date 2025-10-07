@@ -30,7 +30,7 @@ function Home() {
           <div className="logo-container">
             <h1 className="brand-logo-new">
               <span className="logo-bracket">{"<"}</span>
-              UPLYTICS
+              STATUSFRAME
               <span className="logo-bracket">{"/>"}</span>
             </h1>
             <div className="logo-subtitle">
@@ -119,7 +119,7 @@ function Home() {
       <footer className="home-footer">
         <div className="footer-content">
           <div className="footer-text">
-            © 2025 UPLYTICS | Built for Developers
+            © 2025 STATUSFRAME | Built for Developers
           </div>
           <div className="footer-status">
             <span className="status-dot"></span>
