@@ -165,7 +165,7 @@ func main() {
 		http.ServeFile(w, r, indexPath)
 	})
 
-	log.Println("Server starting on http://localhost:3333")
+	log.Println("Server starting on http://localhost:8080")
 	if err := http.ListenAndServe(":8080", r); err != nil {
 		log.Fatal(err)
 	}
