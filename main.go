@@ -9,11 +9,13 @@ import (
 	"time"
 	"uplytics/backend/auth"
 	"uplytics/backend/handlers"
+	"uplytics/backend/stripe_config"
 	"uplytics/backend/worker"
 	"uplytics/db"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/joho/godotenv"
 )
 
 // Custom file server that sets correct MIME types
@@ -56,6 +58,14 @@ func staticFileServer(dir string) http.Handler {
 }
 
 func main() {
+	// Load .env file
+	if err := godotenv.Load(); err != nil {
+		log.Println("⚠️  No .env file found, using environment variables")
+	}
+
+	// Initialize Stripe configuration
+	stripe_config.Initialize()
+
 	// Ensure correct MIME types are registered
 	mime.AddExtensionType(".css", "text/css")
 	mime.AddExtensionType(".js", "application/javascript")
@@ -97,6 +107,11 @@ func main() {
 		r.With(auth.AuthMiddleware).Get("/user-apps", appHandlers.GetUserAppsHandler)
 		r.With(auth.AuthMiddleware).Delete("/apps/{appId}", appHandlers.DeleteAppHandler)
 		r.With(auth.AuthMiddleware).Get("/check-plan-limit", appHandlers.CheckPlanLimitHandler)
+
+		// Stripe payment routes
+		r.With(auth.AuthMiddleware).Post("/create-checkout-session", appHandlers.CreateCheckoutSessionHandler)
+		r.With(auth.AuthMiddleware).Post("/create-portal-session", appHandlers.CreateCustomerPortalSessionHandler)
+		r.Post("/stripe-webhook", appHandlers.StripeWebhookHandler) // No auth - Stripe signs the request
 
 		// Public API - no authentication required
 		r.Get("/public/status/{slug}", appHandlers.GetPublicStatusHandler)

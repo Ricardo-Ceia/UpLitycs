@@ -95,9 +95,9 @@ func (hc *HealthChecker) checkAppHealth(appId, userId int, appName, slug, health
 	// Derive status from status code
 	status := db.GetStatusFromCode(statusCode)
 
-	// Save to database with app_id
-	query := "INSERT INTO user_status (user_id, app_id, status_code, checked_at) VALUES ($1, $2, $3, NOW())"
-	_, err = hc.conn.Exec(query, userId, appId, statusCode)
+	// Save to database with app_id only (user_id removed from schema)
+	query := "INSERT INTO user_status (app_id, status_code, checked_at) VALUES ($1, $2, NOW())"
+	_, err = hc.conn.Exec(query, appId, statusCode)
 	if err != nil {
 		log.Printf("❌ Error saving status check for app %s (ID: %d): %v", appName, appId, err)
 	} else {
@@ -150,8 +150,8 @@ func (hc *HealthChecker) checkAndSendAppAlert(appId, userId int, appName, health
 	log.Printf("🚨 ALERT: App %s (%s) - Service %s is %s (HTTP %d)",
 		appName, userEmail, healthUrl, status, statusCode)
 
-	// Save alert record
-	_, err = hc.conn.Exec("INSERT INTO alerts (user_id, app_id, sent_at) VALUES ($1, $2, NOW())", userId, appId)
+	// Save alert record (user_id removed from schema)
+	_, err = hc.conn.Exec("INSERT INTO alerts (app_id, sent_at) VALUES ($1, NOW())", appId)
 	if err != nil {
 		log.Printf("❌ Error saving alert for app %d: %v", appId, err)
 	}

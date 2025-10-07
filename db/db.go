@@ -697,3 +697,67 @@ func UpdateAppTheme(conn *sql.DB, appId int, theme string) error {
 	)
 	return err
 }
+
+// ========== STRIPE SUBSCRIPTION MANAGEMENT ==========
+
+// UpdateUserSubscription updates user's Stripe subscription information
+func UpdateUserSubscription(conn *sql.DB, userId int, plan, stripeCustomerId, stripeSubscriptionId string) error {
+	_, err := conn.Exec(
+		`UPDATE users 
+		SET plan = $1, 
+		    stripe_customer_id = $2, 
+		    stripe_subscription_id = $3,
+		    plan_started_at = NOW()
+		WHERE id = $4`,
+		plan,
+		stripeCustomerId,
+		stripeSubscriptionId,
+		userId,
+	)
+	return err
+}
+
+// CancelUserSubscription reverts user back to free plan
+func CancelUserSubscription(conn *sql.DB, userId int) error {
+	_, err := conn.Exec(
+		`UPDATE users 
+		SET plan = 'free', 
+		    stripe_subscription_id = NULL,
+		    plan_started_at = NOW()
+		WHERE id = $1`,
+		userId,
+	)
+	return err
+}
+
+// GetUserByStripeCustomerId finds a user by their Stripe customer ID
+func GetUserByStripeCustomerId(conn *sql.DB, stripeCustomerId string) (*User, error) {
+	var user User
+	err := conn.QueryRow(
+		"SELECT id, username, email, avatar_url, plan FROM users WHERE stripe_customer_id = $1",
+		stripeCustomerId,
+	).Scan(&user.Id, &user.Name, &user.Email, &user.AvatarUrl, &user.Plan)
+	
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+// GetStripeCustomerId gets the Stripe customer ID for a user
+func GetStripeCustomerId(conn *sql.DB, userId int) (string, error) {
+	var customerId sql.NullString
+	err := conn.QueryRow(
+		"SELECT stripe_customer_id FROM users WHERE id = $1",
+		userId,
+	).Scan(&customerId)
+	
+	if err != nil {
+		return "", err
+	}
+	
+	if customerId.Valid {
+		return customerId.String, nil
+	}
+	return "", nil
+}

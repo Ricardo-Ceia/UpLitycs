@@ -14,5 +14,6 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.0 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect
+	github.com/stripe/stripe-go/v81 v81.4.0 // indirect
 	golang.org/x/oauth2 v0.27.0 // indirect
 )
