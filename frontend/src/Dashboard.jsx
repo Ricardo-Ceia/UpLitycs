@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, TrendingUp, Activity, Clock, ExternalLink, Trash2, AlertCircle } from 'lucide-react';
+import UpgradeModal from './UpgradeModal';
+import PlanFeatures from './PlanFeatures';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -222,6 +224,9 @@ const Dashboard = () => {
         </div>
       </section>
 
+      {/* Plan Features Section */}
+      <PlanFeatures />
+
       {/* Apps Grid */}
       <section className="apps-section">
         <div className="section-header">
@@ -309,46 +314,10 @@ const Dashboard = () => {
 
       {/* Upgrade Modal */}
       {showUpgradeModal && (
-        <div className="modal-overlay" onClick={() => setShowUpgradeModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>⚠️ Upgrade Required</h2>
-            </div>
-            <div className="modal-body">
-              <p>You've reached your {planInfo.plan.toUpperCase()} plan limit ({planInfo.plan_limit} {planInfo.plan_limit === 1 ? 'app' : 'apps'}).</p>
-              <p>Upgrade to monitor more apps with faster checks!</p>
-              
-              <div className="upgrade-options">
-                <div className="upgrade-option">
-                  <h3>⚡ Pro Plan</h3>
-                  <p className="price">$12/month</p>
-                  <ul>
-                    <li>10 monitors</li>
-                    <li>1-minute checks</li>
-                    <li>Unlimited alerts</li>
-                  </ul>
-                </div>
-                <div className="upgrade-option highlighted">
-                  <h3>🚀 Business Plan</h3>
-                  <p className="price">$29/month</p>
-                  <ul>
-                    <li>50 monitors</li>
-                    <li>30-second checks</li>
-                    <li>Webhook alerts</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="modal-btn secondary" onClick={() => setShowUpgradeModal(false)}>
-                Cancel
-              </button>
-              <button className="modal-btn primary" onClick={() => navigate('/pricing')}>
-                View Pricing
-              </button>
-            </div>
-          </div>
-        </div>
+        <UpgradeModal 
+          planInfo={planInfo} 
+          onClose={() => setShowUpgradeModal(false)} 
+        />
       )}
     </div>
   );

@@ -1,0 +1,231 @@
+/* Plan Features Component */
+.plan-features-container {
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(0, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 0;
+  margin-bottom: 30px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Plan Banner */
+.plan-banner {
+  padding: 20px 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid rgba(0, 255, 255, 0.2);
+}
+
+.plan-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.plan-icon {
+  font-size: 2.5rem;
+}
+
+.plan-name {
+  font-family: 'Courier New', monospace;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #fff;
+  margin: 0;
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.plan-subtitle {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  margin: 5px 0 0;
+}
+
+.upgrade-btn-small {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  font-family: 'Courier New', monospace;
+}
+
+.upgrade-btn-small:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 255, 255, 0.2);
+}
+
+/* Usage Section */
+.usage-section {
+  padding: 25px;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+}
+
+.usage-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-family: 'Courier New', monospace;
+}
+
+.usage-label {
+  color: #00ffff;
+  font-size: 0.9rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.usage-count {
+  color: #ff00ff;
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+.usage-bar {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  border-radius: 10px;
+  height: 20px;
+  overflow: hidden;
+  position: relative;
+}
+
+.usage-fill {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.6s ease;
+  position: relative;
+  box-shadow: 0 0 10px currentColor;
+}
+
+/* Features Grid */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1px;
+  background: rgba(0, 255, 255, 0.1);
+}
+
+.feature-card {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+  background: rgba(0, 255, 255, 0.05);
+}
+
+.feature-icon {
+  color: #00ffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(0, 255, 255, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 255, 255, 0.3);
+}
+
+.feature-content {
+  flex: 1;
+}
+
+.feature-name {
+  color: #999;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 5px;
+  font-family: 'Courier New', monospace;
+}
+
+.feature-value {
+  color: #fff;
+  font-size: 1rem;
+  font-weight: bold;
+  font-family: 'Courier New', monospace;
+}
+
+.feature-value.enabled {
+  color: #00ff00;
+}
+
+.feature-value.disabled {
+  color: #ff0000;
+  opacity: 0.6;
+}
+
+/* Upgrade CTA */
+.upgrade-cta {
+  padding: 25px;
+  text-align: center;
+  background: linear-gradient(135deg, rgba(255, 0, 255, 0.1), rgba(0, 255, 255, 0.1));
+  border-top: 2px solid rgba(0, 255, 255, 0.2);
+}
+
+.upgrade-cta p {
+  color: #fff;
+  font-size: 1.1rem;
+  margin: 0 0 15px;
+  font-weight: bold;
+}
+
+.upgrade-btn-large {
+  background: linear-gradient(90deg, #ff00ff, #00ffff);
+  border: none;
+  color: #000;
+  padding: 15px 40px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 15px rgba(255, 0, 255, 0.3);
+}
+
+.upgrade-btn-large:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(255, 0, 255, 0.5);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .plan-banner {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+
+  .plan-info {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .upgrade-btn-small {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+}

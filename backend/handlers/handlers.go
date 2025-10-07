@@ -729,3 +729,31 @@ func (h *Handler) CheckPlanLimitHandler(w http.ResponseWriter, r *http.Request) 
 		"remaining":  planLimit - appCount,
 	})
 }
+
+// GetPlanFeaturesHandler returns all features for user's current plan
+func (h *Handler) GetPlanFeaturesHandler(w http.ResponseWriter, r *http.Request) {
+	user, err := db.GetUserFromContext(h.conn, r.Context())
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	plan, _ := db.GetUserPlan(h.conn, user.Id)
+	features := db.GetPlanFeatures(plan)
+	appCount, _ := db.GetAppCount(h.conn, user.Id)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"plan":                plan,
+		"max_monitors":        features.MaxMonitors,
+		"min_check_interval":  features.MinCheckInterval,
+		"webhooks":            features.Webhooks,
+		"custom_domain":       features.CustomDomain,
+		"ssl_monitoring":      features.SSLMonitoring,
+		"api_access":          features.APIAccess,
+		"email_alerts":        features.EmailAlerts,
+		"max_alerts_per_day":  features.MaxAlertsPerDay,
+		"current_app_count":   appCount,
+		"remaining_monitors":  features.MaxMonitors - appCount,
+	})
+}

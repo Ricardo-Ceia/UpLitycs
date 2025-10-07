@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 
 	_ "github.com/lib/pq"
@@ -625,19 +626,77 @@ func GetUserPlan(conn *sql.DB, userId int) (string, error) {
 	return plan, nil
 }
 
-// GetPlanLimit returns the app limit for a plan
-func GetPlanLimit(plan string) int {
-	limits := map[string]int{
-		"free":     1,
-		"pro":      10,
-		"business": 50,
+// PlanFeatures defines all features and limits for each plan
+type PlanFeatures struct {
+	MaxMonitors      int
+	MinCheckInterval int    // in seconds
+	Webhooks         bool
+	CustomDomain     bool
+	SSLMonitoring    bool
+	APIAccess        bool
+	EmailAlerts      bool
+	MaxAlertsPerDay  int
+}
+
+// GetPlanFeatures returns all features for a given plan
+func GetPlanFeatures(plan string) PlanFeatures {
+	features := map[string]PlanFeatures{
+		"free": {
+			MaxMonitors:      1,
+			MinCheckInterval: 300, // 5 minutes
+			Webhooks:         false,
+			CustomDomain:     false,
+			SSLMonitoring:    false,
+			APIAccess:        false,
+			EmailAlerts:      true,
+			MaxAlertsPerDay:  10,
+		},
+		"pro": {
+			MaxMonitors:      10,
+			MinCheckInterval: 60, // 1 minute
+			Webhooks:         true,
+			CustomDomain:     true,
+			SSLMonitoring:    true,
+			APIAccess:        false,
+			EmailAlerts:      true,
+			MaxAlertsPerDay:  100,
+		},
+		"business": {
+			MaxMonitors:      50,
+			MinCheckInterval: 30, // 30 seconds
+			Webhooks:         true,
+			CustomDomain:     true,
+			SSLMonitoring:    true,
+			APIAccess:        true,
+			EmailAlerts:      true,
+			MaxAlertsPerDay:  1000,
+		},
 	}
 
-	limit, ok := limits[plan]
+	feature, ok := features[plan]
 	if !ok {
-		return 1 // Default to free plan limit
+		return features["free"] // Default to free plan
 	}
-	return limit
+	return feature
+}
+
+// GetPlanLimit returns the app limit for a plan
+func GetPlanLimit(plan string) int {
+	return GetPlanFeatures(plan).MaxMonitors
+}
+
+// GetPlanCheckInterval returns minimum check interval for a plan
+func GetPlanCheckInterval(plan string) int {
+	return GetPlanFeatures(plan).MinCheckInterval
+}
+
+// ValidateCheckInterval ensures user isn't checking too frequently for their plan
+func ValidateCheckInterval(plan string, requestedInterval int) error {
+	minInterval := GetPlanCheckInterval(plan)
+	if requestedInterval < minInterval {
+		return fmt.Errorf("your %s plan allows minimum %d second intervals", plan, minInterval)
+	}
+	return nil
 }
 
 // GetAllAppsForHealthCheck returns all apps that need health checking

@@ -107,6 +107,7 @@ func main() {
 		r.With(auth.AuthMiddleware).Get("/user-apps", appHandlers.GetUserAppsHandler)
 		r.With(auth.AuthMiddleware).Delete("/apps/{appId}", appHandlers.DeleteAppHandler)
 		r.With(auth.AuthMiddleware).Get("/check-plan-limit", appHandlers.CheckPlanLimitHandler)
+		r.With(auth.AuthMiddleware).Get("/plan-features", appHandlers.GetPlanFeaturesHandler)
 
 		// Stripe payment routes
 		r.With(auth.AuthMiddleware).Post("/create-checkout-session", appHandlers.CreateCheckoutSessionHandler)
