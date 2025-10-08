@@ -31,11 +31,6 @@ echo ""
 echo "📊 Service Status:"
 docker compose ps
 
-# Test health
-echo ""
-echo "🏥 Health Check:"
-curl -s http://localhost:8080/health || echo "Backend not ready yet"
-
 echo ""
 echo "✅ StatusFrame is running!"
 echo ""
