@@ -1,0 +1,14 @@
+.git
+.env
+.env.*
+*.md
+node_modules
+frontend/node_modules
+*.log
+.DS_Store
+docs/
+nginx/
+systemd/
+scripts/
+.vscode/
+.idea/
