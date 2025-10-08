@@ -15,7 +15,6 @@ import (
 	"strings"
 
 	"github.com/gorilla/sessions"
-	"github.com/joho/godotenv"
 )
 
 var Store *sessions.CookieStore
@@ -78,10 +77,6 @@ func AuthMiddleware(next http.Handler) http.Handler {
 }
 
 func NewAuth() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
 
 	googleClientId := os.Getenv("GOOGLE_CLIENT_ID")
 	googleClientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")

@@ -6,16 +6,15 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"time"
 	"statusframe/backend/auth"
 	"statusframe/backend/handlers"
 	"statusframe/backend/stripe_config"
 	"statusframe/backend/worker"
 	"statusframe/db"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/joho/godotenv"
 )
 
 // Custom file server that sets correct MIME types
@@ -58,10 +57,6 @@ func staticFileServer(dir string) http.Handler {
 }
 
 func main() {
-	// Load .env file
-	if err := godotenv.Load(); err != nil {
-		log.Println("⚠️  No .env file found, using environment variables")
-	}
 
 	// Initialize Stripe configuration
 	stripe_config.Initialize()

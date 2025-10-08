@@ -3,9 +3,9 @@ services:
     image: caddy:2.7-alpine
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"  # HTTP/3
+      - 80:80
+      - 443:443
+      - 443:443/udp # HTTP/3
     environment:
       - ACME_AGREE=true
       - DOMAIN=${DOMAIN:-statusframe.com}
@@ -13,9 +13,10 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+    networks:
+      - uplitycs_network
     depends_on:
       - app
-
   app:
     build:
       context: .
@@ -25,43 +26,28 @@ services:
     environment:
       APP_ENV: production
       PORT: 8080
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-statusframe}?sslmode=disable
-      
-      # OAuth
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-      GOOGLE_REDIRECT_URL: ${GOOGLE_REDIRECT_URL}
-      
-      # Stripe
-      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
-      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
-      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
-      
-      # App
-      APP_URL: ${APP_URL:-https://statusframe.com}
-      SESSION_SECRET: ${SESSION_SECRET}
-      ENVIRONMENT: ${ENVIRONMENT:-production}
+    ports:
+      - 8080:8080
+    env_file: .env
+    networks:
+      - uplitycs_network
     depends_on:
-      db:
-        condition: service_healthy
+      - db 
 
   db:
     image: postgres:15-alpine
     restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-statusframe}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    env_file: .env
+    networks:
+      - uplitycs_network
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./db/init:/docker-entrypoint-initdb.d
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
 volumes:
   caddy_data:
   caddy_config:
   postgres_data:
+
+networks:
+  uplitycs_network:
+    driver: bridge

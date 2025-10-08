@@ -44,7 +44,7 @@ type LatestStatus struct {
 }
 
 func OpenDB() *sql.DB {
-	connStr := "user=postgres dbname=statusframe password=example host=localhost port=5432 sslmode=disable"
+	connStr := "user=postgres dbname=statusframe password=your_secure_password_here_change_this host=db port=5432 sslmode=disable"
 
 	conn, err := sql.Open("postgres", connStr)
 
@@ -629,7 +629,7 @@ func GetUserPlan(conn *sql.DB, userId int) (string, error) {
 // PlanFeatures defines all features and limits for each plan
 type PlanFeatures struct {
 	MaxMonitors      int
-	MinCheckInterval int    // in seconds
+	MinCheckInterval int // in seconds
 	Webhooks         bool
 	CustomDomain     bool
 	SSLMonitoring    bool
@@ -796,7 +796,7 @@ func GetUserByStripeCustomerId(conn *sql.DB, stripeCustomerId string) (*User, er
 		"SELECT id, username, email, avatar_url, plan FROM users WHERE stripe_customer_id = $1",
 		stripeCustomerId,
 	).Scan(&user.Id, &user.Name, &user.Email, &user.AvatarUrl, &user.Plan)
-	
+
 	if err != nil {
 		return nil, err
 	}
@@ -810,11 +810,11 @@ func GetStripeCustomerId(conn *sql.DB, userId int) (string, error) {
 		"SELECT stripe_customer_id FROM users WHERE id = $1",
 		userId,
 	).Scan(&customerId)
-	
+
 	if err != nil {
 		return "", err
 	}
-	
+
 	if customerId.Valid {
 		return customerId.String, nil
 	}
