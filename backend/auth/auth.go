@@ -92,12 +92,15 @@ func NewAuth() {
 	}
 
 	Store = sessions.NewCookieStore([]byte(sessionSecret))
-	Store.MaxAge(86400 * 30)
-	Store.Options.Path = "/"
-	Store.Options.HttpOnly = true
-	Store.Options.Secure = false // Set to true in production with HTTPS
-	Store.Options.SameSite = http.SameSiteLaxMode
-	Store.Options.MaxAge = 86400 * 30 // 30 days - ensures cookie persists across browser sessions
+	
+	// Configure session options for persistent cookies (30 days)
+	Store.Options = &sessions.Options{
+		Path:     "/",
+		MaxAge:   86400 * 30, // 30 days in seconds
+		HttpOnly: true,
+		Secure:   false, // Set to true in production with HTTPS
+		SameSite: http.SameSiteLaxMode,
+	}
 
 	// Initialize Google OAuth config
 	googleConfig = GoogleOAuthConfig{

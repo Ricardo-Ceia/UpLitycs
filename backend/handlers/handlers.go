@@ -226,6 +226,10 @@ func (h *Handler) GetAuthHandler(w http.ResponseWriter, r *http.Request) {
 	session, _ := auth.Store.Get(r, "auth-session")
 	session.Values["user"] = userInfo.Name
 	session.Values["userId"] = id
+	
+	// Ensure the session cookie persists (30 days)
+	session.Options.MaxAge = 86400 * 30 // 30 days
+	
 	err = session.Save(r, w)
 	if err != nil {
 		log.Printf("Error saving session: %v", err)
