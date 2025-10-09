@@ -87,6 +87,10 @@ func NewAuth() {
 		log.Fatal("Google client ID or secret not set in environment variables")
 	}
 
+	if sessionSecret == "" {
+		log.Fatal("SESSION_SECRET environment variable not set")
+	}
+
 	Store = sessions.NewCookieStore([]byte(sessionSecret))
 	Store.MaxAge(86400 * 30)
 	Store.Options.Path = "/"
