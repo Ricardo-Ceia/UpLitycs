@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS apps (
   alerts TEXT DEFAULT 'n',
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now(),
+  next_check_at TIMESTAMPTZ DEFAULT now(),
   UNIQUE(user_id, app_name)
 );
 

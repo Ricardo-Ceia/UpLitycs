@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
-	"time"
 	"statusframe/db"
+	"time"
 )
 
 type HealthChecker struct {
@@ -39,8 +39,14 @@ func (hc *HealthChecker) Start() {
 }
 
 func (hc *HealthChecker) checkAllUsers() {
-	// Get all apps instead of users
-	query := "SELECT id, user_id, app_name, slug, health_url, alerts FROM apps WHERE health_url != ''"
+	// Get apps that are due for checking based on their plan's check interval
+	query := `
+		SELECT a.id, a.user_id, a.app_name, a.slug, a.health_url, a.alerts, u.plan
+		FROM apps a
+		JOIN users u ON a.user_id = u.id
+		WHERE a.health_url != '' 
+		  AND a.next_check_at <= NOW()
+	`
 	rows, err := hc.conn.Query(query)
 	if err != nil {
 		log.Printf("❌ Error getting apps for health check: %v", err)
@@ -51,31 +57,27 @@ func (hc *HealthChecker) checkAllUsers() {
 	appCount := 0
 	for rows.Next() {
 		var appId, userId int
-		var appName, slug, healthUrl, alerts string
+		var appName, slug, healthUrl, alerts, plan string
 
-		err := rows.Scan(&appId, &userId, &appName, &slug, &healthUrl, &alerts)
+		err := rows.Scan(&appId, &userId, &appName, &slug, &healthUrl, &alerts, &plan)
 		if err != nil {
 			log.Printf("❌ Error scanning app: %v", err)
 			continue
 		}
 
 		appCount++
-		go hc.checkAppHealth(appId, userId, appName, slug, healthUrl, alerts)
+		go hc.checkAppHealth(appId, userId, appName, slug, healthUrl, alerts, plan)
 	}
 
 	if appCount == 0 {
-		log.Println("⏸️  No apps with health URLs configured yet")
+		// Don't log every tick if no apps are due
 		return
 	}
 
-	log.Printf("🔍 Checking health for %d app(s)", appCount)
+	log.Printf("🔍 Checking health for %d app(s) due now", appCount)
 }
 
-func (hc *HealthChecker) checkUserHealth(user db.User) {
-	// This function is deprecated - apps are checked directly now
-}
-
-func (hc *HealthChecker) checkAppHealth(appId, userId int, appName, slug, healthUrl, alerts string) {
+func (hc *HealthChecker) checkAppHealth(appId, userId int, appName, slug, healthUrl, alerts, plan string) {
 	startTime := time.Now()
 
 	resp, err := hc.client.Get(healthUrl)
@@ -84,8 +86,8 @@ func (hc *HealthChecker) checkAppHealth(appId, userId int, appName, slug, health
 	statusCode := 0
 
 	if err != nil {
-		log.Printf("❌ %s | App: %s (ID: %d) | Error: %v",
-			healthUrl, appName, appId, err)
+		log.Printf("❌ %s | App: %s (ID: %d, Plan: %s) | Error: %v",
+			healthUrl, appName, appId, plan, err)
 		statusCode = 0
 	} else {
 		defer resp.Body.Close()
@@ -109,18 +111,24 @@ func (hc *HealthChecker) checkAppHealth(appId, userId int, appName, slug, health
 			emoji = "🟡"
 		}
 
-		log.Printf("%s %s | App: %s (ID: %d) | Status: %d (%s) | Response: %dms",
-			emoji, healthUrl, appName, appId, statusCode, status, responseTime)
+		log.Printf("%s %s | App: %s (ID: %d, Plan: %s) | Status: %d (%s) | Response: %dms",
+			emoji, healthUrl, appName, appId, plan, statusCode, status, responseTime)
+	}
+
+	// Update next_check_at based on plan interval
+	planInterval := db.GetPlanCheckInterval(plan)
+	nextCheck := time.Now().Add(time.Duration(planInterval) * time.Second)
+
+	updateQuery := "UPDATE apps SET next_check_at = $1 WHERE id = $2"
+	_, err = hc.conn.Exec(updateQuery, nextCheck, appId)
+	if err != nil {
+		log.Printf("❌ Error updating next_check_at for app %s: %v", appName, err)
 	}
 
 	// Check if we need to send alert (when service goes down)
 	if (status == "down" || status == "error" || statusCode >= 500) && alerts == "y" {
 		hc.checkAndSendAppAlert(appId, userId, appName, healthUrl, statusCode, status)
 	}
-}
-
-func (hc *HealthChecker) checkAndSendAlert(user db.User, statusCode int, status string) {
-	// Deprecated - use checkAndSendAppAlert
 }
 
 func (hc *HealthChecker) checkAndSendAppAlert(appId, userId int, appName, healthUrl string, statusCode int, status string) {
