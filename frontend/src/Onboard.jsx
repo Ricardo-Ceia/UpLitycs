@@ -15,6 +15,29 @@ const RetroOnboarding = () => {
   const [copied, setCopied] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [planInfo, setPlanInfo] = useState(null);
+  const [planFeatures, setPlanFeatures] = useState(null);
+
+  // Fetch plan features on mount
+  useEffect(() => {
+    const fetchPlanFeatures = async () => {
+      try {
+        const response = await fetch('/api/plan-features', {
+          credentials: 'include'
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setPlanFeatures(data);
+          // Auto-set email alerts to 'n' for free plan users
+          if (data.plan === 'free' && !data.email_alerts) {
+            setEmailAlerts('n');
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching plan features:', err);
+      }
+    };
+    fetchPlanFeatures();
+  }, []);
   
   const codeExamples = {
     'node-express': {
@@ -907,6 +930,56 @@ public class HealthController {
         );
 
       case 4:
+        // Skip this step for free users (they don't have email alerts)
+        if (planFeatures && planFeatures.plan === 'free' && !planFeatures.email_alerts) {
+          return (
+            <div className="space-y-6 animate-fadeIn">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold text-cyan-400 mb-2" style={{fontFamily: "'Press Start 2P', monospace"}}>
+                  STEP 5: ALERTS
+                </h2>
+                <p className="text-purple-400 text-sm">Email alerts are not available on the free plan</p>
+              </div>
+
+              <div className="bg-black/50 rounded-lg p-8 border border-purple-500/50">
+                <div className="flex justify-center mb-6">
+                  <div className="p-6 bg-gradient-to-br from-gray-600/20 to-gray-800/20 rounded-full">
+                    <Mail className="w-16 h-16 text-gray-500" />
+                  </div>
+                </div>
+
+                <div className="text-center space-y-4">
+                  <h3 className="text-xl text-gray-400 mb-4">
+                    🆓 Free Plan - No Alerts
+                  </h3>
+                  <p className="text-gray-400 mb-6">
+                    Email alerts are available on Pro and Business plans
+                  </p>
+                  
+                  <div className="bg-gradient-to-r from-cyan-900/20 to-purple-900/20 rounded-lg p-6 border border-cyan-500/30">
+                    <p className="text-sm text-cyan-300 mb-4">
+                      ⚡ Upgrade to Pro or Business to get:
+                    </p>
+                    <ul className="text-left text-sm text-gray-300 space-y-2">
+                      <li>✓ Email alerts when your service goes down</li>
+                      <li>✓ Faster health checks (1 min or 30 sec)</li>
+                      <li>✓ More monitors (10 or 50)</li>
+                      <li>✓ Webhook support (Business plan)</li>
+                    </ul>
+                    <button
+                      onClick={() => setShowUpgradeModal(true)}
+                      className="mt-4 w-full px-6 py-3 bg-gradient-to-r from-cyan-600 to-purple-600 text-white rounded-lg hover:from-cyan-500 hover:to-purple-500 transition-all font-bold"
+                    >
+                      View Upgrade Options
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        // Show email alerts option for Pro and Business users
         return (
           <div className="space-y-6 animate-fadeIn">
             <div className="text-center mb-8">
@@ -960,6 +1033,11 @@ public class HealthController {
                   <p className="text-sm text-green-300">
                     ✅ You'll receive alerts at your registered email when your service status changes
                   </p>
+                  {planFeatures && planFeatures.plan === 'business' && planFeatures.webhooks && (
+                    <p className="text-sm text-purple-300 mt-2">
+                      🔗 As a Business plan user, you can also configure webhooks for alerts
+                    </p>
+                  )}
                 </div>
               )}
             </div>

@@ -580,27 +580,27 @@ func GetPlanFeatures(plan string) PlanFeatures {
 			CustomDomain:     false,
 			SSLMonitoring:    false,
 			APIAccess:        false,
-			EmailAlerts:      true,
-			MaxAlertsPerDay:  10,
+			EmailAlerts:      false, // Free plan has NO alerts
+			MaxAlertsPerDay:  0,
 		},
 		"pro": {
 			MaxMonitors:      10,
-			MinCheckInterval: 60, // 1 minute
-			Webhooks:         true,
+			MinCheckInterval: 60,    // 1 minute
+			Webhooks:         false, // Pro has email only, NO webhooks
 			CustomDomain:     true,
 			SSLMonitoring:    true,
 			APIAccess:        false,
-			EmailAlerts:      true,
+			EmailAlerts:      true, // Pro has email alerts
 			MaxAlertsPerDay:  100,
 		},
 		"business": {
 			MaxMonitors:      50,
-			MinCheckInterval: 30, // 30 seconds
-			Webhooks:         true,
+			MinCheckInterval: 30,   // 30 seconds
+			Webhooks:         true, // Business has webhooks
 			CustomDomain:     true,
 			SSLMonitoring:    true,
 			APIAccess:        true,
-			EmailAlerts:      true,
+			EmailAlerts:      true, // Business has email alerts
 			MaxAlertsPerDay:  1000,
 		},
 	}

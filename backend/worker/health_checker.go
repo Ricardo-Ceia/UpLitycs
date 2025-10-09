@@ -126,12 +126,18 @@ func (hc *HealthChecker) checkAppHealth(appId, userId int, appName, slug, health
 	}
 
 	// Check if we need to send alert (when service goes down)
-	if (status == "down" || status == "error" || statusCode >= 500) && alerts == "y" {
-		hc.checkAndSendAppAlert(appId, userId, appName, healthUrl, statusCode, status)
+	// Only send alerts if user has alerts enabled AND plan supports alerts
+	planFeatures := db.GetPlanFeatures(plan)
+	shouldSendAlert := (status == "down" || status == "error" || statusCode >= 500) &&
+		alerts == "y" &&
+		planFeatures.EmailAlerts // Check if plan has email alerts enabled
+
+	if shouldSendAlert {
+		hc.checkAndSendAppAlert(appId, userId, appName, healthUrl, statusCode, status, plan)
 	}
 }
 
-func (hc *HealthChecker) checkAndSendAppAlert(appId, userId int, appName, healthUrl string, statusCode int, status string) {
+func (hc *HealthChecker) checkAndSendAppAlert(appId, userId int, appName, healthUrl string, statusCode int, status string, plan string) {
 	// Check if we already sent an alert recently (within last 5 minutes)
 	query := "SELECT sent_at FROM alerts WHERE app_id = $1 ORDER BY sent_at DESC LIMIT 1"
 	var lastAlert string
@@ -155,8 +161,8 @@ func (hc *HealthChecker) checkAndSendAppAlert(appId, userId int, appName, health
 	}
 
 	// Log the alert (in production, send actual email)
-	log.Printf("🚨 ALERT: App %s (%s) - Service %s is %s (HTTP %d)",
-		appName, userEmail, healthUrl, status, statusCode)
+	log.Printf("🚨 ALERT [%s plan]: App %s (%s) - Service %s is %s (HTTP %d)",
+		plan, appName, userEmail, healthUrl, status, statusCode)
 
 	// Save alert record (user_id removed from schema)
 	_, err = hc.conn.Exec("INSERT INTO alerts (app_id, sent_at) VALUES ($1, NOW())", appId)
@@ -167,4 +173,11 @@ func (hc *HealthChecker) checkAndSendAppAlert(appId, userId int, appName, health
 	// TODO: Implement actual email sending here
 	// For now, we just log it
 	log.Printf("📧 Email would be sent to: %s", userEmail)
+
+	// Get plan features to check if webhooks are enabled
+	planFeatures := db.GetPlanFeatures(plan)
+	if planFeatures.Webhooks {
+		log.Printf("🔗 Webhook would be triggered for business plan user: %s", userEmail)
+		// TODO: Implement webhook sending here
+	}
 }

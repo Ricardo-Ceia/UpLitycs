@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
-	"time"
 	"statusframe/backend/auth"
 	"statusframe/backend/utils"
 	"statusframe/db"
+	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -114,9 +114,9 @@ func (h *Handler) GoToDashboardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create new app
-	log.Printf("Creating app: user_id=%d, app_name=%s, slug=%s, health_url=%s, theme=%s, alerts=%s", 
+	log.Printf("Creating app: user_id=%d, app_name=%s, slug=%s, health_url=%s, theme=%s, alerts=%s",
 		user.Id, req.AppName, req.Slug, req.Homepage, req.Theme, req.Alerts)
-	
+
 	appId, err := db.CreateApp(conn, user.Id, req.AppName, req.Slug, req.Homepage, req.Theme, req.Alerts)
 	if err != nil {
 		log.Println("Error creating app in GoToDashboardHandler", err)
@@ -226,10 +226,10 @@ func (h *Handler) GetAuthHandler(w http.ResponseWriter, r *http.Request) {
 	session, _ := auth.Store.Get(r, "auth-session")
 	session.Values["user"] = userInfo.Name
 	session.Values["userId"] = id
-	
+
 	// Ensure the session cookie persists (30 days)
 	session.Options.MaxAge = 86400 * 30 // 30 days
-	
+
 	err = session.Save(r, w)
 	if err != nil {
 		log.Printf("Error saving session: %v", err)
@@ -573,7 +573,7 @@ func (h *Handler) UpdateThemeHandler(w http.ResponseWriter, r *http.Request) {
 
 	var req struct {
 		Theme string `json:"theme"`
-		Slug  string `json:"slug"`  // Add slug to identify which app to update
+		Slug  string `json:"slug"`   // Add slug to identify which app to update
 		AppId int    `json:"app_id"` // Alternative: use app_id
 	}
 
@@ -599,7 +599,7 @@ func (h *Handler) UpdateThemeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	conn := h.conn
-	
+
 	// Get the app to update - either by slug or app_id
 	var app *db.App
 	if req.Slug != "" {
@@ -748,16 +748,16 @@ func (h *Handler) GetPlanFeaturesHandler(w http.ResponseWriter, r *http.Request)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"plan":                plan,
-		"max_monitors":        features.MaxMonitors,
-		"min_check_interval":  features.MinCheckInterval,
-		"webhooks":            features.Webhooks,
-		"custom_domain":       features.CustomDomain,
-		"ssl_monitoring":      features.SSLMonitoring,
-		"api_access":          features.APIAccess,
-		"email_alerts":        features.EmailAlerts,
-		"max_alerts_per_day":  features.MaxAlertsPerDay,
-		"current_app_count":   appCount,
-		"remaining_monitors":  features.MaxMonitors - appCount,
+		"plan":               plan,
+		"max_monitors":       features.MaxMonitors,
+		"min_check_interval": features.MinCheckInterval,
+		"webhooks":           features.Webhooks,
+		"custom_domain":      features.CustomDomain,
+		"ssl_monitoring":     features.SSLMonitoring,
+		"api_access":         features.APIAccess,
+		"email_alerts":       features.EmailAlerts,
+		"max_alerts_per_day": features.MaxAlertsPerDay,
+		"current_app_count":  appCount,
+		"remaining_monitors": features.MaxMonitors - appCount,
 	})
 }

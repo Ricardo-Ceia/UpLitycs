@@ -92,7 +92,7 @@ func NewAuth() {
 	}
 
 	Store = sessions.NewCookieStore([]byte(sessionSecret))
-	
+
 	// Configure session options for persistent cookies (30 days)
 	Store.Options = &sessions.Options{
 		Path:     "/",
