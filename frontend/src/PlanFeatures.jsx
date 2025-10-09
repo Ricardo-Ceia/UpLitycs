@@ -133,18 +133,6 @@ const PlanFeatures = () => {
 
         <div className="feature-card">
           <div className="feature-icon">
-            <Globe size={20} />
-          </div>
-          <div className="feature-content">
-            <div className="feature-name">Custom Domain</div>
-            <div className={`feature-value ${features.custom_domain ? 'enabled' : 'disabled'}`}>
-              {features.custom_domain ? '✓ Enabled' : '✗ Disabled'}
-            </div>
-          </div>
-        </div>
-
-        <div className="feature-card">
-          <div className="feature-icon">
             <Code size={20} />
           </div>
           <div className="feature-content">

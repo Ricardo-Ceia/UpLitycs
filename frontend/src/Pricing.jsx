@@ -69,6 +69,7 @@ const Pricing = () => {
         { text: '50 monitors', included: true },
         { text: '30-second checks', included: true },
         { text: 'Email alerts', included: true },
+        { text: 'Custom slugs', included: true },
         { text: 'Webhook alerts', included: true },
         { text: 'Priority support', included: true },
         { text: 'API access', included: true },
