@@ -108,7 +108,7 @@ func (h *Handler) CreateCheckoutSessionHandler(w http.ResponseWriter, r *http.Re
 				Quantity: stripe.Int64(1),
 			},
 		},
-		SuccessURL: stripe.String(stripe_config.StripeConfig.AppURL + "/dashboard?upgrade=success"),
+		SuccessURL: stripe.String(stripe_config.StripeConfig.AppURL + "/onboarding?subscribed=true"),
 		CancelURL:  stripe.String(stripe_config.StripeConfig.AppURL + "/pricing?upgrade=cancelled"),
 		Metadata: map[string]string{
 			"user_id": fmt.Sprintf("%d", user.Id),

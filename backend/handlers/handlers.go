@@ -235,12 +235,14 @@ func (h *Handler) GetAuthHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Error saving session: %v", err)
 	}
 
-	// Redirect based on onboarding status
+	// NEW FLOW:
+	// - New users (no apps) → /pricing (to select a plan)
+	// - Existing users (have apps) → /dashboard
 	if needsOnboarding {
-		log.Printf("Redirecting to onboarding for user ID: %d", id)
-		http.Redirect(w, r, "/onboarding", http.StatusFound)
+		log.Printf("Redirecting new user to pricing page: user ID %d", id)
+		http.Redirect(w, r, "/pricing", http.StatusFound)
 	} else {
-		log.Printf("Redirecting to dashboard for user ID: %d", id)
+		log.Printf("Redirecting existing user to dashboard: user ID %d", id)
 		http.Redirect(w, r, "/dashboard", http.StatusFound)
 	}
 }

@@ -1,11 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, Zap, Rocket, Crown } from 'lucide-react';
 import './Pricing.css';
 
 const Pricing = () => {
   const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' or 'yearly'
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+
+  // Check if user is authenticated on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/auth/check-session', {
+          credentials: 'include'
+        });
+        setIsAuthenticated(response.ok);
+      } catch (err) {
+        console.error('Error checking auth:', err);
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    checkAuth();
+  }, []);
 
   const plans = [
     {
@@ -60,13 +80,44 @@ const Pricing = () => {
     }
   ];
 
-  const handleSelectPlan = (tier) => {
+  const handleSelectPlan = async (tier) => {
+    // If not authenticated, redirect to auth first
+    if (!isAuthenticated) {
+      navigate('/auth');
+      return;
+    }
+
+    // User is authenticated
     if (tier === 'free') {
-      navigate('/auth');
+      // Free plan: go directly to onboarding
+      navigate('/onboarding');
     } else {
-      // Store selected plan in localStorage for after auth
-      localStorage.setItem('selectedPlan', JSON.stringify({ tier, billingCycle }));
-      navigate('/auth');
+      // Paid plan: create Stripe checkout session
+      try {
+        const response = await fetch('/api/create-checkout-session', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            plan: tier,
+            billing_period: billingCycle
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          // Redirect to Stripe checkout
+          window.location.href = data.url;
+        } else {
+          console.error('Failed to create checkout session');
+          alert('Failed to create checkout session. Please try again.');
+        }
+      } catch (err) {
+        console.error('Error creating checkout session:', err);
+        alert('An error occurred. Please try again.');
+      }
     }
   };
 

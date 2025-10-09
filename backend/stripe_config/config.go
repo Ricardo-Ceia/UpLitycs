@@ -25,10 +25,10 @@ func Initialize() {
 	StripeConfig = &Config{
 		SecretKey:              os.Getenv("STRIPE_SECRET_KEY"),
 		PublishableKey:         os.Getenv("STRIPE_PUBLISHABLE_KEY"),
-		ProMonthlyPriceID:      os.Getenv("STRIPE_PRO_MONTHLY_PRICE_ID"),
-		ProYearlyPriceID:       os.Getenv("STRIPE_PRO_YEARLY_PRICE_ID"),
-		BusinessMonthlyPriceID: os.Getenv("STRIPE_BUSINESS_MONTHLY_PRICE_ID"),
-		BusinessYearlyPriceID:  os.Getenv("STRIPE_BUSINESS_YEARLY_PRICE_ID"),
+		ProMonthlyPriceID:      os.Getenv("STRIPE_PRO_MONTHLY_PRICE_ID_TEST"),
+		ProYearlyPriceID:       os.Getenv("STRIPE_PRO_YEARLY_PRICE_ID_TEST"),
+		BusinessMonthlyPriceID: os.Getenv("STRIPE_BUSINESS_MONTHLY_PRICE_ID_TEST"),
+		BusinessYearlyPriceID:  os.Getenv("STRIPE_BUSINESS_YEARLY_PRICE_ID_TEST"),
 		WebhookSecret:          os.Getenv("STRIPE_WEBHOOK_SECRET"),
 		AppURL:                 os.Getenv("APP_URL"),
 	}
