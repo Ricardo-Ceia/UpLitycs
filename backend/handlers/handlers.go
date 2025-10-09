@@ -755,7 +755,6 @@ func (h *Handler) GetPlanFeaturesHandler(w http.ResponseWriter, r *http.Request)
 		"min_check_interval": features.MinCheckInterval,
 		"webhooks":           features.Webhooks,
 		"custom_domain":      features.CustomDomain,
-		"ssl_monitoring":     features.SSLMonitoring,
 		"api_access":         features.APIAccess,
 		"email_alerts":       features.EmailAlerts,
 		"max_alerts_per_day": features.MaxAlertsPerDay,

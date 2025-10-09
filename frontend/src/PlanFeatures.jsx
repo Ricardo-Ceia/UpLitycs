@@ -145,18 +145,6 @@ const PlanFeatures = () => {
 
         <div className="feature-card">
           <div className="feature-icon">
-            <Shield size={20} />
-          </div>
-          <div className="feature-content">
-            <div className="feature-name">SSL Monitoring</div>
-            <div className={`feature-value ${features.ssl_monitoring ? 'enabled' : 'disabled'}`}>
-              {features.ssl_monitoring ? '✓ Enabled' : '✗ Disabled'}
-            </div>
-          </div>
-        </div>
-
-        <div className="feature-card">
-          <div className="feature-icon">
             <Code size={20} />
           </div>
           <div className="feature-content">

@@ -54,7 +54,6 @@ const Pricing = () => {
         { text: '1-minute checks', included: true },
         { text: 'Email alerts', included: true },
         { text: 'Custom slugs', included: true },
-        { text: 'SSL monitoring', included: true },
       ],
       cta: 'Pick Pro',
       highlight: true,

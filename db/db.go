@@ -564,7 +564,6 @@ type PlanFeatures struct {
 	MinCheckInterval int // in seconds
 	Webhooks         bool
 	CustomDomain     bool
-	SSLMonitoring    bool
 	APIAccess        bool
 	EmailAlerts      bool
 	MaxAlertsPerDay  int
@@ -578,7 +577,6 @@ func GetPlanFeatures(plan string) PlanFeatures {
 			MinCheckInterval: 300, // 5 minutes
 			Webhooks:         false,
 			CustomDomain:     false,
-			SSLMonitoring:    false,
 			APIAccess:        false,
 			EmailAlerts:      false, // Free plan has NO alerts
 			MaxAlertsPerDay:  0,
@@ -588,7 +586,6 @@ func GetPlanFeatures(plan string) PlanFeatures {
 			MinCheckInterval: 60,    // 1 minute
 			Webhooks:         false, // Pro has email only, NO webhooks
 			CustomDomain:     true,
-			SSLMonitoring:    true,
 			APIAccess:        false,
 			EmailAlerts:      true, // Pro has email alerts
 			MaxAlertsPerDay:  100,
@@ -598,7 +595,6 @@ func GetPlanFeatures(plan string) PlanFeatures {
 			MinCheckInterval: 30,   // 30 seconds
 			Webhooks:         true, // Business has webhooks
 			CustomDomain:     true,
-			SSLMonitoring:    true,
 			APIAccess:        true,
 			EmailAlerts:      true, // Business has email alerts
 			MaxAlertsPerDay:  1000,

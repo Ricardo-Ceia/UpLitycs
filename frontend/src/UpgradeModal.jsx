@@ -15,7 +15,7 @@ const UpgradeModal = ({ planInfo, onClose }) => {
       monitors: 10,
       interval: '1 minute',
       price: '$12',
-      features: ['10 monitors', '1-minute checks', 'Email alerts', 'Custom domain', 'SSL monitoring']
+      features: ['10 monitors', '1-minute checks', 'Email alerts', 'Custom domain']
     },
     business: {
       monitors: 50,
