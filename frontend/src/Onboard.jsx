@@ -16,6 +16,22 @@ const RetroOnboarding = () => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [planInfo, setPlanInfo] = useState(null);
   const [planFeatures, setPlanFeatures] = useState(null);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [subscribedPlan, setSubscribedPlan] = useState('');
+
+  // Check for subscription success on mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const subscribed = urlParams.get('subscribed');
+    const plan = urlParams.get('plan');
+    
+    if (subscribed === 'true' && plan) {
+      setShowSuccessMessage(true);
+      setSubscribedPlan(plan);
+      // Auto-hide after 5 seconds
+      setTimeout(() => setShowSuccessMessage(false), 5000);
+    }
+  }, []);
 
   // Fetch plan features on mount
   useEffect(() => {
@@ -1051,6 +1067,31 @@ public class HealthController {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 flex items-center justify-center p-4">
+      {/* Success Message Banner */}
+      {showSuccessMessage && (
+        <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
+          <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-lg shadow-2xl border-2 border-green-400 flex items-center gap-3 max-w-md">
+            <div className="flex-shrink-0">
+              <svg className="w-6 h-6 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="font-bold text-lg">🎉 Payment Successful!</h3>
+              <p className="text-sm text-green-100">
+                Welcome to <span className="font-bold capitalize">{subscribedPlan}</span> plan! Enjoy your upgraded features.
+              </p>
+            </div>
+            <button 
+              onClick={() => setShowSuccessMessage(false)}
+              className="ml-4 text-white hover:text-green-200 transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Animated background effects */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
     <div

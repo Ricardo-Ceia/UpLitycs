@@ -117,7 +117,8 @@ func main() {
 		// Stripe payment routes
 		r.With(auth.AuthMiddleware).Post("/create-checkout-session", appHandlers.CreateCheckoutSessionHandler)
 		r.With(auth.AuthMiddleware).Post("/create-portal-session", appHandlers.CreateCustomerPortalSessionHandler)
-		r.Post("/stripe-webhook", appHandlers.StripeWebhookHandler) // No auth - Stripe signs the request
+		r.With(auth.AuthMiddleware).Get("/stripe-success", appHandlers.StripeSuccessHandler) // Handle successful payment
+		r.Post("/stripe-webhook", appHandlers.StripeWebhookHandler)                          // No auth - Stripe signs the request
 
 		// Public API - no authentication required
 		r.Get("/public/status/{slug}", appHandlers.GetPublicStatusHandler)

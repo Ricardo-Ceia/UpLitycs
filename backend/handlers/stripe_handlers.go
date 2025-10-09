@@ -108,7 +108,7 @@ func (h *Handler) CreateCheckoutSessionHandler(w http.ResponseWriter, r *http.Re
 				Quantity: stripe.Int64(1),
 			},
 		},
-		SuccessURL: stripe.String(stripe_config.StripeConfig.AppURL + "/onboarding?subscribed=true"),
+		SuccessURL: stripe.String(stripe_config.StripeConfig.AppURL + "/api/stripe-success?session_id={CHECKOUT_SESSION_ID}"),
 		CancelURL:  stripe.String(stripe_config.StripeConfig.AppURL + "/pricing?upgrade=cancelled"),
 		Metadata: map[string]string{
 			"user_id": fmt.Sprintf("%d", user.Id),
@@ -318,6 +318,68 @@ func (h *Handler) getPlanFromSubscription(subscription *stripe.Subscription) str
 	}
 
 	return "free"
+}
+
+// StripeSuccessHandler handles the redirect after successful Stripe checkout
+// This verifies the payment and upgrades the user's plan
+func (h *Handler) StripeSuccessHandler(w http.ResponseWriter, r *http.Request) {
+	// Get the session ID from the query parameter
+	sessionID := r.URL.Query().Get("session_id")
+	if sessionID == "" {
+		log.Printf("❌ No session_id in success URL")
+		http.Redirect(w, r, "/onboarding?error=no_session", http.StatusSeeOther)
+		return
+	}
+
+	// Get authenticated user
+	user, err := db.GetUserFromContext(h.conn, r.Context())
+	if err != nil {
+		log.Printf("❌ Error getting user from context: %v", err)
+		http.Redirect(w, r, "/auth", http.StatusSeeOther)
+		return
+	}
+
+	// Retrieve the checkout session from Stripe to verify payment
+	session, err := checkoutsession.Get(sessionID, nil)
+	if err != nil {
+		log.Printf("❌ Error retrieving checkout session: %v", err)
+		http.Redirect(w, r, "/onboarding?error=session_retrieval", http.StatusSeeOther)
+		return
+	}
+
+	// Verify the payment was successful
+	if session.PaymentStatus != "paid" {
+		log.Printf("⚠️  Payment not completed for session %s, status: %s", sessionID, session.PaymentStatus)
+		http.Redirect(w, r, "/pricing?error=payment_incomplete", http.StatusSeeOther)
+		return
+	}
+
+	// Get the plan from metadata
+	plan, ok := session.Metadata["plan"]
+	if !ok || plan == "" {
+		log.Printf("❌ No plan in session metadata")
+		http.Redirect(w, r, "/onboarding?error=no_plan", http.StatusSeeOther)
+		return
+	}
+
+	// Update user's subscription in database
+	err = db.UpdateUserSubscription(
+		h.conn,
+		user.Id,
+		plan,
+		string(session.Customer.ID),
+		string(session.Subscription.ID),
+	)
+	if err != nil {
+		log.Printf("❌ Error updating user subscription: %v", err)
+		http.Redirect(w, r, "/onboarding?error=plan_update", http.StatusSeeOther)
+		return
+	}
+
+	log.Printf("✅ User %d successfully upgraded to %s plan (session: %s)", user.Id, plan, sessionID)
+
+	// Redirect to onboarding with success flag
+	http.Redirect(w, r, "/onboarding?subscribed=true&plan="+plan, http.StatusSeeOther)
 }
 
 // CreateCustomerPortalSessionHandler creates a Stripe customer portal session
