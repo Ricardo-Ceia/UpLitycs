@@ -2,22 +2,36 @@ package worker
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
+	"statusframe/backend/email"
 	"statusframe/db"
 	"time"
 )
 
 type HealthChecker struct {
-	conn     *sql.DB
-	interval time.Duration
-	client   *http.Client
+	conn       *sql.DB
+	interval   time.Duration
+	client     *http.Client
+	emailClient *email.SESClient
 }
 
 func NewHealthChecker(conn *sql.DB, interval time.Duration) *HealthChecker {
+	// Initialize email client
+	emailClient, err := email.NewSESClient()
+	if err != nil {
+		log.Printf("⚠️  Warning: Email service not available: %v", err)
+		log.Println("   Email alerts will be disabled. Check your AWS SES configuration.")
+		emailClient = nil
+	} else {
+		log.Println("✅ Email service initialized successfully")
+	}
+
 	return &HealthChecker{
-		conn:     conn,
-		interval: interval,
+		conn:       conn,
+		interval:   interval,
+		emailClient: emailClient,
 		client: &http.Client{
 			Timeout: 10 * time.Second,
 		},
@@ -170,9 +184,33 @@ func (hc *HealthChecker) checkAndSendAppAlert(appId, userId int, appName, health
 		log.Printf("❌ Error saving alert for app %d: %v", appId, err)
 	}
 
-	// TODO: Implement actual email sending here
-	// For now, we just log it
-	log.Printf("📧 Email would be sent to: %s", userEmail)
+	// Send email alert using AWS SES
+	if hc.emailClient != nil {
+		errorMsg := fmt.Sprintf("Service returned HTTP %d (%s)", statusCode, status)
+		if statusCode == 0 {
+			errorMsg = "Connection failed - service is unreachable"
+		}
+
+		alertEmail := email.AlertEmail{
+			AppName:      appName,
+			HealthURL:    healthUrl,
+			StatusCode:   statusCode,
+			Status:       status,
+			ErrorMessage: errorMsg,
+			Timestamp:    time.Now(),
+			UserEmail:    userEmail,
+			Plan:         plan,
+		}
+
+		err = hc.emailClient.SendDowntimeAlert(alertEmail)
+		if err != nil {
+			log.Printf("❌ Failed to send email alert to %s: %v", userEmail, err)
+		} else {
+			log.Printf("✅ Email alert sent successfully to %s", userEmail)
+		}
+	} else {
+		log.Printf("⚠️  Email service not available - alert not sent to: %s", userEmail)
+	}
 
 	// Get plan features to check if webhooks are enabled
 	planFeatures := db.GetPlanFeatures(plan)
