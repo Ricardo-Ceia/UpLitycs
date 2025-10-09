@@ -30,7 +30,7 @@ func Initialize() {
 		BusinessMonthlyPriceID: os.Getenv("STRIPE_BUSINESS_MONTHLY_PRICE_ID"),
 		BusinessYearlyPriceID:  os.Getenv("STRIPE_BUSINESS_YEARLY_PRICE_ID"),
 		WebhookSecret:          os.Getenv("STRIPE_WEBHOOK_SECRET"),
-		AppURL:                 getAppURL(),
+		AppURL:                 os.Getenv("APP_URL"),
 	}
 
 	// Set the Stripe API key
@@ -46,14 +46,6 @@ func Initialize() {
 	log.Printf("📦 Pro Yearly Price: %s", StripeConfig.ProYearlyPriceID)
 	log.Printf("📦 Business Monthly Price: %s", StripeConfig.BusinessMonthlyPriceID)
 	log.Printf("📦 Business Yearly Price: %s", StripeConfig.BusinessYearlyPriceID)
-}
-
-func getAppURL() string {
-	appURL := os.Getenv("APP_URL")
-	if appURL == "" {
-		appURL = "http://localhost:3333"
-	}
-	return appURL
 }
 
 // GetPriceID returns the Stripe price ID for a given plan and billing period

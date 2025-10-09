@@ -78,7 +78,7 @@ func (h *Handler) CreateCheckoutSessionHandler(w http.ResponseWriter, r *http.Re
 				"user_id": fmt.Sprintf("%d", user.Id),
 			},
 		}
-		
+
 		cust, err := customer.New(customerParams)
 		if err != nil {
 			log.Printf("Error creating Stripe customer: %v", err)
@@ -86,7 +86,7 @@ func (h *Handler) CreateCheckoutSessionHandler(w http.ResponseWriter, r *http.Re
 			return
 		}
 		stripeCustomerID = cust.ID
-		
+
 		// Update user with Stripe customer ID
 		_, err = h.conn.Exec(
 			"UPDATE users SET stripe_customer_id = $1 WHERE id = $2",
@@ -134,7 +134,7 @@ func (h *Handler) CreateCheckoutSessionHandler(w http.ResponseWriter, r *http.Re
 func (h *Handler) StripeWebhookHandler(w http.ResponseWriter, r *http.Request) {
 	const MaxBodyBytes = int64(65536)
 	r.Body = http.MaxBytesReader(w, r.Body, MaxBodyBytes)
-	
+
 	payload, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("Error reading request body: %v", err)
@@ -165,7 +165,7 @@ func (h *Handler) StripeWebhookHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		
+
 		h.handleCheckoutSessionCompleted(session)
 
 	case "customer.subscription.created":
@@ -176,7 +176,7 @@ func (h *Handler) StripeWebhookHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		
+
 		h.handleSubscriptionCreated(subscription)
 
 	case "customer.subscription.updated":
@@ -187,7 +187,7 @@ func (h *Handler) StripeWebhookHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		
+
 		h.handleSubscriptionUpdated(subscription)
 
 	case "customer.subscription.deleted":
@@ -198,7 +198,7 @@ func (h *Handler) StripeWebhookHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		
+
 		h.handleSubscriptionDeleted(subscription)
 
 	default:
@@ -211,7 +211,7 @@ func (h *Handler) StripeWebhookHandler(w http.ResponseWriter, r *http.Request) {
 // handleCheckoutSessionCompleted processes successful checkout
 func (h *Handler) handleCheckoutSessionCompleted(session stripe.CheckoutSession) {
 	log.Printf("✅ Checkout session completed: %s", session.ID)
-	
+
 	// The subscription will be handled by customer.subscription.created event
 	// This is just for logging
 }
@@ -229,7 +229,7 @@ func (h *Handler) handleSubscriptionCreated(subscription stripe.Subscription) {
 
 	// Determine plan from subscription
 	plan := h.getPlanFromSubscription(&subscription)
-	
+
 	// Update user's subscription in database
 	err = db.UpdateUserSubscription(
 		h.conn,
@@ -257,7 +257,7 @@ func (h *Handler) handleSubscriptionUpdated(subscription stripe.Subscription) {
 	}
 
 	// Check subscription status
-	if subscription.Status == "active" || subscription.Status == "trialing" {
+	if subscription.Status == "active" {
 		plan := h.getPlanFromSubscription(&subscription)
 		err = db.UpdateUserSubscription(
 			h.conn,
@@ -307,13 +307,13 @@ func (h *Handler) getPlanFromSubscription(subscription *stripe.Subscription) str
 	priceID := subscription.Items.Data[0].Price.ID
 
 	// Check against our configured price IDs
-	if priceID == stripe_config.StripeConfig.ProMonthlyPriceID || 
-	   priceID == stripe_config.StripeConfig.ProYearlyPriceID {
+	if priceID == stripe_config.StripeConfig.ProMonthlyPriceID ||
+		priceID == stripe_config.StripeConfig.ProYearlyPriceID {
 		return "pro"
 	}
 
-	if priceID == stripe_config.StripeConfig.BusinessMonthlyPriceID || 
-	   priceID == stripe_config.StripeConfig.BusinessYearlyPriceID {
+	if priceID == stripe_config.StripeConfig.BusinessMonthlyPriceID ||
+		priceID == stripe_config.StripeConfig.BusinessYearlyPriceID {
 		return "business"
 	}
 

@@ -34,7 +34,7 @@ const Pricing = () => {
         { text: 'Custom slugs', included: true },
         { text: 'Unlimited alerts', included: true },
       ],
-      cta: 'Start 7-Day Trial',
+      cta: 'Pick Pro',
       highlight: true,
       popular: true,
       tier: 'pro'
@@ -50,7 +50,7 @@ const Pricing = () => {
         { text: 'Webhook alerts', included: true },
         { text: 'Priority support', included: true },
       ],
-      cta: 'Start 7-Day Trial',
+      cta: 'Pick Business',
       highlight: false,
       tier: 'business'
     }
@@ -171,10 +171,6 @@ const Pricing = () => {
           <div className="faq-item">
             <h3>What's a monitor?</h3>
             <p>A monitor is a single endpoint you want to track (e.g., your API or website health check).</p>
-          </div>
-          <div className="faq-item">
-            <h3>How does the trial work?</h3>
-            <p>All paid plans include a 7-day free trial. No credit card required to start. Cancel anytime during the trial.</p>
           </div>
           <div className="faq-item">
             <h3>Can I upgrade later?</h3>

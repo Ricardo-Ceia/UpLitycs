@@ -80,6 +80,7 @@ func NewAuth() {
 
 	googleClientId := os.Getenv("GOOGLE_CLIENT_ID")
 	googleClientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
+	googleRedirectURL := os.Getenv("GOOGLE_REDIRECT_URL")
 	sessionSecret := os.Getenv("SESSION_SECRET")
 
 	if googleClientId == "" || googleClientSecret == "" {
@@ -98,7 +99,7 @@ func NewAuth() {
 	googleConfig = GoogleOAuthConfig{
 		ClientID:     googleClientId,
 		ClientSecret: googleClientSecret,
-		RedirectURL:  "http://localhost:3333/auth/google/callback",
+		RedirectURL:  googleRedirectURL,
 		AuthURL:      "https://accounts.google.com/o/oauth2/auth",
 		TokenURL:     "https://oauth2.googleapis.com/token",
 		UserInfoURL:  "https://www.googleapis.com/oauth2/v2/userinfo",

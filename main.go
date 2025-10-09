@@ -58,9 +58,6 @@ func staticFileServer(dir string) http.Handler {
 
 func main() {
 
-	// Initialize Stripe configuration
-	stripe_config.Initialize()
-
 	// Ensure correct MIME types are registered
 	mime.AddExtensionType(".css", "text/css")
 	mime.AddExtensionType(".js", "application/javascript")
@@ -70,6 +67,9 @@ func main() {
 
 	conn := db.OpenDB()
 	defer conn.Close()
+
+	// Initialize Stripe configuration
+	stripe_config.Initialize()
 
 	// Ping database to ensure connection
 	if err := db.PingDB(conn); err != nil {
