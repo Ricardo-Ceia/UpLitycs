@@ -750,14 +750,11 @@ func (h *Handler) GetPlanFeaturesHandler(w http.ResponseWriter, r *http.Request)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"plan":               plan,
-		"max_monitors":       features.MaxMonitors,
-		"min_check_interval": features.MinCheckInterval,
-		"webhooks":           features.Webhooks,
-		"api_access":         features.APIAccess,
-		"email_alerts":       features.EmailAlerts,
-		"max_alerts_per_day": features.MaxAlertsPerDay,
-		"current_app_count":  appCount,
-		"remaining_monitors": features.MaxMonitors - appCount,
+		"plan":                plan,
+		"max_monitors":        features.MaxMonitors,
+		"min_check_interval":  features.MinCheckInterval,
+		"data_retention_days": features.DataRetentionDays,
+		"current_app_count":   appCount,
+		"remaining_monitors":  features.MaxMonitors - appCount,
 	})
 }

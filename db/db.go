@@ -560,40 +560,28 @@ func GetUserPlan(conn *sql.DB, userId int) (string, error) {
 
 // PlanFeatures defines all features and limits for each plan
 type PlanFeatures struct {
-	MaxMonitors      int
-	MinCheckInterval int // in seconds
-	Webhooks         bool
-	APIAccess        bool
-	EmailAlerts      bool
-	MaxAlertsPerDay  int
+	MaxMonitors       int
+	MinCheckInterval  int // in seconds
+	DataRetentionDays int // how many days of historical data to keep
 }
 
 // GetPlanFeatures returns all features for a given plan
 func GetPlanFeatures(plan string) PlanFeatures {
 	features := map[string]PlanFeatures{
 		"free": {
-			MaxMonitors:      1,
-			MinCheckInterval: 300, // 5 minutes
-			Webhooks:         false,
-			APIAccess:        false,
-			EmailAlerts:      false, // Free plan has NO alerts
-			MaxAlertsPerDay:  0,
+			MaxMonitors:       1,
+			MinCheckInterval:  300, // 5 minutes
+			DataRetentionDays: 7,   // 7 days
 		},
 		"pro": {
-			MaxMonitors:      10,
-			MinCheckInterval: 60,    // 1 minute
-			Webhooks:         false, // Pro has email only, NO webhooks
-			APIAccess:        false,
-			EmailAlerts:      true, // Pro has email alerts
-			MaxAlertsPerDay:  100,
+			MaxMonitors:       25,
+			MinCheckInterval:  60, // 1 minute
+			DataRetentionDays: 30, // 30 days
 		},
 		"business": {
-			MaxMonitors:      50,
-			MinCheckInterval: 30,   // 30 seconds
-			Webhooks:         true, // Business has webhooks
-			APIAccess:        true,
-			EmailAlerts:      true, // Business has email alerts
-			MaxAlertsPerDay:  1000,
+			MaxMonitors:       100,
+			MinCheckInterval:  30, // 30 seconds
+			DataRetentionDays: 90, // 90 days
 		},
 	}
 
@@ -743,4 +731,47 @@ func GetStripeCustomerId(conn *sql.DB, userId int) (string, error) {
 		return customerId.String, nil
 	}
 	return "", nil
+}
+
+// CleanupOldStatusChecks removes status checks older than the retention period for each plan
+func CleanupOldStatusChecks(conn *sql.DB) error {
+	// Delete old records for each plan type based on their retention policy
+	queries := []struct {
+		plan string
+		days int
+	}{
+		{"free", 7},
+		{"pro", 30},
+		{"business", 90},
+	}
+
+	totalDeleted := 0
+	for _, q := range queries {
+		result, err := conn.Exec(`
+			DELETE FROM user_status
+			WHERE app_id IN (
+				SELECT a.id FROM apps a
+				JOIN users u ON a.user_id = u.id
+				WHERE u.plan = $1
+			)
+			AND checked_at < NOW() - INTERVAL '1 day' * $2
+		`, q.plan, q.days)
+
+		if err != nil {
+			log.Printf("❌ Error cleaning up %s plan data: %v", q.plan, err)
+			continue
+		}
+
+		rows, _ := result.RowsAffected()
+		if rows > 0 {
+			log.Printf("🧹 Cleaned up %d old status checks for %s plan (>%d days)", rows, q.plan, q.days)
+			totalDeleted += int(rows)
+		}
+	}
+
+	if totalDeleted > 0 {
+		log.Printf("✅ Total cleanup: removed %d old status checks", totalDeleted)
+	}
+
+	return nil
 }

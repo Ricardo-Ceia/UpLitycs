@@ -2,36 +2,22 @@ package worker
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
-	"statusframe/backend/email"
 	"statusframe/db"
 	"time"
 )
 
 type HealthChecker struct {
-	conn       *sql.DB
-	interval   time.Duration
-	client     *http.Client
-	emailClient *email.SESClient
+	conn     *sql.DB
+	interval time.Duration
+	client   *http.Client
 }
 
 func NewHealthChecker(conn *sql.DB, interval time.Duration) *HealthChecker {
-	// Initialize email client
-	emailClient, err := email.NewSESClient()
-	if err != nil {
-		log.Printf("⚠️  Warning: Email service not available: %v", err)
-		log.Println("   Email alerts will be disabled. Check your AWS SES configuration.")
-		emailClient = nil
-	} else {
-		log.Println("✅ Email service initialized successfully")
-	}
-
 	return &HealthChecker{
-		conn:       conn,
-		interval:   interval,
-		emailClient: emailClient,
+		conn:     conn,
+		interval: interval,
 		client: &http.Client{
 			Timeout: 10 * time.Second,
 		},
@@ -41,6 +27,10 @@ func NewHealthChecker(conn *sql.DB, interval time.Duration) *HealthChecker {
 // Start begins the health checking loop
 func (hc *HealthChecker) Start() {
 	log.Println("🚀 Health checker started - monitoring every", hc.interval)
+
+	// Start cleanup routine (runs every 24 hours)
+	go hc.startCleanupRoutine()
+
 	ticker := time.NewTicker(hc.interval)
 	defer ticker.Stop()
 
@@ -52,10 +42,26 @@ func (hc *HealthChecker) Start() {
 	}
 }
 
+// startCleanupRoutine runs data retention cleanup every 24 hours
+func (hc *HealthChecker) startCleanupRoutine() {
+	// Run cleanup immediately on start
+	log.Println("🧹 Starting data retention cleanup routine")
+	db.CleanupOldStatusChecks(hc.conn)
+
+	// Then run every 24 hours
+	ticker := time.NewTicker(24 * time.Hour)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		log.Println("🧹 Running scheduled data retention cleanup")
+		db.CleanupOldStatusChecks(hc.conn)
+	}
+}
+
 func (hc *HealthChecker) checkAllUsers() {
 	// Get apps that are due for checking based on their plan's check interval
 	query := `
-		SELECT a.id, a.user_id, a.app_name, a.slug, a.health_url, a.alerts, u.plan
+		SELECT a.id, a.user_id, a.app_name, a.slug, a.health_url, u.plan
 		FROM apps a
 		JOIN users u ON a.user_id = u.id
 		WHERE a.health_url != '' 
@@ -71,16 +77,16 @@ func (hc *HealthChecker) checkAllUsers() {
 	appCount := 0
 	for rows.Next() {
 		var appId, userId int
-		var appName, slug, healthUrl, alerts, plan string
+		var appName, slug, healthUrl, plan string
 
-		err := rows.Scan(&appId, &userId, &appName, &slug, &healthUrl, &alerts, &plan)
+		err := rows.Scan(&appId, &userId, &appName, &slug, &healthUrl, &plan)
 		if err != nil {
 			log.Printf("❌ Error scanning app: %v", err)
 			continue
 		}
 
 		appCount++
-		go hc.checkAppHealth(appId, userId, appName, slug, healthUrl, alerts, plan)
+		go hc.checkAppHealth(appId, userId, appName, slug, healthUrl, plan)
 	}
 
 	if appCount == 0 {
@@ -91,7 +97,7 @@ func (hc *HealthChecker) checkAllUsers() {
 	log.Printf("🔍 Checking health for %d app(s) due now", appCount)
 }
 
-func (hc *HealthChecker) checkAppHealth(appId, userId int, appName, slug, healthUrl, alerts, plan string) {
+func (hc *HealthChecker) checkAppHealth(appId, userId int, appName, slug, healthUrl, plan string) {
 	startTime := time.Now()
 
 	resp, err := hc.client.Get(healthUrl)
@@ -137,85 +143,5 @@ func (hc *HealthChecker) checkAppHealth(appId, userId int, appName, slug, health
 	_, err = hc.conn.Exec(updateQuery, nextCheck, appId)
 	if err != nil {
 		log.Printf("❌ Error updating next_check_at for app %s: %v", appName, err)
-	}
-
-	// Check if we need to send alert (when service goes down)
-	// Only send alerts if user has alerts enabled AND plan supports alerts
-	planFeatures := db.GetPlanFeatures(plan)
-	shouldSendAlert := (status == "down" || status == "error" || statusCode >= 500) &&
-		alerts == "y" &&
-		planFeatures.EmailAlerts // Check if plan has email alerts enabled
-
-	if shouldSendAlert {
-		hc.checkAndSendAppAlert(appId, userId, appName, healthUrl, statusCode, status, plan)
-	}
-}
-
-func (hc *HealthChecker) checkAndSendAppAlert(appId, userId int, appName, healthUrl string, statusCode int, status string, plan string) {
-	// Check if we already sent an alert recently (within last 5 minutes)
-	query := "SELECT sent_at FROM alerts WHERE app_id = $1 ORDER BY sent_at DESC LIMIT 1"
-	var lastAlert string
-	err := hc.conn.QueryRow(query, appId).Scan(&lastAlert)
-
-	if err == nil && lastAlert != "" {
-		lastAlertTime, err := time.Parse(time.RFC3339, lastAlert)
-		if err == nil && time.Since(lastAlertTime) < 5*time.Minute {
-			log.Printf("⏭️  Skipping alert for app %s (ID: %d) - alert sent %s ago",
-				appName, appId, time.Since(lastAlertTime).Round(time.Second))
-			return // Don't spam alerts
-		}
-	}
-
-	// Get user email for alert
-	var userEmail string
-	err = hc.conn.QueryRow("SELECT email FROM users WHERE id = $1", userId).Scan(&userEmail)
-	if err != nil {
-		log.Printf("❌ Error getting user email for app %s: %v", appName, err)
-		return
-	}
-
-	// Log the alert (in production, send actual email)
-	log.Printf("🚨 ALERT [%s plan]: App %s (%s) - Service %s is %s (HTTP %d)",
-		plan, appName, userEmail, healthUrl, status, statusCode)
-
-	// Save alert record (user_id removed from schema)
-	_, err = hc.conn.Exec("INSERT INTO alerts (app_id, sent_at) VALUES ($1, NOW())", appId)
-	if err != nil {
-		log.Printf("❌ Error saving alert for app %d: %v", appId, err)
-	}
-
-	// Send email alert using AWS SES
-	if hc.emailClient != nil {
-		errorMsg := fmt.Sprintf("Service returned HTTP %d (%s)", statusCode, status)
-		if statusCode == 0 {
-			errorMsg = "Connection failed - service is unreachable"
-		}
-
-		alertEmail := email.AlertEmail{
-			AppName:      appName,
-			HealthURL:    healthUrl,
-			StatusCode:   statusCode,
-			Status:       status,
-			ErrorMessage: errorMsg,
-			Timestamp:    time.Now(),
-			UserEmail:    userEmail,
-			Plan:         plan,
-		}
-
-		err = hc.emailClient.SendDowntimeAlert(alertEmail)
-		if err != nil {
-			log.Printf("❌ Failed to send email alert to %s: %v", userEmail, err)
-		} else {
-			log.Printf("✅ Email alert sent successfully to %s", userEmail)
-		}
-	} else {
-		log.Printf("⚠️  Email service not available - alert not sent to: %s", userEmail)
-	}
-
-	// Get plan features to check if webhooks are enabled
-	planFeatures := db.GetPlanFeatures(plan)
-	if planFeatures.Webhooks {
-		log.Printf("🔗 Webhook would be triggered for business plan user: %s", userEmail)
-		// TODO: Implement webhook sending here
 	}
 }

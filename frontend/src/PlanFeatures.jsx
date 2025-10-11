@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TrendingUp, Zap, Clock, Webhook, Globe, Shield, Code } from 'lucide-react';
+import { TrendingUp, Clock, Database } from 'lucide-react';
 import './PlanFeatures.css';
 
 const PlanFeatures = () => {
@@ -112,45 +112,21 @@ const PlanFeatures = () => {
             <Clock size={20} />
           </div>
           <div className="feature-content">
-            <div className="feature-name">Check Interval</div>
+            <div className="feature-name">Check Frequency</div>
             <div className="feature-value">
-              {formatInterval(features.min_check_interval)}
+              Every {formatInterval(features.min_check_interval)}
             </div>
           </div>
         </div>
 
         <div className="feature-card">
           <div className="feature-icon">
-            <Webhook size={20} />
+            <Database size={20} />
           </div>
           <div className="feature-content">
-            <div className="feature-name">Webhooks</div>
-            <div className={`feature-value ${features.webhooks ? 'enabled' : 'disabled'}`}>
-              {features.webhooks ? '✓ Enabled' : '✗ Disabled'}
-            </div>
-          </div>
-        </div>
-
-        <div className="feature-card">
-          <div className="feature-icon">
-            <Code size={20} />
-          </div>
-          <div className="feature-content">
-            <div className="feature-name">API Access</div>
-            <div className={`feature-value ${features.api_access ? 'enabled' : 'disabled'}`}>
-              {features.api_access ? '✓ Enabled' : '✗ Disabled'}
-            </div>
-          </div>
-        </div>
-
-        <div className="feature-card">
-          <div className="feature-icon">
-            <Zap size={20} />
-          </div>
-          <div className="feature-content">
-            <div className="feature-name">Alerts/Day</div>
+            <div className="feature-name">Data Retention</div>
             <div className="feature-value">
-              {features.max_alerts_per_day}
+              {features.data_retention_days} days
             </div>
           </div>
         </div>
@@ -159,7 +135,7 @@ const PlanFeatures = () => {
       {/* Upgrade CTA for free users */}
       {features.plan === 'free' && (
         <div className="upgrade-cta">
-          <p>🚀 Want more monitors and features?</p>
+          <p>🚀 Want faster checks and longer data retention?</p>
           <button 
             className="upgrade-btn-large"
             onClick={() => navigate('/pricing')}
