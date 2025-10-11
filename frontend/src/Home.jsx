@@ -64,16 +64,34 @@ function Home() {
           {/* Trust Indicators */}
           <div className="trust-indicators">
             <div className="trust-item">
-              <Shield className="trust-icon" />
-              <span>Real-time Monitoring</span>
-            </div>
-            <div className="trust-item">
               <Activity className="trust-icon" />
-              <span>30s Health Checks</span>
+              <span>Up to 100 Monitors</span>
             </div>
             <div className="trust-item">
-              <Bell className="trust-icon" />
-              <span>Instant Alerts</span>
+              <Zap className="trust-icon" />
+              <span>30s Check Intervals</span>
+            </div>
+            <div className="trust-item">
+              <TrendingUp className="trust-icon" />
+              <span>90 Days History</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Video Demo Section */}
+        <div className="video-demo-section">
+          <h3 className="section-title">
+            <span className="title-line">─────</span>
+            SEE IT IN ACTION
+            <span className="title-line">─────</span>
+          </h3>
+          <div className="video-container">
+            <div className="video-placeholder">
+              <div className="video-play-icon">
+                <Activity className="play-icon" />
+              </div>
+              <p className="video-text">Demo Video Coming Soon</p>
+              <p className="video-subtext">Monitor setup in under 60 seconds</p>
             </div>
           </div>
         </div>
@@ -81,21 +99,21 @@ function Home() {
         {/* Features Grid */}
         <div className="features-grid">
           <FeatureCard
-            icon={<Activity />}
-            title="REAL-TIME MONITORING"
-            description="30-second health checks keep you informed 24/7"
-            status="OPERATIONAL"
+            icon={<Shield />}
+            title="FLEXIBLE MONITORING"
+            description="From 1 to 100 monitors based on your plan"
+            status="SCALABLE"
           />
           <FeatureCard
-            icon={<Bell />}
-            title="INSTANT ALERTS"
-            description="Get notified the moment your service goes down"
+            icon={<Zap />}
+            title="FAST CHECKS"
+            description="Health checks every 30 seconds to 5 minutes"
             status="ACTIVE"
           />
           <FeatureCard
             icon={<TrendingUp />}
-            title="UPTIME ANALYTICS"
-            description="Track performance with detailed status history"
+            title="DATA RETENTION"
+            description="Keep your status history for 7 to 90 days"
             status="RUNNING"
           />
         </div>
@@ -120,6 +138,16 @@ function Home() {
         <div className="footer-content">
           <div className="footer-text">
             © 2025 STATUSFRAME | Built for Developers
+          </div>
+          <div className="footer-center">
+            <a 
+              href="https://x.com/SalzDevs" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="footer-x-handle"
+            >
+              @SalzDevs
+            </a>
           </div>
           <div className="footer-status">
             <span className="status-dot"></span>
