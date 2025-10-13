@@ -449,31 +449,6 @@ const StatusPage = () => {
         </section>
       )}
 
-      {/* Additional Info */}
-      <section className="info-section">
-        <div className="info-card">
-          <h3 className="info-title">About This Status Page</h3>
-          <p className="info-text">
-            This page shows the real-time status of our services. 
-            We check the health of our systems every 30 seconds to ensure everything is running smoothly.
-          </p>
-          <div className="info-details">
-            <div className="info-item">
-              <span className="info-label">Endpoint:</span>
-              <span className="info-value">{statusData?.endpoint}</span>
-            </div>
-            <div className="info-item">
-              <span className="info-label">Check Interval:</span>
-              <span className="info-value">30 seconds</span>
-            </div>
-          </div>
-          <div className="info-badge">
-            <span className="badge-dot"></span>
-            <span>Auto-refreshing every 30 seconds</span>
-          </div>
-        </div>
-      </section>
-
       {/* Footer */}
       <footer className="status-footer">
         <div className="footer-container">
