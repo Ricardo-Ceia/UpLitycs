@@ -478,6 +478,30 @@
   color: #8C52FF;
   font-size: clamp(0.9rem, 2vw, 1rem);
   opacity: 0.9;
+  margin-top: 1rem;
+  text-align: center;
+}
+
+/* Demo Video Styles */
+.demo-video {
+  width: 100%;
+  max-width: 900px;
+  border-radius: 16px;
+  border: 2px solid #8C52FF;
+  background: rgba(18, 18, 32, 0.9);
+  box-shadow: 0 10px 40px rgba(140, 82, 255, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.demo-video:hover {
+  border-color: #00fff7;
+  box-shadow: 0 15px 50px rgba(0, 255, 247, 0.4);
+  transform: translateY(-2px);
+}
+
+.demo-video::cue {
+  color: #00fff7;
+  background: rgba(0, 0, 0, 0.8);
 }
 
 /* Features Grid - Better responsive behavior */

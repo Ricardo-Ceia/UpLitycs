@@ -86,13 +86,16 @@ function Home() {
             <span className="title-line">─────</span>
           </h3>
           <div className="video-container">
-            <div className="video-placeholder">
-              <div className="video-play-icon">
-                <Activity className="play-icon" />
-              </div>
-              <p className="video-text">Demo Video Coming Soon</p>
-              <p className="video-subtext">Monitor setup in under 60 seconds</p>
-            </div>
+            <video 
+              className="demo-video" 
+              controls 
+              preload="metadata"
+              poster="/demo-poster.jpg"
+            >
+              <source src="/demo.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+            <p className="video-subtext">Monitor setup in under 60 seconds</p>
           </div>
         </div>
 
