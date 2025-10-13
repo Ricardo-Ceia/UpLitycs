@@ -55,7 +55,7 @@ const Pricing = () => {
         { text: '30 days data retention', included: true },
         { text: 'Public status pages', included: true },
         { text: 'Response time graphs', included: true },
-        { text: 'Priority email support', included: true },
+        { text: 'Priority support', included: true },
       ],
       cta: 'Start Pro Trial',
       highlight: true,
@@ -72,7 +72,7 @@ const Pricing = () => {
         { text: '30-second checks', included: true },
         { text: '90 days data retention', included: true },
         { text: 'Public status pages', included: true },
-        { text: 'Advanced analytics & reports', included: true },
+        { text: 'Advanced analytics', included: true },
         { text: '24/7 priority support', included: true },
       ],
       cta: 'Start Business Trial',
@@ -138,7 +138,7 @@ const Pricing = () => {
           </h1>
         </div>
         <p className="pricing-subtitle">
-          Start with 7 days free. No credit card required.
+          Free plan forever. No credit card required to start.
         </p>
 
         {/* Billing Cycle Toggle */}

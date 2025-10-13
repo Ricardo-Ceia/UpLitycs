@@ -65,15 +65,15 @@ function Home() {
           <div className="trust-indicators">
             <div className="trust-item">
               <Activity className="trust-icon" />
-              <span>Up to 100 Monitors</span>
+              <span>1-100 Monitors</span>
             </div>
             <div className="trust-item">
               <Zap className="trust-icon" />
-              <span>30s Check Intervals</span>
+              <span>30s-5min Checks</span>
             </div>
             <div className="trust-item">
               <TrendingUp className="trust-icon" />
-              <span>90 Days History</span>
+              <span>7-90 Days Retention</span>
             </div>
           </div>
         </div>
@@ -100,20 +100,20 @@ function Home() {
         <div className="features-grid">
           <FeatureCard
             icon={<Shield />}
-            title="FLEXIBLE MONITORING"
-            description="From 1 to 100 monitors based on your plan"
-            status="SCALABLE"
+            title="SCALABLE MONITORING"
+            description="1-100 monitors • Free, Pro & Business plans"
+            status="FLEXIBLE"
           />
           <FeatureCard
             icon={<Zap />}
-            title="FAST CHECKS"
-            description="Health checks every 30 seconds to 5 minutes"
+            title="SMART HEALTH CHECKS"
+            description="5min to 30sec intervals • Plan-based frequency"
             status="ACTIVE"
           />
           <FeatureCard
             icon={<TrendingUp />}
-            title="DATA RETENTION"
-            description="Keep your status history for 7 to 90 days"
+            title="HISTORICAL DATA"
+            description="7-90 days retention • Upgrade for more history"
             status="RUNNING"
           />
         </div>

@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronRight, Monitor, Zap, Sparkles, Mail, Check, Copy, Globe } from 'lucide-react';
+import { ChevronRight, Monitor, Zap, Sparkles, Check, Copy, Globe } from 'lucide-react';
 import UpgradeModal from './UpgradeModal';
 
 const RetroOnboarding = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedLanguage, setSelectedLanguage] = useState('node-express');
   const [selectedTheme, setSelectedTheme] = useState('');
-  const [emailAlerts, setEmailAlerts] = useState('');
   const [homepageUrl, setHomepageUrl] = useState('');
   const [appName, setAppName] = useState('');
   const [slug, setSlug] = useState('');
@@ -43,10 +42,6 @@ const RetroOnboarding = () => {
         if (response.ok) {
           const data = await response.json();
           setPlanFeatures(data);
-          // Auto-set email alerts to 'n' for free plan users
-          if (data.plan === 'free' && !data.email_alerts) {
-            setEmailAlerts('n');
-          }
         }
       } catch (err) {
         console.error('Error fetching plan features:', err);
@@ -513,7 +508,7 @@ public class HealthController {
   };
 
   const handleSubmit = async () => {
-    if (selectedTheme && emailAlerts && homepageUrl && appName && slug) {
+    if (selectedTheme && homepageUrl && appName && slug) {
       setIsSubmitting(true);
       
       try {
@@ -537,7 +532,7 @@ public class HealthController {
         const onboardingData = {
           name: "User",
           homepage: homepageUrl,
-          alerts: emailAlerts === 'yes' ? 'y' : 'n',
+          alerts: 'n',
           theme: selectedTheme,
           appName: appName,
           slug: slug
@@ -681,7 +676,7 @@ public class HealthController {
               <div className="space-y-2">
                 <div className="p-3 bg-gradient-to-r from-cyan-900/20 to-blue-900/20 rounded border border-cyan-500/30">
                   <p className="text-xs text-cyan-300">
-                    💡 <strong>TIP:</strong> We'll check this endpoint every 30 seconds. Make sure it returns JSON with a "status" field.
+                    💡 <strong>TIP:</strong> We'll check this endpoint based on your plan (Free: 5min, Pro: 1min, Business: 30sec). Make sure it returns JSON with a "status" field.
                   </p>
                 </div>
                 <div className="p-3 bg-gradient-to-r from-yellow-900/20 to-orange-900/20 rounded border border-yellow-500/30">
@@ -813,7 +808,7 @@ public class HealthController {
                 {isValidUrl && (
                   <div className="p-3 bg-green-900/20 rounded border border-green-500/50">
                     <p className="text-xs text-green-400">
-                      ✅ URL format looks good! We'll monitor this endpoint every 30 seconds.
+                      ✅ URL format looks good! We'll monitor this endpoint based on your plan's check interval.
                     </p>
                   </div>
                 )}
@@ -896,10 +891,10 @@ public class HealthController {
         return (
           <div className="space-y-6 animate-fadeIn">
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-cyan-400 mb-2" style={{fontFamily: "'Press Start 2P', monospace"}}>
-                STEP 4: CHOOSE YOUR THEME
+                              <h2 className="text-2xl font-bold text-cyan-400 mb-2" style={{fontFamily: "'Press Start 2P', monospace"}}>
+                STEP 4: THEME & FINISH
               </h2>
-              <p className="text-purple-400 text-sm">Select a visual style for your status page</p>
+              <p className="text-purple-400 text-sm">Select a visual style for your status page and complete setup</p>
             </div>
 
             <div className="grid gap-4">
@@ -945,121 +940,6 @@ public class HealthController {
           </div>
         );
 
-      case 4:
-        // Skip this step for free users (they don't have email alerts)
-        if (planFeatures && planFeatures.plan === 'free' && !planFeatures.email_alerts) {
-          return (
-            <div className="space-y-6 animate-fadeIn">
-              <div className="text-center mb-8">
-                <h2 className="text-2xl font-bold text-cyan-400 mb-2" style={{fontFamily: "'Press Start 2P', monospace"}}>
-                  STEP 5: ALERTS
-                </h2>
-                <p className="text-purple-400 text-sm">Email alerts are not available on the free plan</p>
-              </div>
-
-              <div className="bg-black/50 rounded-lg p-8 border border-purple-500/50">
-                <div className="flex justify-center mb-6">
-                  <div className="p-6 bg-gradient-to-br from-gray-600/20 to-gray-800/20 rounded-full">
-                    <Mail className="w-16 h-16 text-gray-500" />
-                  </div>
-                </div>
-
-                <div className="text-center space-y-4">
-                  <h3 className="text-xl text-gray-400 mb-4">
-                    🆓 Free Plan - No Alerts
-                  </h3>
-                  <p className="text-gray-400 mb-6">
-                    Email alerts are available on Pro and Business plans
-                  </p>
-                  
-                  <div className="bg-gradient-to-r from-cyan-900/20 to-purple-900/20 rounded-lg p-6 border border-cyan-500/30">
-                    <p className="text-sm text-cyan-300 mb-4">
-                      ⚡ Upgrade to Pro or Business to get:
-                    </p>
-                    <ul className="text-left text-sm text-gray-300 space-y-2">
-                      <li>✓ Email alerts when your service goes down</li>
-                      <li>✓ Faster health checks (1 min or 30 sec)</li>
-                      <li>✓ More monitors (10 or 50)</li>
-                      <li>✓ Webhook support (Business plan)</li>
-                    </ul>
-                    <button
-                      onClick={() => setShowUpgradeModal(true)}
-                      className="mt-4 w-full px-6 py-3 bg-gradient-to-r from-cyan-600 to-purple-600 text-white rounded-lg hover:from-cyan-500 hover:to-purple-500 transition-all font-bold"
-                    >
-                      View Upgrade Options
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        }
-
-        // Show email alerts option for Pro and Business users
-        return (
-          <div className="space-y-6 animate-fadeIn">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-cyan-400 mb-2" style={{fontFamily: "'Press Start 2P', monospace"}}>
-                STEP 5: EMAIL ALERTS
-              </h2>
-              <p className="text-purple-400 text-sm">Get notified when your service goes down</p>
-            </div>
-
-            <div className="bg-black/50 rounded-lg p-8 border border-purple-500/50">
-              <div className="flex justify-center mb-6">
-                <div className="p-6 bg-gradient-to-br from-purple-600/20 to-cyan-600/20 rounded-full">
-                  <Mail className="w-16 h-16 text-cyan-400" />
-                </div>
-              </div>
-
-              <h3 className="text-center text-xl text-cyan-300 mb-6">
-                Would you like to receive email alerts?
-              </h3>
-
-              <div className="grid grid-cols-2 gap-4">
-                <button
-                  onClick={() => setEmailAlerts('yes')}
-                  className={`p-6 rounded-lg border-2 transition-all ${
-                    emailAlerts === 'yes'
-                      ? 'border-green-400 bg-green-400/10 shadow-lg shadow-green-400/30'
-                      : 'border-gray-600 bg-gray-800/50 hover:border-green-500'
-                  }`}
-                >
-                  <Check className="w-8 h-8 mx-auto mb-2 text-green-400" />
-                  <span className="text-green-400 font-bold">YES</span>
-                  <p className="text-xs text-gray-400 mt-2">Get instant notifications</p>
-                </button>
-
-                <button
-                  onClick={() => setEmailAlerts('no')}
-                  className={`p-6 rounded-lg border-2 transition-all ${
-                    emailAlerts === 'no'
-                      ? 'border-red-400 bg-red-400/10 shadow-lg shadow-red-400/30'
-                      : 'border-gray-600 bg-gray-800/50 hover:border-red-500'
-                  }`}
-                >
-                  <span className="block w-8 h-8 mx-auto mb-2 text-red-400 text-2xl font-bold">✕</span>
-                  <span className="text-red-400 font-bold">NO</span>
-                  <p className="text-xs text-gray-400 mt-2">Check dashboard manually</p>
-                </button>
-              </div>
-
-              {emailAlerts === 'yes' && (
-                <div className="mt-6 p-4 bg-gradient-to-r from-green-900/20 to-cyan-900/20 rounded border border-green-500/30">
-                  <p className="text-sm text-green-300">
-                    ✅ You'll receive alerts at your registered email when your service status changes
-                  </p>
-                  {planFeatures && planFeatures.plan === 'business' && planFeatures.webhooks && (
-                    <p className="text-sm text-purple-300 mt-2">
-                      🔗 As a Business plan user, you can also configure webhooks for alerts
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        );
-
       default:
         return null;
     }
@@ -1088,6 +968,29 @@ public class HealthController {
             >
               ✕
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Current Plan Info Banner */}
+      {planFeatures && currentStep === 0 && (
+        <div className="fixed top-4 left-4 z-50">
+          <div className="bg-gradient-to-r from-purple-900/90 to-cyan-900/90 backdrop-blur-md text-white px-4 py-3 rounded-lg border border-purple-500/50 shadow-lg">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">
+                {planFeatures.plan === 'free' && '🆓'}
+                {planFeatures.plan === 'pro' && '⚡'}
+                {planFeatures.plan === 'business' && '🚀'}
+              </span>
+              <div className="text-xs">
+                <div className="font-bold uppercase">{planFeatures.plan} Plan</div>
+                <div className="text-gray-300">
+                  {planFeatures.max_monitors} monitor{planFeatures.max_monitors > 1 ? 's' : ''} • 
+                  {planFeatures.min_check_interval >= 60 ? ` ${planFeatures.min_check_interval / 60}min` : ` ${planFeatures.min_check_interval}s`} checks • 
+                  {planFeatures.data_retention_days}d retention
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -1124,7 +1027,7 @@ public class HealthController {
         <div className="bg-black/40 backdrop-blur-md rounded-2xl border-2 border-purple-500/50 shadow-2xl shadow-purple-500/20 p-8">
           {/* Progress indicator */}
           <div className="flex items-center justify-between mb-8">
-            {[0, 1, 2, 3, 4].map((step) => (
+            {[0, 1, 2, 3].map((step) => (
               <div key={step} className="flex items-center flex-1">
                 <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center font-mono transition-all ${
                   currentStep >= step 
@@ -1133,7 +1036,7 @@ public class HealthController {
                 }`}>
                   {currentStep > step ? '✓' : step + 1}
                 </div>
-                {step < 4 && (
+                {step < 3 && (
                   <div className={`flex-1 h-0.5 mx-2 transition-all ${
                     currentStep > step ? 'bg-cyan-400' : 'bg-gray-700'
                   }`} />
@@ -1159,13 +1062,12 @@ public class HealthController {
               ← BACK
             </button>
 
-            {currentStep < 4 ? (
+            {currentStep < 3 ? (
               <button
                 onClick={() => setCurrentStep(currentStep + 1)}
                 disabled={
                   (currentStep === 1 && !homepageUrl) ||
-                  (currentStep === 2 && (!appName || !slug)) ||
-                  (currentStep === 3 && !selectedTheme)
+                  (currentStep === 2 && (!appName || !slug))
                 }
                 className="px-6 py-3 rounded-lg font-mono text-sm bg-gradient-to-r from-cyan-500 to-purple-500 text-white hover:from-cyan-400 hover:to-purple-400 transition-all flex items-center gap-2 shadow-lg hover:shadow-cyan-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -1174,7 +1076,7 @@ public class HealthController {
             ) : (
               <button
                 onClick={handleSubmit}
-                disabled={!selectedTheme || !emailAlerts || !homepageUrl || !appName || !slug || isSubmitting}
+                disabled={!selectedTheme || !homepageUrl || !appName || !slug || isSubmitting}
                 className="px-8 py-3 rounded-lg font-mono text-sm bg-gradient-to-r from-green-500 to-cyan-500 text-white hover:from-green-400 hover:to-cyan-400 transition-all shadow-lg hover:shadow-green-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
@@ -1192,10 +1094,10 @@ public class HealthController {
 
         {/* Status Bar */}
         <div className="mt-6 text-center">
-          <div className="inline-flex items-center gap-3 px-4 py-2 bg-black/40 backdrop-blur-md rounded-full border border-purple-500/30">
+                      <div className="inline-flex items-center gap-3 px-4 py-2 bg-black/40 backdrop-blur-md rounded-full border border-purple-500/30">
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50" />
             <span className="text-xs font-mono text-gray-400">SYSTEM READY</span>
-            <span className="text-xs font-mono text-cyan-400">STEP {currentStep + 1} OF 5</span>
+            <span className="text-xs font-mono text-cyan-400">STEP {currentStep + 1} OF 4</span>
           </div>
         </div>
       </div>

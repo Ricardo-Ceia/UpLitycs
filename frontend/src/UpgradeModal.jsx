@@ -9,19 +9,19 @@ const UpgradeModal = ({ planInfo, onClose }) => {
     free: {
       monitors: 1,
       interval: '5 minutes',
-      features: ['1 monitor', '5-minute checks', 'Public status page', 'No alerts']
+      features: ['1 monitor', '5-minute checks', '7 days retention', 'Public status page']
     },
     pro: {
-      monitors: 10,
+      monitors: 25,
       interval: '1 minute',
-      price: '$12',
-      features: ['10 monitors', '1-minute checks', 'Email alerts']
+      price: '$19',
+      features: ['25 monitors', '1-minute checks', '30 days retention', 'Priority support']
     },
     business: {
-      monitors: 50,
+      monitors: 100,
       interval: '30 seconds',
-      price: '$29',
-      features: ['50 monitors', '30-second checks', 'Email alerts', 'Webhook alerts', 'Priority support', 'API access']
+      price: '$49',
+      features: ['100 monitors', '30-second checks', '90 days retention', 'Advanced analytics', '24/7 support']
     }
   };
 
