@@ -57,7 +57,7 @@ const Pricing = () => {
         { text: 'Response time graphs', included: true },
         { text: 'Priority support', included: true },
       ],
-      cta: 'Start Pro Trial',
+      cta: 'Start Pro',
       highlight: true,
       popular: true,
       tier: 'pro'
@@ -75,7 +75,7 @@ const Pricing = () => {
         { text: 'Advanced analytics', included: true },
         { text: '24/7 priority support', included: true },
       ],
-      cta: 'Start Business Trial',
+      cta: 'Start Business',
       highlight: false,
       tier: 'business'
     }
