@@ -20,7 +20,7 @@ const UpgradeModal = ({ planInfo, onClose }) => {
     business: {
       monitors: 100,
       interval: '30 seconds',
-      price: '$49',
+      price: '$29',
       features: ['100 monitors', '30-second checks', '90 days retention', 'Advanced analytics', '24/7 support']
     }
   };

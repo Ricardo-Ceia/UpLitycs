@@ -65,7 +65,7 @@ const Pricing = () => {
     {
       name: 'Business',
       icon: '🚀',
-      price: { monthly: 49, yearly: 490 },
+      price: { monthly: 29, yearly: 290 },
       description: 'For teams and agencies',
       features: [
         { text: '100 monitors', included: true },
