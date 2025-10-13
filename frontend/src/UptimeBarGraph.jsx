@@ -1,27 +1,27 @@
 import React from 'react';
 import './UptimeBarGraph.css';
 
-const UptimeBarGraph = ({ uptimeHistory }) => {
+const UptimeBarGraph = ({ uptimeHistory, dataRetentionDays = 30 }) => {
   // Sort by date ascending (oldest to newest)
   const sortedHistory = [...uptimeHistory].sort((a, b) => 
     new Date(a.date) - new Date(b.date)
   );
 
-  // Create a full 30-day array including unmonitored days
+  // Create a full array for the retention period including unmonitored days
   const today = new Date();
-  const thirtyDaysAgo = new Date(today);
-  thirtyDaysAgo.setDate(today.getDate() - 29); // 29 days ago + today = 30 days
+  const startDate = new Date(today);
+  startDate.setDate(today.getDate() - (dataRetentionDays - 1)); // e.g., 6 days ago + today = 7 days
 
-  const full30Days = [];
-  for (let i = 0; i < 30; i++) {
-    const currentDate = new Date(thirtyDaysAgo);
-    currentDate.setDate(thirtyDaysAgo.getDate() + i);
+  const displayDays = [];
+  for (let i = 0; i < dataRetentionDays; i++) {
+    const currentDate = new Date(startDate);
+    currentDate.setDate(startDate.getDate() + i);
     const dateString = currentDate.toISOString().split('T')[0];
     
     // Find if we have data for this date
     const dataForDate = sortedHistory.find(d => d.date.split('T')[0] === dateString);
     
-    full30Days.push({
+    displayDays.push({
       date: dateString,
       uptime_percentage: dataForDate?.uptime_percentage || 0,
       total_checks: dataForDate?.total_checks || 0,
@@ -30,13 +30,11 @@ const UptimeBarGraph = ({ uptimeHistory }) => {
     });
   }
 
-  const last30Days = full30Days;
-
   // If no data, show empty state
-  if (last30Days.length === 0) {
+  if (displayDays.length === 0) {
     return (
       <div className="uptime-graph-container">
-        <h3 className="graph-title">30-Day Uptime History</h3>
+        <h3 className="graph-title">{dataRetentionDays}-Day Uptime History</h3>
         <div className="graph-empty-state">
           <p>No uptime data available yet</p>
           <p className="empty-hint">Data will appear as health checks are performed</p>
@@ -66,7 +64,7 @@ const UptimeBarGraph = ({ uptimeHistory }) => {
       <div className="graph-header">
         <h3 className="graph-title">
           <span className="graph-icon">📊</span>
-          30-Day Uptime History
+          {dataRetentionDays}-Day Uptime History
         </h3>
         <div className="graph-legend">
           <div className="legend-item">
@@ -94,7 +92,7 @@ const UptimeBarGraph = ({ uptimeHistory }) => {
 
       <div className="graph-content">
         <div className="graph-bars">
-          {last30Days.map((day, index) => {
+          {displayDays.map((day, index) => {
             const percentage = day.uptime_percentage || 0;
             const height = (percentage / maxPercentage) * 100;
             const date = new Date(day.date);
@@ -156,7 +154,7 @@ const UptimeBarGraph = ({ uptimeHistory }) => {
             <span className="stat-label">Average Uptime</span>
             <span className="stat-value">
               {(() => {
-                const monitoredDays = last30Days.filter(d => d.isMonitored);
+                const monitoredDays = displayDays.filter(d => d.isMonitored);
                 if (monitoredDays.length === 0) return '0.00';
                 return (monitoredDays.reduce((sum, day) => sum + (day.uptime_percentage || 0), 0) / monitoredDays.length).toFixed(2);
               })()}%
@@ -165,12 +163,12 @@ const UptimeBarGraph = ({ uptimeHistory }) => {
           <div className="stat-card">
             <span className="stat-label">Total Checks</span>
             <span className="stat-value">
-              {last30Days.reduce((sum, day) => sum + (day.total_checks || 0), 0).toLocaleString()}
+              {displayDays.reduce((sum, day) => sum + (day.total_checks || 0), 0).toLocaleString()}
             </span>
           </div>
           <div className="stat-card">
             <span className="stat-label">Days Monitored</span>
-            <span className="stat-value">{last30Days.filter(d => d.isMonitored).length} / 30</span>
+            <span className="stat-value">{displayDays.filter(d => d.isMonitored).length} / {dataRetentionDays}</span>
           </div>
         </div>
       </div>

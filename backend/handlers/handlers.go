@@ -510,7 +510,15 @@ func (h *Handler) GetPublicStatusHandler(w http.ResponseWriter, r *http.Request)
 		uptime = 0
 	}
 
-	// Get 30-day uptime history for bar graph
+	// Get user's plan to determine data retention period
+	userPlan, err := db.GetUserPlan(conn, app.UserId)
+	if err != nil {
+		log.Printf("Error getting user plan: %v", err)
+		userPlan = "free" // Default to free plan
+	}
+	dataRetentionDays := db.GetPlanFeatures(userPlan).DataRetentionDays
+
+	// Get uptime history based on plan's data retention (7, 30, or 90 days)
 	historyQuery := `
 		SELECT 
 			DATE(checked_at) as date,
@@ -522,7 +530,7 @@ func (h *Handler) GetPublicStatusHandler(w http.ResponseWriter, r *http.Request)
 		GROUP BY DATE(checked_at)
 		ORDER BY date DESC
 	`
-	rows, err := conn.Query(historyQuery, app.Id, 30)
+	rows, err := conn.Query(historyQuery, app.Id, dataRetentionDays)
 	if err != nil {
 		log.Printf("Error getting uptime history: %v", err)
 	}
@@ -546,14 +554,15 @@ func (h *Handler) GetPublicStatusHandler(w http.ResponseWriter, r *http.Request)
 
 	// Return public status data (no sensitive info)
 	response := map[string]interface{}{
-		"app_name":       app.AppName,
-		"theme":          app.Theme,
-		"status_code":    statusCode,
-		"status":         status,
-		"checked_at":     checkedAt,
-		"uptime_24h":     uptime,
-		"uptime_history": uptimeHistory,
-		"user_id":        app.UserId, // Include user ID for owner detection
+		"app_name":            app.AppName,
+		"theme":               app.Theme,
+		"status_code":         statusCode,
+		"status":              status,
+		"checked_at":          checkedAt,
+		"uptime_24h":          uptime,
+		"uptime_history":      uptimeHistory,
+		"user_id":             app.UserId, // Include user ID for owner detection
+		"data_retention_days": dataRetentionDays,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

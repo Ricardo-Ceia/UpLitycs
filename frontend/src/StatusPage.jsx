@@ -439,10 +439,13 @@ const StatusPage = () => {
         </div>
       </section>
 
-      {/* 30-Day Uptime Bar Graph */}
+      {/* Uptime Bar Graph (7, 30, or 90 days based on plan) */}
       {statusData?.uptime_history && statusData.uptime_history.length > 0 && (
         <section className="graph-section">
-          <UptimeBarGraph uptimeHistory={statusData.uptime_history} />
+          <UptimeBarGraph 
+            uptimeHistory={statusData.uptime_history} 
+            dataRetentionDays={statusData.data_retention_days || 30}
+          />
         </section>
       )}
 
