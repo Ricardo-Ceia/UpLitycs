@@ -50,6 +50,12 @@ func staticFileServer(dir string) http.Handler {
 			w.Header().Set("Content-Type", "font/woff")
 		case ".woff2":
 			w.Header().Set("Content-Type", "font/woff2")
+		case ".mp4":
+			w.Header().Set("Content-Type", "video/mp4")
+		case ".webm":
+			w.Header().Set("Content-Type", "video/webm")
+		case ".ogg":
+			w.Header().Set("Content-Type", "video/ogg")
 		}
 
 		// Serve the file
@@ -65,6 +71,9 @@ func main() {
 	mime.AddExtensionType(".json", "application/json")
 	mime.AddExtensionType(".woff", "font/woff")
 	mime.AddExtensionType(".woff2", "font/woff2")
+	mime.AddExtensionType(".mp4", "video/mp4")
+	mime.AddExtensionType(".webm", "video/webm")
+	mime.AddExtensionType(".ogg", "video/ogg")
 
 	conn := db.OpenDB()
 	defer conn.Close()
@@ -141,6 +150,37 @@ func main() {
 
 	// Serve static assets
 	r.Handle("/assets/*", http.StripPrefix("/assets/", staticFileServer(filepath.Join(reactBuildDir, "assets"))))
+
+	// Serve video files and other root static files
+	r.Get("/demo.mp4", func(w http.ResponseWriter, r *http.Request) {
+		videoPath := filepath.Join(reactBuildDir, "demo.mp4")
+		if _, err := os.Stat(videoPath); err == nil {
+			w.Header().Set("Content-Type", "video/mp4")
+			http.ServeFile(w, r, videoPath)
+		} else {
+			http.NotFound(w, r)
+		}
+	})
+
+	r.Get("/demo-poster.jpg", func(w http.ResponseWriter, r *http.Request) {
+		posterPath := filepath.Join(reactBuildDir, "demo-poster.jpg")
+		if _, err := os.Stat(posterPath); err == nil {
+			w.Header().Set("Content-Type", "image/jpeg")
+			http.ServeFile(w, r, posterPath)
+		} else {
+			http.NotFound(w, r)
+		}
+	})
+
+	r.Get("/vite.svg", func(w http.ResponseWriter, r *http.Request) {
+		svgPath := filepath.Join(reactBuildDir, "vite.svg")
+		if _, err := os.Stat(svgPath); err == nil {
+			w.Header().Set("Content-Type", "image/svg+xml")
+			http.ServeFile(w, r, svgPath)
+		} else {
+			http.NotFound(w, r)
+		}
+	})
 
 	// Serve favicon
 	r.Get("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
