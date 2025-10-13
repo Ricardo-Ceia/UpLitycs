@@ -69,8 +69,23 @@ func (h *Handler) CreateCheckoutSessionHandler(w http.ResponseWriter, r *http.Re
 		log.Printf("Error getting Stripe customer ID: %v", err)
 	}
 
-	// Create Stripe customer if they don't have one
-	if stripeCustomerID == "" {
+	// Check if we need to create a new customer
+	// This includes: no customer ID, or test mode customer ID (starts with cus_test_ or retrieve fails in live mode)
+	needsNewCustomer := stripeCustomerID == ""
+	
+	// If we have a customer ID, verify it exists in the current Stripe mode
+	if stripeCustomerID != "" {
+		// Try to retrieve the customer to see if it exists in current mode
+		_, err := customer.Get(stripeCustomerID, nil)
+		if err != nil {
+			// Customer doesn't exist in current mode (likely test mode customer with live mode keys)
+			log.Printf("⚠️  Existing customer %s not found in current Stripe mode, creating new customer", stripeCustomerID)
+			needsNewCustomer = true
+		}
+	}
+
+	// Create Stripe customer if needed
+	if needsNewCustomer {
 		customerParams := &stripe.CustomerParams{
 			Email: stripe.String(user.Email),
 			Name:  stripe.String(user.Name),
@@ -86,6 +101,8 @@ func (h *Handler) CreateCheckoutSessionHandler(w http.ResponseWriter, r *http.Re
 			return
 		}
 		stripeCustomerID = cust.ID
+
+		log.Printf("✅ Created new Stripe customer %s for user %d", stripeCustomerID, user.Id)
 
 		// Update user with Stripe customer ID
 		_, err = h.conn.Exec(
