@@ -7,6 +7,7 @@ import RetroAuth from "./RetroAuth";
 import ProtectedRoute from "./ProtectedRoute";
 import Pricing from "./Pricing";
 import Dashboard from "./Dashboard";
+import Admin from "./Admin";
 
 // Dashboard redirect component
 function DashboardRedirect() {
@@ -63,6 +64,8 @@ function App() {
             <Dashboard />
           </ProtectedRoute>
         } />
+        {/* Admin panel - password protected */}
+        <Route path="/admin" element={<Admin />} />
       </Routes>
     </Router>
   );

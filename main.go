@@ -132,6 +132,18 @@ func main() {
 		// Public API - no authentication required
 		r.Get("/public/status/{slug}", appHandlers.GetPublicStatusHandler)
 		r.Get("/public/ping/{slug}", appHandlers.GetCurrentResponseTimeHandler)
+
+		// Admin routes - check if logged-in user is admin email
+		r.Route("/admin", func(r chi.Router) {
+			r.Get("/check-session", appHandlers.AdminCheckSessionHandler)
+			
+			// Protected admin routes - must be logged in with admin email
+			r.Group(func(r chi.Router) {
+				r.Use(appHandlers.AdminMiddleware)
+				r.Get("/users", appHandlers.GetAllUsersHandler)
+				r.Get("/stats", appHandlers.GetAdminStatsHandler)
+			})
+		})
 	})
 
 	//--- OAuth Auth Routes (must come before catch-all) ---
