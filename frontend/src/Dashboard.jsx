@@ -146,19 +146,6 @@ const Dashboard = () => {
       <header className="dashboard-header">
         <div className="header-content">
           <div className="brand-section">
-            {/* Show user's logo if they have one (from first app) */}
-            {apps.length > 0 && apps[0].logo_url && (
-              <div className="user-logo-container">
-                <img 
-                  src={apps[0].logo_url} 
-                  alt="Your logo"
-                  className="user-logo"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                  }}
-                />
-              </div>
-            )}
             <h1 className="dashboard-title">
               <span className="glitch" data-text="STATUSFRAME">STATUSFRAME</span>
             </h1>
@@ -266,8 +253,27 @@ const Dashboard = () => {
               <div key={app.id} className={`app-card status-${getStatusColor(app.status)}`}>
                 <div className="app-header">
                   <div className="app-info">
-                    <h3 className="app-name">{app.app_name || 'Unnamed App'}</h3>
-                    <span className="app-slug">/{app.slug || 'no-slug'}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      {app.logo_url && (
+                        <img 
+                          src={app.logo_url} 
+                          alt={`${app.app_name} logo`}
+                          style={{
+                            width: '40px',
+                            height: '40px',
+                            objectFit: 'contain',
+                            borderRadius: '4px'
+                          }}
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                      )}
+                      <div>
+                        <h3 className="app-name">{app.app_name || 'Unnamed App'}</h3>
+                        <span className="app-slug">/{app.slug || 'no-slug'}</span>
+                      </div>
+                    </div>
                   </div>
                   <div className={`status-indicator status-${getStatusColor(app.status)}`}>
                     {getStatusIcon(app.status)}

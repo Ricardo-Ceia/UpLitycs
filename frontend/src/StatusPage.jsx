@@ -268,22 +268,29 @@ const StatusPage = () => {
       <header className="status-header">
         <div className="header-container">
           <div className="brand-info">
-            {statusData?.logo_url && (
-              <div className="brand-logo-container">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              {statusData?.logo_url && (
                 <img 
                   src={statusData.logo_url} 
                   alt={`${statusData?.app_name} logo`}
-                  className="brand-logo"
+                  style={{
+                    width: '60px',
+                    height: '60px',
+                    objectFit: 'contain',
+                    borderRadius: '8px'
+                  }}
                   onError={(e) => {
                     e.target.style.display = 'none';
                   }}
                 />
+              )}
+              <div>
+                <h1 className="app-name">
+                  {statusData?.app_name || 'Service Status'}
+                </h1>
+                <p className="app-subtitle">System Status Monitor</p>
               </div>
-            )}
-            <h1 className="app-name">
-              {statusData?.app_name || 'Service Status'}
-            </h1>
-            <p className="app-subtitle">System Status Monitor</p>
+            </div>
           </div>
           <div className="header-actions">
             <div className="time-display">
