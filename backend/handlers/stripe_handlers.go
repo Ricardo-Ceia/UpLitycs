@@ -72,7 +72,7 @@ func (h *Handler) CreateCheckoutSessionHandler(w http.ResponseWriter, r *http.Re
 	// Check if we need to create a new customer
 	// This includes: no customer ID, or test mode customer ID (starts with cus_test_ or retrieve fails in live mode)
 	needsNewCustomer := stripeCustomerID == ""
-	
+
 	// If we have a customer ID, verify it exists in the current Stripe mode
 	if stripeCustomerID != "" {
 		// Try to retrieve the customer to see if it exists in current mode

@@ -136,7 +136,7 @@ function Admin() {
         <div className="admin-login-box">
           <h1>🔐 Admin Access</h1>
           <p className="admin-subtitle">Restricted Area - Admin Only</p>
-          <p className="admin-info">Only ricardoceia.sete@gmail.com can access this panel</p>
+          <p className="admin-info">Only ADMIN can access this panel</p>
           
           <button onClick={handleLogin} className="admin-login-btn">
             Sign in with Google

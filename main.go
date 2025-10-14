@@ -136,7 +136,7 @@ func main() {
 		// Admin routes - check if logged-in user is admin email
 		r.Route("/admin", func(r chi.Router) {
 			r.Get("/check-session", appHandlers.AdminCheckSessionHandler)
-			
+
 			// Protected admin routes - must be logged in with admin email
 			r.Group(func(r chi.Router) {
 				r.Use(appHandlers.AdminMiddleware)
