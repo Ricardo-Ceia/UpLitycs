@@ -3,11 +3,18 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"statusframe/backend/auth"
+	"statusframe/backend/utils"
 	"statusframe/db"
 	"time"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/s3"
 )
 
 const (
@@ -170,6 +177,99 @@ func (h *Handler) GetAllUsersHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(users)
+}
+
+func (h *Handler) UploadLogoHandler(w http.ResponseWriter, r *http.Request) {
+	// Parse the multipart form with 5MB max size
+	err := r.ParseMultipartForm(5 << 20)
+	if err != nil {
+		http.Error(w, "File too large or invalid form", http.StatusBadRequest)
+		return
+	}
+
+	// Get the file from form
+	file, fileHeader, err := r.FormFile("logo")
+	if err != nil {
+		http.Error(w, "Invalid file upload", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	// Validate file type based on header
+	contentType := fileHeader.Header.Get("Content-Type")
+	validTypes := map[string]bool{
+		"image/png":     true,
+		"image/jpeg":    true,
+		"image/jpg":     true,
+		"image/svg+xml": true,
+		"image/webp":    true,
+	}
+
+	if !validTypes[contentType] {
+		http.Error(w, "Invalid file type. Only images allowed (PNG, JPG, SVG, WebP)", http.StatusBadRequest)
+		return
+	}
+
+	// Validate file size
+	if fileHeader.Size > 5<<20 { // 5MB
+		http.Error(w, "File size exceeds 5MB limit", http.StatusBadRequest)
+		return
+	}
+
+	// Create AWS session
+	sess, err := utils.CreateAWSSession()
+	if err != nil {
+		log.Printf("Failed to create AWS session: %v", err)
+		http.Error(w, "Failed to create AWS session", http.StatusInternalServerError)
+		return
+	}
+
+	// Get bucket name from environment
+	bucketName := os.Getenv("AWS_S3_BUCKET_NAME")
+	if bucketName == "" {
+		log.Printf("AWS_S3_BUCKET_NAME not configured")
+		http.Error(w, "S3 bucket name not configured", http.StatusInternalServerError)
+		return
+	}
+
+	// Create S3 client
+	s3Client := s3.New(sess)
+
+	// Generate unique file name with original extension
+	ext := filepath.Ext(fileHeader.Filename)
+	if ext == "" {
+		ext = ".png" // default extension
+	}
+	fileName := fmt.Sprintf("logo_%d_%d%s", time.Now().Unix(), time.Now().Nanosecond(), ext)
+	s3Path := "logos/" + fileName
+
+	// Upload directly to S3 - streaming the file without reading into memory
+	_, err = s3Client.PutObject(&s3.PutObjectInput{
+		Bucket:        aws.String(bucketName),
+		Key:           aws.String(s3Path),
+		Body:          file, // Stream directly from multipart.File
+		ContentType:   aws.String(contentType),
+		ContentLength: aws.Int64(fileHeader.Size),
+		// ACL removed - bucket must have public read policy configured
+	})
+	if err != nil {
+		log.Printf("Failed to upload to S3: %v", err)
+		http.Error(w, "Failed to upload file to S3", http.StatusInternalServerError)
+		return
+	}
+
+	// Construct the public file URL
+	fileURL := fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s",
+		bucketName,
+		os.Getenv("AWS_REGION"),
+		s3Path,
+	)
+
+	// Return the URL
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"url": fileURL,
+	})
 }
 
 // GetAdminStatsHandler returns overall platform statistics

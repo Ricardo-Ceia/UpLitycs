@@ -5,13 +5,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"mime/multipart"
 	"net/http"
+	"os"
+	"path/filepath"
 	"statusframe/backend/auth"
 	"statusframe/backend/utils"
 	"statusframe/db"
 	"strings"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -22,6 +27,7 @@ type OnboardingRequest struct {
 	Theme    string `json:"theme"`
 	Slug     string `json:"slug"`
 	AppName  string `json:"appName"`
+	LogoURL  string `json:"logo_url,omitempty"` // Optional logo URL
 }
 
 type Handler struct {
@@ -43,13 +49,92 @@ func (h *Handler) GoToDashboardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req OnboardingRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
+	var logoURL *string
 
-	if err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
+	// Check content type to determine how to parse the request
+	contentType := r.Header.Get("Content-Type")
+
+	if strings.Contains(contentType, "multipart/form-data") {
+		// Parse multipart form (with potential logo upload)
+		err := r.ParseMultipartForm(10 << 20) // 10MB max
+		if err != nil {
+			log.Printf("Error parsing multipart form: %v", err)
+			http.Error(w, "Invalid form data", http.StatusBadRequest)
+			return
+		}
+
+		// Get form values
+		req.Name = r.FormValue("name")
+		req.Homepage = r.FormValue("homepage")
+		req.Alerts = r.FormValue("alerts")
+		req.Theme = r.FormValue("theme")
+		req.AppName = r.FormValue("appName")
+		req.Slug = r.FormValue("slug")
+
+		// Check if logo file was uploaded
+		file, fileHeader, err := r.FormFile("logo")
+		if err == nil {
+			// Logo was uploaded
+			defer file.Close()
+
+			// Get user to check plan
+			user, err := db.GetUserFromContext(h.conn, r.Context())
+			if err != nil {
+				log.Println("Error getting user from context", err)
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			// Check if user has Pro or Business plan
+			plan, _ := db.GetUserPlan(h.conn, user.Id)
+			if plan != "pro" && plan != "business" {
+				http.Error(w, "Logo upload requires Pro or Business plan", http.StatusForbidden)
+				return
+			}
+
+			// Validate file type
+			validContentTypes := map[string]bool{
+				"image/png":     true,
+				"image/jpeg":    true,
+				"image/jpg":     true,
+				"image/svg+xml": true,
+				"image/webp":    true,
+			}
+
+			fileContentType := fileHeader.Header.Get("Content-Type")
+			if !validContentTypes[fileContentType] {
+				http.Error(w, "Invalid file type. Only images allowed", http.StatusBadRequest)
+				return
+			}
+
+			// Validate file size
+			if fileHeader.Size > 5<<20 { // 5MB
+				http.Error(w, "File size exceeds 5MB limit", http.StatusBadRequest)
+				return
+			}
+
+			// Upload to S3
+			url, err := h.uploadLogoToS3(file, fileHeader, user.Id)
+			if err != nil {
+				log.Printf("Error uploading logo to S3: %v", err)
+				http.Error(w, "Failed to upload logo", http.StatusInternalServerError)
+				return
+			}
+			logoURL = &url
+		}
+		// If no file or error getting file, logoURL stays nil (optional field)
+
+	} else {
+		// Parse JSON body (existing behavior)
+		err := json.NewDecoder(r.Body).Decode(&req)
+		if err != nil {
+			log.Printf("Error decoding JSON: %v", err)
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
 	}
 
+	// Validation
 	if !utils.CheckUsername(req.Name) {
 		http.Error(w, "Invalid username format", http.StatusBadRequest)
 		return
@@ -113,11 +198,11 @@ func (h *Handler) GoToDashboardHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create new app
-	log.Printf("Creating app: user_id=%d, app_name=%s, slug=%s, health_url=%s, theme=%s, alerts=%s",
-		user.Id, req.AppName, req.Slug, req.Homepage, req.Theme, req.Alerts)
+	// Create new app with logo URL
+	log.Printf("Creating app: user_id=%d, app_name=%s, slug=%s, health_url=%s, theme=%s, alerts=%s, logo_url=%v",
+		user.Id, req.AppName, req.Slug, req.Homepage, req.Theme, req.Alerts, logoURL)
 
-	appId, err := db.CreateApp(conn, user.Id, req.AppName, req.Slug, req.Homepage, req.Theme, req.Alerts)
+	appId, err := db.CreateAppWithLogo(conn, user.Id, req.AppName, req.Slug, req.Homepage, req.Theme, req.Alerts, logoURL)
 	if err != nil {
 		log.Println("Error creating app in GoToDashboardHandler", err)
 		if strings.Contains(err.Error(), "duplicate") {
@@ -134,11 +219,64 @@ func (h *Handler) GoToDashboardHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"success": true,
-		"message": "App created successfully",
-		"app_id":  appId,
-		"slug":    req.Slug,
+		"success":  true,
+		"message":  "App created successfully",
+		"app_id":   appId,
+		"slug":     req.Slug,
+		"logo_url": logoURL,
 	})
+}
+
+// uploadLogoToS3 streams the logo file directly to S3 and returns the URL
+func (h *Handler) uploadLogoToS3(file multipart.File, fileHeader *multipart.FileHeader, userId int) (string, error) {
+	// Create AWS session
+	sess, err := utils.CreateAWSSession()
+	if err != nil {
+		return "", fmt.Errorf("failed to create AWS session: %w", err)
+	}
+
+	// Get bucket name from environment
+	bucketName := os.Getenv("AWS_S3_BUCKET_NAME")
+	if bucketName == "" {
+		return "", fmt.Errorf("AWS_S3_BUCKET_NAME not configured")
+	}
+
+	// Create S3 client
+	s3Client := s3.New(sess)
+
+	// Generate unique file name with original extension
+	ext := filepath.Ext(fileHeader.Filename)
+	if ext == "" {
+		ext = ".png" // default extension
+	}
+	fileName := fmt.Sprintf("logo_%d_%d%s", time.Now().Unix(), time.Now().Nanosecond(), ext)
+	s3Path := "logos/" + fileName
+
+	// Get content type from header
+	contentType := fileHeader.Header.Get("Content-Type")
+
+	// Upload directly to S3 - streaming the file
+	// Note: ACL removed - use bucket policy for public access instead
+	_, err = s3Client.PutObject(&s3.PutObjectInput{
+		Bucket:        aws.String(bucketName),
+		Key:           aws.String(s3Path),
+		Body:          file,
+		ContentType:   aws.String(contentType),
+		ContentLength: aws.Int64(fileHeader.Size),
+		// ACL removed - bucket must have public read policy configured
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to upload to S3: %w", err)
+	}
+
+	// Construct the public file URL
+	fileURL := fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s",
+		bucketName,
+		os.Getenv("AWS_REGION"),
+		s3Path,
+	)
+
+	return fileURL, nil
 }
 
 func BeginAuthHandler(w http.ResponseWriter, r *http.Request) {
@@ -475,7 +613,9 @@ func (h *Handler) GetPublicStatusHandler(w http.ResponseWriter, r *http.Request)
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(map[string]interface{}{
 				"app_name":    app.AppName,
+				"slug":        app.Slug,
 				"theme":       app.Theme,
+				"logo_url":    app.LogoURL,
 				"endpoint":    app.HealthUrl,
 				"status":      "pending",
 				"status_code": 0,
@@ -555,7 +695,9 @@ func (h *Handler) GetPublicStatusHandler(w http.ResponseWriter, r *http.Request)
 	// Return public status data (no sensitive info)
 	response := map[string]interface{}{
 		"app_name":            app.AppName,
+		"slug":                app.Slug,
 		"theme":               app.Theme,
+		"logo_url":            app.LogoURL, // Include logo URL
 		"status_code":         statusCode,
 		"status":              status,
 		"checked_at":          checkedAt,

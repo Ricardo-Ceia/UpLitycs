@@ -142,6 +142,30 @@
   flex: 1;
 }
 
+.brand-logo-container {
+  margin-bottom: 0.75rem;
+}
+
+.brand-logo {
+  height: 60px;
+  width: auto;
+  max-width: 200px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 10px var(--glow-color));
+  transition: transform 0.3s ease;
+}
+
+.brand-logo:hover {
+  transform: scale(1.05);
+}
+
+@media (max-width: 768px) {
+  .brand-logo {
+    height: 45px;
+    max-width: 150px;
+  }
+}
+
 .app-name {
   font-size: 2rem;
   margin: 0;

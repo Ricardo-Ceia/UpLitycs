@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronRight, Monitor, Zap, Sparkles, Check, Copy, Globe } from 'lucide-react';
+import { ChevronRight, Monitor, Zap, Sparkles, Check, Copy, Globe, Upload, X, Image as ImageIcon } from 'lucide-react';
 import UpgradeModal from './UpgradeModal';
 
 const RetroOnboarding = () => {
@@ -17,6 +17,10 @@ const RetroOnboarding = () => {
   const [planFeatures, setPlanFeatures] = useState(null);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [subscribedPlan, setSubscribedPlan] = useState('');
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(null);
+  const [uploadError, setUploadError] = useState(null);
+  const fileInputRef = useRef(null);
 
   // Check for subscription success on mount
   useEffect(() => {
@@ -507,6 +511,47 @@ public class HealthController {
     }
   };
 
+  const handleLogoUpload = (event) => {
+    const file = event.target.files[0];
+    setUploadError(null);
+
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setUploadError('Please upload an image file (PNG, JPG, SVG, etc.)');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('Logo must be smaller than 5MB');
+      return;
+    }
+
+    setLogoFile(file);
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setLogoPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeLogo = () => {
+    setLogoFile(null);
+    setLogoPreview(null);
+    setUploadError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const canUploadLogo = () => {
+    return planFeatures && (planFeatures.plan === 'pro' || planFeatures.plan === 'business');
+  };
+
   const handleSubmit = async () => {
     if (selectedTheme && homepageUrl && appName && slug) {
       setIsSubmitting(true);
@@ -528,23 +573,40 @@ public class HealthController {
           }
         }
         
-        // Prepare data for submission
-        const onboardingData = {
-          name: "User",
-          homepage: homepageUrl,
-          alerts: 'n',
-          theme: selectedTheme,
-          appName: appName,
-          slug: slug
-        };
+        // Prepare FormData if logo is uploaded
+        let requestBody;
+        let headers = {};
+        
+        if (logoFile) {
+          const formData = new FormData();
+          formData.append('name', "User");
+          formData.append('homepage', homepageUrl);
+          formData.append('alerts', 'n');
+          formData.append('theme', selectedTheme);
+          formData.append('appName', appName);
+          formData.append('slug', slug);
+          formData.append('logo', logoFile);
+          requestBody = formData;
+          // Don't set Content-Type header - browser will set it with boundary
+        } else {
+          // Prepare data for submission without logo
+          const onboardingData = {
+            name: "User",
+            homepage: homepageUrl,
+            alerts: 'n',
+            theme: selectedTheme,
+            appName: appName,
+            slug: slug
+          };
+          requestBody = JSON.stringify(onboardingData);
+          headers['Content-Type'] = 'application/json';
+        }
         
         const response = await fetch('/api/go-to-dashboard', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: headers,
           credentials: 'include',
-          body: JSON.stringify(onboardingData)
+          body: requestBody
         });
         
         if (response.ok) {
@@ -888,13 +950,157 @@ public class HealthController {
         );
 
       case 3:
+        // Logo upload step - only for Pro and Business customers
+        const hasLogoAccess = canUploadLogo();
+        
         return (
           <div className="space-y-6 animate-fadeIn">
             <div className="text-center mb-8">
-                              <h2 className="text-2xl font-bold text-cyan-400 mb-2" style={{fontFamily: "'Press Start 2P', monospace"}}>
-                STEP 4: THEME & FINISH
+              <h2 className="text-2xl font-bold text-cyan-400 mb-2" style={{fontFamily: "'Press Start 2P', monospace"}}>
+                STEP 4: CUSTOM BRANDING {hasLogoAccess ? '(OPTIONAL)' : ''}
               </h2>
-              <p className="text-purple-400 text-sm">Select a visual style for your status page and complete setup</p>
+              <p className="text-purple-400 text-sm">
+                {hasLogoAccess 
+                  ? 'Add your brand logo to your status page' 
+                  : 'Custom branding available for Pro and Business plans'}
+              </p>
+            </div>
+
+            <div className="bg-black/50 rounded-lg p-8 border border-purple-500/50">
+              {hasLogoAccess ? (
+                <>
+                  <div className="flex justify-center mb-6">
+                    <div className="p-6 bg-gradient-to-br from-purple-600/20 to-cyan-600/20 rounded-full">
+                      <ImageIcon className="w-16 h-16 text-cyan-400" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    {/* Logo Upload Area */}
+                    {!logoPreview ? (
+                      <div className="border-2 border-dashed border-purple-500/50 rounded-lg p-8 text-center hover:border-cyan-400/50 transition-all">
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleLogoUpload}
+                          className="hidden"
+                          id="logo-upload"
+                        />
+                        <label htmlFor="logo-upload" className="cursor-pointer">
+                          <Upload className="w-12 h-12 text-cyan-400 mx-auto mb-4" />
+                          <p className="text-cyan-300 font-mono mb-2">Click to upload your logo</p>
+                          <p className="text-xs text-gray-400">PNG, JPG, SVG up to 5MB</p>
+                          <p className="text-xs text-gray-400 mt-2">Recommended: Square image, min 200x200px</p>
+                        </label>
+                      </div>
+                    ) : (
+                      <div className="border-2 border-cyan-500/50 rounded-lg p-6 bg-gradient-to-br from-cyan-900/20 to-purple-900/20">
+                        <div className="flex items-center gap-4">
+                          <div className="flex-shrink-0">
+                            <img 
+                              src={logoPreview} 
+                              alt="Logo preview" 
+                              className="w-24 h-24 object-contain rounded-lg bg-white/10 p-2"
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-cyan-300 font-mono text-sm mb-1">Logo uploaded successfully!</p>
+                            <p className="text-xs text-gray-400">{logoFile?.name}</p>
+                            <p className="text-xs text-gray-400">{(logoFile?.size / 1024).toFixed(1)} KB</p>
+                          </div>
+                          <button
+                            onClick={removeLogo}
+                            className="p-2 bg-red-500/20 border border-red-500 rounded-lg hover:bg-red-500/40 transition-all"
+                          >
+                            <X className="w-5 h-5 text-red-300" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {uploadError && (
+                      <div className="p-3 bg-red-900/20 rounded border border-red-500/50">
+                        <p className="text-xs text-red-400">{uploadError}</p>
+                      </div>
+                    )}
+
+                    {/* Info boxes */}
+                    <div className="grid gap-3">
+                      <div className="p-4 bg-gradient-to-r from-cyan-900/20 to-purple-900/20 rounded border border-cyan-500/30">
+                        <p className="text-xs text-cyan-300">
+                          <strong>📸 Where will my logo appear?</strong>
+                        </p>
+                        <p className="text-xs text-gray-400 mt-2">
+                          Your logo will be displayed on:
+                        </p>
+                        <ul className="text-xs text-gray-400 mt-1 space-y-1">
+                          <li>• Top of your public status page</li>
+                          <li>• Your private dashboard header</li>
+                        </ul>
+                      </div>
+
+                      <div className="p-4 bg-gradient-to-r from-purple-900/20 to-pink-900/20 rounded border border-purple-500/30">
+                        <p className="text-xs text-purple-300">
+                          <strong>💡 Pro Tip:</strong> Use a transparent PNG for best results. Your logo will adapt to the selected theme's color scheme.
+                        </p>
+                      </div>
+
+                      <div className="p-4 bg-gradient-to-r from-green-900/20 to-emerald-900/20 rounded border border-green-500/30">
+                        <p className="text-xs text-green-300">
+                          <strong>✨ This is optional:</strong> You can skip this step and add a logo later from your dashboard settings.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-yellow-600/20 to-orange-600/20 mb-4">
+                    <ImageIcon className="w-10 h-10 text-yellow-400" />
+                  </div>
+                  <h3 className="text-xl font-bold text-yellow-400 mb-3">Custom Branding Available</h3>
+                  <p className="text-gray-300 mb-6 max-w-md mx-auto">
+                    Upgrade to Pro or Business plan to add your custom logo and make your status page truly yours.
+                  </p>
+                  
+                  <div className="bg-gradient-to-r from-purple-900/30 to-cyan-900/30 rounded-lg p-6 border border-purple-500/50 max-w-md mx-auto mb-6">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <Check className="w-5 h-5 text-cyan-400" />
+                        <span className="text-sm text-gray-300">Upload your company logo</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Check className="w-5 h-5 text-cyan-400" />
+                        <span className="text-sm text-gray-300">Display on status page</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Check className="w-5 h-5 text-cyan-400" />
+                        <span className="text-sm text-gray-300">Professional branding</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => window.open('/pricing', '_blank')}
+                    className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-lg font-mono text-sm hover:from-cyan-400 hover:to-purple-400 transition-all shadow-lg"
+                  >
+                    View Upgrade Plans
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+
+      case 4:
+        return (
+          <div className="space-y-6 animate-fadeIn">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-cyan-400 mb-2" style={{fontFamily: "'Press Start 2P', monospace"}}>
+                STEP 5: CHOOSE THEME
+              </h2>
+              <p className="text-purple-400 text-sm">Select a visual style for your status page</p>
             </div>
 
             <div className="grid gap-4">
@@ -1027,7 +1233,7 @@ public class HealthController {
         <div className="bg-black/40 backdrop-blur-md rounded-2xl border-2 border-purple-500/50 shadow-2xl shadow-purple-500/20 p-8">
           {/* Progress indicator */}
           <div className="flex items-center justify-between mb-8">
-            {[0, 1, 2, 3].map((step) => (
+            {[0, 1, 2, 3, 4].map((step) => (
               <div key={step} className="flex items-center flex-1">
                 <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center font-mono transition-all ${
                   currentStep >= step 
@@ -1036,7 +1242,7 @@ public class HealthController {
                 }`}>
                   {currentStep > step ? '✓' : step + 1}
                 </div>
-                {step < 3 && (
+                {step < 4 && (
                   <div className={`flex-1 h-0.5 mx-2 transition-all ${
                     currentStep > step ? 'bg-cyan-400' : 'bg-gray-700'
                   }`} />
@@ -1062,7 +1268,7 @@ public class HealthController {
               ← BACK
             </button>
 
-            {currentStep < 3 ? (
+            {currentStep < 4 ? (
               <button
                 onClick={() => setCurrentStep(currentStep + 1)}
                 disabled={
@@ -1097,7 +1303,7 @@ public class HealthController {
                       <div className="inline-flex items-center gap-3 px-4 py-2 bg-black/40 backdrop-blur-md rounded-full border border-purple-500/30">
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50" />
             <span className="text-xs font-mono text-gray-400">SYSTEM READY</span>
-            <span className="text-xs font-mono text-cyan-400">STEP {currentStep + 1} OF 4</span>
+            <span className="text-xs font-mono text-cyan-400">STEP {currentStep + 1} OF 5</span>
           </div>
         </div>
       </div>

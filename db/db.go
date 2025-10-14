@@ -18,15 +18,16 @@ type User struct {
 }
 
 type App struct {
-	Id        int    `json:"id"`
-	UserId    int    `json:"user_id"`
-	AppName   string `json:"app_name"`
-	Slug      string `json:"slug"`
-	HealthUrl string `json:"health_url"`
-	Theme     string `json:"theme"`
-	Alerts    string `json:"alerts"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
+	Id        int     `json:"id"`
+	UserId    int     `json:"user_id"`
+	AppName   string  `json:"app_name"`
+	Slug      string  `json:"slug"`
+	HealthUrl string  `json:"health_url"`
+	Theme     string  `json:"theme"`
+	Alerts    string  `json:"alerts"`
+	LogoURL   *string `json:"logo_url,omitempty"`
+	CreatedAt string  `json:"created_at"`
+	UpdatedAt string  `json:"updated_at"`
 }
 
 type AppWithStatus struct {
@@ -415,10 +416,24 @@ func CreateApp(conn *sql.DB, userId int, appName, slug, healthUrl, theme, alerts
 	return appId, nil
 }
 
+// CreateAppWithLogo creates a new app for a user with optional logo URL
+func CreateAppWithLogo(conn *sql.DB, userId int, appName, slug, healthUrl, theme, alerts string, logoURL *string) (int, error) {
+	var appId int
+	err := conn.QueryRow(
+		"INSERT INTO apps (user_id, app_name, slug, health_url, theme, alerts, logo_url) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
+		userId, appName, slug, healthUrl, theme, alerts, logoURL,
+	).Scan(&appId)
+
+	if err != nil {
+		return 0, err
+	}
+	return appId, nil
+}
+
 // GetUserApps returns all apps for a user
 func GetUserApps(conn *sql.DB, userId int) ([]App, error) {
 	rows, err := conn.Query(
-		"SELECT id, user_id, app_name, slug, health_url, theme, alerts, created_at, updated_at FROM apps WHERE user_id = $1 ORDER BY created_at DESC",
+		"SELECT id, user_id, app_name, slug, health_url, theme, alerts, logo_url, created_at, updated_at FROM apps WHERE user_id = $1 ORDER BY created_at DESC",
 		userId,
 	)
 	if err != nil {
@@ -430,7 +445,7 @@ func GetUserApps(conn *sql.DB, userId int) ([]App, error) {
 	for rows.Next() {
 		var app App
 		var updatedAt sql.NullString
-		err := rows.Scan(&app.Id, &app.UserId, &app.AppName, &app.Slug, &app.HealthUrl, &app.Theme, &app.Alerts, &app.CreatedAt, &updatedAt)
+		err := rows.Scan(&app.Id, &app.UserId, &app.AppName, &app.Slug, &app.HealthUrl, &app.Theme, &app.Alerts, &app.LogoURL, &app.CreatedAt, &updatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -446,7 +461,7 @@ func GetUserApps(conn *sql.DB, userId int) ([]App, error) {
 func GetUserAppsWithStatus(conn *sql.DB, userId int) ([]AppWithStatus, error) {
 	query := `
 		SELECT 
-			a.id, a.user_id, a.app_name, a.slug, a.health_url, a.theme, a.alerts, a.created_at, a.updated_at,
+			a.id, a.user_id, a.app_name, a.slug, a.health_url, a.theme, a.alerts, a.created_at, a.updated_at, a.logo_url,
 			COALESCE(ls.status_code, 0) as status_code,
 			ls.checked_at as last_checked,
 			COALESCE(uptime.uptime_24h, 0) as uptime_24h
@@ -487,7 +502,7 @@ func GetUserAppsWithStatus(conn *sql.DB, userId int) ([]AppWithStatus, error) {
 
 		err := rows.Scan(
 			&app.Id, &app.UserId, &app.AppName, &app.Slug, &app.HealthUrl, &app.Theme, &app.Alerts,
-			&app.CreatedAt, &updatedAt, &statusCode, &lastChecked, &uptime24h,
+			&app.CreatedAt, &updatedAt, &app.LogoURL, &statusCode, &lastChecked, &uptime24h,
 		)
 		if err != nil {
 			return nil, err
@@ -521,9 +536,9 @@ func GetAppBySlug(conn *sql.DB, slug string) (*App, error) {
 	var updatedAt sql.NullString
 
 	err := conn.QueryRow(
-		"SELECT id, user_id, app_name, slug, health_url, theme, alerts, created_at, updated_at FROM apps WHERE slug = $1",
+		"SELECT id, user_id, app_name, slug, health_url, theme, alerts, logo_url, created_at, updated_at FROM apps WHERE slug = $1",
 		slug,
-	).Scan(&app.Id, &app.UserId, &app.AppName, &app.Slug, &app.HealthUrl, &app.Theme, &app.Alerts, &app.CreatedAt, &updatedAt)
+	).Scan(&app.Id, &app.UserId, &app.AppName, &app.Slug, &app.HealthUrl, &app.Theme, &app.Alerts, &app.LogoURL, &app.CreatedAt, &updatedAt)
 
 	if err != nil {
 		return nil, err

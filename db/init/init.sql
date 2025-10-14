@@ -17,6 +17,7 @@ CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE TABLE IF NOT EXISTS apps (
   id SERIAL PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  logo_url TEXT,
   app_name TEXT NOT NULL,
   slug TEXT UNIQUE NOT NULL,
   health_url TEXT NOT NULL,

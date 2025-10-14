@@ -146,6 +146,19 @@ const Dashboard = () => {
       <header className="dashboard-header">
         <div className="header-content">
           <div className="brand-section">
+            {/* Show user's logo if they have one (from first app) */}
+            {apps.length > 0 && apps[0].logo_url && (
+              <div className="user-logo-container">
+                <img 
+                  src={apps[0].logo_url} 
+                  alt="Your logo"
+                  className="user-logo"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
             <h1 className="dashboard-title">
               <span className="glitch" data-text="STATUSFRAME">STATUSFRAME</span>
             </h1>

@@ -105,6 +105,30 @@
   flex: 1;
 }
 
+.user-logo-container {
+  margin-bottom: 1rem;
+}
+
+.user-logo {
+  height: 50px;
+  width: auto;
+  max-width: 180px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(0, 255, 247, 0.5));
+  transition: transform 0.3s ease;
+}
+
+.user-logo:hover {
+  transform: scale(1.05);
+}
+
+@media (max-width: 768px) {
+  .user-logo {
+    height: 40px;
+    max-width: 140px;
+  }
+}
+
 .dashboard-title {
   font-size: 3rem;
   font-weight: 900;
