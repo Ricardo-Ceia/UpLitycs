@@ -5,6 +5,12 @@ import UpgradeModal from './UpgradeModal';
 import PlanFeatures from './PlanFeatures';
 import './Dashboard.css';
 
+const BADGE_PERIODS = {
+  free: ['24h', '7d'],
+  pro: ['24h', '7d', '30d'],
+  business: ['24h', '7d', '30d', '90d']
+};
+
 const Dashboard = () => {
   const [apps, setApps] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,7 +19,7 @@ const Dashboard = () => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [showBadgeModal, setShowBadgeModal] = useState(null);
-  const [badgePeriod, setBadgePeriod] = useState('24h');
+  const [badgePeriods, setBadgePeriods] = useState({}); // Store period per app ID
   const [copiedBadge, setCopiedBadge] = useState(null);
   const navigate = useNavigate();
 
@@ -135,6 +141,41 @@ const Dashboard = () => {
       setTimeout(() => setCopiedBadge(null), 2000);
     });
   };
+
+  const getBadgePeriod = (appId) => {
+    return badgePeriods[appId] || '24h';
+  };
+
+  const setBadgePeriod = (appId, period) => {
+    setBadgePeriods(prev => ({
+      ...prev,
+      [appId]: period
+    }));
+  };
+
+  const activeBadgeApp = showBadgeModal !== null
+    ? apps.find((app) => app.id === showBadgeModal)
+    : null;
+
+  const activeBadgePeriod = activeBadgeApp
+    ? getBadgePeriod(activeBadgeApp.id)
+    : '24h';
+
+  const availableBadgePeriods = BADGE_PERIODS[planInfo.plan] || BADGE_PERIODS.free;
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (!activeBadgeApp) {
+      return undefined;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [activeBadgeApp]);
 
   if (loading) {
     return (
@@ -348,115 +389,6 @@ const Dashboard = () => {
                   </button>
                 </div>
 
-                {/* Badge Modal */}
-                {showBadgeModal === app.id && (
-                  <div className="badge-modal-overlay" onClick={() => setShowBadgeModal(null)}>
-                    <div className="badge-modal" onClick={(e) => e.stopPropagation()}>
-                      <div className="modal-header">
-                        <h3>Uptime Badge</h3>
-                        <button className="close-btn" onClick={() => setShowBadgeModal(null)}>
-                          <X size={20} />
-                        </button>
-                      </div>
-
-                      <div className="modal-content">
-                        <p className="modal-description">
-                          Share your uptime status with these embeddable badges
-                        </p>
-
-                        {/* Period Selector */}
-                        <div className="period-selector">
-                          <label>Time Period:</label>
-                          <div className="period-buttons">
-                            {(() => {
-                              // Determine available periods based on plan
-                              const planPeriods = {
-                                'free': ['24h', '7d'],
-                                'pro': ['24h', '7d', '30d'],
-                                'business': ['24h', '7d', '30d', '90d']
-                              };
-                              const availablePeriods = planPeriods[planInfo.plan] || ['24h', '7d'];
-                              
-                              return availablePeriods.map((period) => (
-                                <button
-                                  key={period}
-                                  className={`period-btn ${badgePeriod === period ? 'active' : ''}`}
-                                  onClick={() => setBadgePeriod(period)}
-                                >
-                                  {period}
-                                </button>
-                              ));
-                            })()}
-                          </div>
-                          {planInfo.plan === 'free' && (
-                            <p style={{ fontSize: '0.8rem', color: '#a0a8c0', marginTop: '0.5rem' }}>
-                              💡 Upgrade to Pro for 30-day badges or Business for 90-day badges
-                            </p>
-                          )}
-                          {planInfo.plan === 'pro' && (
-                            <p style={{ fontSize: '0.8rem', color: '#a0a8c0', marginTop: '0.5rem' }}>
-                              💡 Upgrade to Business for 90-day badges
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Badge Preview */}
-                        <div className="badge-preview">
-                          <label>Preview:</label>
-                          <div className="preview-box">
-                            <img 
-                              src={getBadgeUrl(app.slug, badgePeriod)} 
-                              alt="Uptime Badge" 
-                            />
-                          </div>
-                        </div>
-
-                        {/* Markdown Code */}
-                        <div className="code-section">
-                          <label>Markdown (README.md, GitHub, etc.):</label>
-                          <div className="code-box">
-                            <code>{getBadgeMarkdown(app.slug, badgePeriod)}</code>
-                            <button
-                              className="copy-btn"
-                              onClick={() => copyToClipboard(getBadgeMarkdown(app.slug, badgePeriod), 'markdown', app.id)}
-                            >
-                              {copiedBadge === `${app.id}-markdown` ? <Check size={16} /> : <Copy size={16} />}
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* HTML Code */}
-                        <div className="code-section">
-                          <label>HTML:</label>
-                          <div className="code-box">
-                            <code>{getBadgeHtml(app.slug, badgePeriod)}</code>
-                            <button
-                              className="copy-btn"
-                              onClick={() => copyToClipboard(getBadgeHtml(app.slug, badgePeriod), 'html', app.id)}
-                            >
-                              {copiedBadge === `${app.id}-html` ? <Check size={16} /> : <Copy size={16} />}
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Direct URL */}
-                        <div className="code-section">
-                          <label>Direct URL:</label>
-                          <div className="code-box">
-                            <code>{getBadgeUrl(app.slug, badgePeriod)}</code>
-                            <button
-                              className="copy-btn"
-                              onClick={() => copyToClipboard(getBadgeUrl(app.slug, badgePeriod), 'url', app.id)}
-                            >
-                              {copiedBadge === `${app.id}-url` ? <Check size={16} /> : <Copy size={16} />}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
                 {deleteConfirm === app.id && (
                   <div className="delete-confirm">
                     <p>Delete this app?</p>
@@ -471,6 +403,88 @@ const Dashboard = () => {
           </div>
         )}
       </section>
+
+      {activeBadgeApp && (
+        <div className="badge-modal-overlay" onClick={() => setShowBadgeModal(null)}>
+          <div className="badge-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="badge-close-btn" onClick={() => setShowBadgeModal(null)}>
+              <X size={20} />
+            </button>
+
+            <div className="badge-modal-content">
+              <div className="period-selector">
+                <label>TIME PERIOD:</label>
+                <div className="period-buttons">
+                  {availableBadgePeriods.map((period) => (
+                    <button
+                      key={period}
+                      className={`period-btn ${activeBadgePeriod === period ? 'active' : ''}`}
+                      onClick={() => setBadgePeriod(activeBadgeApp.id, period)}
+                    >
+                      {period}
+                    </button>
+                  ))}
+                </div>
+                {(planInfo.plan === 'free' || planInfo.plan === 'pro') && (
+                  <p className="upgrade-hint">
+                    💡 Upgrade to Business for 90-day badges
+                  </p>
+                )}
+              </div>
+
+              <div className="badge-preview">
+                <label>PREVIEW:</label>
+                <div className="preview-box">
+                  <img
+                    key={`${activeBadgeApp.id}-${activeBadgePeriod}`}
+                    src={getBadgeUrl(activeBadgeApp.slug, activeBadgePeriod)}
+                    alt="Uptime Badge"
+                  />
+                </div>
+              </div>
+
+              <div className="code-section">
+                <label>MARKDOWN (README.MD, GITHUB, ETC.):</label>
+                <div className="code-box">
+                  <code>{getBadgeMarkdown(activeBadgeApp.slug, activeBadgePeriod)}</code>
+                  <button
+                    className="copy-btn"
+                    onClick={() => copyToClipboard(getBadgeMarkdown(activeBadgeApp.slug, activeBadgePeriod), 'markdown', activeBadgeApp.id)}
+                  >
+                    {copiedBadge === `${activeBadgeApp.id}-markdown` ? <Check size={16} /> : <Copy size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="code-section">
+                <label>HTML:</label>
+                <div className="code-box">
+                  <code>{getBadgeHtml(activeBadgeApp.slug, activeBadgePeriod)}</code>
+                  <button
+                    className="copy-btn"
+                    onClick={() => copyToClipboard(getBadgeHtml(activeBadgeApp.slug, activeBadgePeriod), 'html', activeBadgeApp.id)}
+                  >
+                    {copiedBadge === `${activeBadgeApp.id}-html` ? <Check size={16} /> : <Copy size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="code-section">
+                <label>DIRECT URL:</label>
+                <div className="code-box">
+                  <code>{getBadgeUrl(activeBadgeApp.slug, activeBadgePeriod)}</code>
+                  <button
+                    className="copy-btn"
+                    onClick={() => copyToClipboard(getBadgeUrl(activeBadgeApp.slug, activeBadgePeriod), 'url', activeBadgeApp.id)}
+                  >
+                    {copiedBadge === `${activeBadgeApp.id}-url` ? <Check size={16} /> : <Copy size={16} />}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Upgrade Modal */}
       {showUpgradeModal && (
