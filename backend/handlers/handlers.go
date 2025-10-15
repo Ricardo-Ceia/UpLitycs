@@ -909,3 +909,157 @@ func (h *Handler) GetPlanFeaturesHandler(w http.ResponseWriter, r *http.Request)
 		"remaining_monitors":  features.MaxMonitors - appCount,
 	})
 }
+
+// ========== UPTIME BADGE GENERATION ==========
+
+// GetUptimeBadgeHandler generates an SVG uptime badge for an app (PUBLIC, NO AUTH)
+func (h *Handler) GetUptimeBadgeHandler(w http.ResponseWriter, r *http.Request) {
+	slug := chi.URLParam(r, "slug")
+	if slug == "" {
+		http.Error(w, "Slug required", http.StatusBadRequest)
+		return
+	}
+
+	// Get period from query parameter (default: 24h)
+	period := r.URL.Query().Get("period")
+	if period == "" {
+		period = "24h"
+	}
+
+	// Validate period
+	validPeriods := map[string]int{
+		"24h": 1,
+		"7d":  7,
+		"30d": 30,
+		"90d": 90,
+	}
+
+	days, ok := validPeriods[period]
+	if !ok {
+		period = "24h"
+		days = 1
+	}
+
+	// Get app by slug
+	app, err := db.GetAppBySlug(h.conn, slug)
+	if err != nil {
+		// Return an error badge
+		w.Header().Set("Content-Type", "image/svg+xml")
+		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		w.Write([]byte(generateErrorBadge("not found")))
+		return
+	}
+
+	// Calculate uptime percentage based on period
+	uptimeQuery := `
+		SELECT 
+			COALESCE(
+				ROUND(
+					CAST(COUNT(*) FILTER (WHERE status_code >= 200 AND status_code < 300) AS NUMERIC) / 
+					NULLIF(COUNT(*), 0) * 100, 
+					2
+				),
+				0
+			) as uptime
+		FROM user_status
+		WHERE app_id = $1 AND checked_at > NOW() - INTERVAL '1 day' * $2
+	`
+
+	var uptime float64
+	err = h.conn.QueryRow(uptimeQuery, app.Id, days).Scan(&uptime)
+	if err != nil {
+		log.Printf("Error calculating uptime for badge: %v", err)
+		uptime = 0
+	}
+
+	// Generate SVG badge
+	badge := generateUptimeBadge(uptime, period)
+
+	// Set headers
+	w.Header().Set("Content-Type", "image/svg+xml")
+	w.Header().Set("Cache-Control", "max-age=300") // Cache for 5 minutes
+	w.Write([]byte(badge))
+}
+
+// generateUptimeBadge creates an SVG badge showing uptime percentage
+func generateUptimeBadge(uptime float64, period string) string {
+	// Determine color based on uptime
+	var color string
+	if uptime >= 95 {
+		color = "#4c1" // Bright green
+	} else if uptime >= 80 {
+		color = "#dfb317" // Yellow/Orange
+	} else {
+		color = "#e05d44" // Red
+	}
+
+	// Format uptime to 2 decimal places
+	uptimeStr := fmt.Sprintf("%.2f%%", uptime)
+
+	// Label text based on period
+	label := fmt.Sprintf("uptime (%s)", period)
+
+	// Calculate widths for the badge
+	labelWidth := len(label)*6 + 10
+	valueWidth := len(uptimeStr)*6 + 10
+	totalWidth := labelWidth + valueWidth
+
+	svg := fmt.Sprintf(`<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="20" role="img" aria-label="%s: %s">
+  <title>%s: %s</title>
+  <linearGradient id="s" x2="0" y2="100%%">
+    <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
+    <stop offset="1" stop-opacity=".1"/>
+  </linearGradient>
+  <clipPath id="r">
+    <rect width="%d" height="20" rx="3" fill="#fff"/>
+  </clipPath>
+  <g clip-path="url(#r)">
+    <rect width="%d" height="20" fill="#555"/>
+    <rect x="%d" width="%d" height="20" fill="%s"/>
+    <rect width="%d" height="20" fill="url(#s)"/>
+  </g>
+  <g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" text-rendering="geometricPrecision" font-size="110">
+    <text aria-hidden="true" x="%d" y="150" fill="#010101" fill-opacity=".3" transform="scale(.1)" textLength="%d">%s</text>
+    <text x="%d" y="140" transform="scale(.1)" fill="#fff" textLength="%d">%s</text>
+    <text aria-hidden="true" x="%d" y="150" fill="#010101" fill-opacity=".3" transform="scale(.1)" textLength="%d">%s</text>
+    <text x="%d" y="140" transform="scale(.1)" fill="#fff" textLength="%d">%s</text>
+  </g>
+</svg>`,
+		totalWidth, label, uptimeStr, label, uptimeStr,
+		totalWidth,
+		labelWidth,
+		labelWidth, valueWidth, color,
+		totalWidth,
+		labelWidth*5, (labelWidth-10)*10, label,
+		labelWidth*5, (labelWidth-10)*10, label,
+		(labelWidth+valueWidth/2)*10, (valueWidth-10)*10, uptimeStr,
+		(labelWidth+valueWidth/2)*10, (valueWidth-10)*10, uptimeStr,
+	)
+
+	return svg
+}
+
+// generateErrorBadge creates an error badge
+func generateErrorBadge(message string) string {
+	return fmt.Sprintf(`<svg xmlns="http://www.w3.org/2000/svg" width="140" height="20" role="img" aria-label="uptime: %s">
+  <title>uptime: %s</title>
+  <linearGradient id="s" x2="0" y2="100%%">
+    <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
+    <stop offset="1" stop-opacity=".1"/>
+  </linearGradient>
+  <clipPath id="r">
+    <rect width="140" height="20" rx="3" fill="#fff"/>
+  </clipPath>
+  <g clip-path="url(#r)">
+    <rect width="55" height="20" fill="#555"/>
+    <rect x="55" width="85" height="20" fill="#9f9f9f"/>
+    <rect width="140" height="20" fill="url(#s)"/>
+  </g>
+  <g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" text-rendering="geometricPrecision" font-size="110">
+    <text aria-hidden="true" x="285" y="150" fill="#010101" fill-opacity=".3" transform="scale(.1)" textLength="450">uptime</text>
+    <text x="285" y="140" transform="scale(.1)" fill="#fff" textLength="450">uptime</text>
+    <text aria-hidden="true" x="965" y="150" fill="#010101" fill-opacity=".3" transform="scale(.1)" textLength="750">%s</text>
+    <text x="965" y="140" transform="scale(.1)" fill="#fff" textLength="750">%s</text>
+  </g>
+</svg>`, message, message, message, message)
+}

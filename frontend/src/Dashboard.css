@@ -798,4 +798,228 @@
   .upgrade-options {
     grid-template-columns: 1fr;
   }
+
+  .badge-modal {
+    max-width: 95%;
+    margin: 1rem;
+  }
+}
+
+/* Badge Modal */
+.badge-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  backdrop-filter: blur(5px);
+}
+
+.badge-modal {
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  border: 2px solid #8C52FF;
+  border-radius: 16px;
+  max-width: 600px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.badge-modal .modal-header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid rgba(140, 82, 255, 0.3);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.badge-modal .modal-header h3 {
+  font-size: 1.5rem;
+  color: #00fff7;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #a0a8c0;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  border-radius: 8px;
+}
+
+.close-btn:hover {
+  background: rgba(255, 51, 102, 0.2);
+  color: #ff3366;
+}
+
+.badge-modal .modal-content {
+  padding: 2rem;
+}
+
+.modal-description {
+  color: #a0a8c0;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.period-selector {
+  margin-bottom: 1.5rem;
+}
+
+.period-selector label {
+  display: block;
+  color: #00fff7;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+}
+
+.period-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.period-btn {
+  padding: 0.5rem 1rem;
+  border: 2px solid #8C52FF;
+  border-radius: 8px;
+  background: rgba(140, 82, 255, 0.1);
+  color: #8C52FF;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+}
+
+.period-btn:hover {
+  background: rgba(140, 82, 255, 0.2);
+  border-color: #00fff7;
+  color: #00fff7;
+}
+
+.period-btn.active {
+  background: linear-gradient(135deg, #00fff7, #8C52FF);
+  border-color: #00fff7;
+  color: #0f0f23;
+  box-shadow: 0 0 15px rgba(0, 255, 247, 0.5);
+}
+
+.badge-preview {
+  margin-bottom: 1.5rem;
+}
+
+.badge-preview label {
+  display: block;
+  color: #00fff7;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+}
+
+.preview-box {
+  background: rgba(29, 27, 78, 0.6);
+  border: 2px solid #8C52FF;
+  border-radius: 8px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80px;
+}
+
+.preview-box img {
+  max-width: 100%;
+  height: auto;
+}
+
+.code-section {
+  margin-bottom: 1.5rem;
+}
+
+.code-section label {
+  display: block;
+  color: #00fff7;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+}
+
+.code-box {
+  position: relative;
+  background: rgba(15, 15, 35, 0.8);
+  border: 2px solid #8C52FF;
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.code-box code {
+  flex: 1;
+  color: #00fff7;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 0.85rem;
+  word-break: break-all;
+  line-height: 1.5;
+}
+
+.copy-btn {
+  flex-shrink: 0;
+  background: rgba(0, 255, 247, 0.1);
+  border: 2px solid #00fff7;
+  border-radius: 6px;
+  color: #00fff7;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.copy-btn:hover {
+  background: rgba(0, 255, 247, 0.2);
+  box-shadow: 0 0 10px rgba(0, 255, 247, 0.5);
+}
+
+.copy-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.badge-btn {
+  border-color: #FF6EC7;
+  background: rgba(255, 110, 199, 0.1);
+  color: #FF6EC7;
+}
+
+.badge-btn:hover {
+  background: rgba(255, 110, 199, 0.2);
+  border-color: #FF6EC7;
+  color: #FF6EC7;
 }

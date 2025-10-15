@@ -613,6 +613,183 @@
   animation: pulse 2s ease-in-out infinite;
 }
 
+/* Badge Section */
+.badge-section {
+  position: relative;
+  z-index: 10;
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 3rem auto;
+}
+
+.badge-container {
+  background: var(--card-background);
+  border: 2px solid var(--primary-color);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.badge-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.badge-header-icon {
+  color: var(--primary-color);
+  width: 28px;
+  height: 28px;
+}
+
+.badge-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--primary-color);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.badge-description {
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.badge-period-selector {
+  margin-bottom: 1.5rem;
+}
+
+.badge-period-selector label {
+  display: block;
+  color: var(--primary-color);
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+}
+
+.badge-period-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.badge-period-btn {
+  padding: 0.5rem 1rem;
+  border: 2px solid var(--primary-color);
+  border-radius: 6px;
+  background: rgba(0, 255, 65, 0.05);
+  color: var(--primary-color);
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+}
+
+.badge-period-btn:hover {
+  background: rgba(0, 255, 65, 0.15);
+  box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+}
+
+.badge-period-btn.active {
+  background: var(--primary-color);
+  color: var(--background);
+  box-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+}
+
+.badge-preview-section {
+  margin-bottom: 1.5rem;
+}
+
+.badge-preview-section label {
+  display: block;
+  color: var(--primary-color);
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+}
+
+.badge-preview-box {
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid var(--primary-color);
+  border-radius: 8px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80px;
+}
+
+.badge-codes {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.badge-code-section label {
+  display: block;
+  color: var(--primary-color);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+}
+
+.badge-code-box {
+  position: relative;
+  background: rgba(0, 0, 0, 0.4);
+  border: 2px solid var(--primary-color);
+  border-radius: 6px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.badge-code-box code {
+  flex: 1;
+  color: var(--primary-color);
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 0.85rem;
+  word-break: break-all;
+  line-height: 1.5;
+  overflow-x: auto;
+}
+
+.badge-copy-btn {
+  flex-shrink: 0;
+  background: rgba(0, 255, 65, 0.1);
+  border: 2px solid var(--primary-color);
+  border-radius: 4px;
+  color: var(--primary-color);
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.badge-copy-btn:hover {
+  background: rgba(0, 255, 65, 0.2);
+  box-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+}
+
+.badge-copy-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
 /* Footer */
 .status-footer {
   position: relative;

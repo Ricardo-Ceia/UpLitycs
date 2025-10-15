@@ -132,6 +132,7 @@ func main() {
 		// Public API - no authentication required
 		r.Get("/public/status/{slug}", appHandlers.GetPublicStatusHandler)
 		r.Get("/public/ping/{slug}", appHandlers.GetCurrentResponseTimeHandler)
+		r.Get("/badge/{slug}", appHandlers.GetUptimeBadgeHandler) // Public uptime badge
 
 		// Admin routes - check if logged-in user is admin email
 		r.Route("/admin", func(r chi.Router) {
