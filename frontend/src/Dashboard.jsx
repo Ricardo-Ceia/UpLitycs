@@ -368,16 +368,36 @@ const Dashboard = () => {
                         <div className="period-selector">
                           <label>Time Period:</label>
                           <div className="period-buttons">
-                            {['24h', '7d', '30d', '90d'].map((period) => (
-                              <button
-                                key={period}
-                                className={`period-btn ${badgePeriod === period ? 'active' : ''}`}
-                                onClick={() => setBadgePeriod(period)}
-                              >
-                                {period}
-                              </button>
-                            ))}
+                            {(() => {
+                              // Determine available periods based on plan
+                              const planPeriods = {
+                                'free': ['24h', '7d'],
+                                'pro': ['24h', '7d', '30d'],
+                                'business': ['24h', '7d', '30d', '90d']
+                              };
+                              const availablePeriods = planPeriods[planInfo.plan] || ['24h', '7d'];
+                              
+                              return availablePeriods.map((period) => (
+                                <button
+                                  key={period}
+                                  className={`period-btn ${badgePeriod === period ? 'active' : ''}`}
+                                  onClick={() => setBadgePeriod(period)}
+                                >
+                                  {period}
+                                </button>
+                              ));
+                            })()}
                           </div>
+                          {planInfo.plan === 'free' && (
+                            <p style={{ fontSize: '0.8rem', color: '#a0a8c0', marginTop: '0.5rem' }}>
+                              💡 Upgrade to Pro for 30-day badges or Business for 90-day badges
+                            </p>
+                          )}
+                          {planInfo.plan === 'pro' && (
+                            <p style={{ fontSize: '0.8rem', color: '#a0a8c0', marginTop: '0.5rem' }}>
+                              💡 Upgrade to Business for 90-day badges
+                            </p>
+                          )}
                         </div>
 
                         {/* Badge Preview */}

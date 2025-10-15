@@ -993,8 +993,8 @@ func generateUptimeBadge(uptime float64, period string) string {
 		color = "#e05d44" // Red
 	}
 
-	// Format uptime to 2 decimal places
-	uptimeStr := fmt.Sprintf("%.2f%%", uptime)
+	// Format uptime to 1 decimal place
+	uptimeStr := fmt.Sprintf("%.1f%%", uptime)
 
 	// Label text based on period
 	label := fmt.Sprintf("uptime (%s)", period)

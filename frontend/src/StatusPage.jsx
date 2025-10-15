@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import './StatusPage.css';
 import UptimeBarGraph from './UptimeBarGraph';
-import { Activity, CheckCircle, XCircle, Clock, Globe, Settings, Copy, Check, Award } from 'lucide-react';
+import { Activity, CheckCircle, XCircle, Clock, Globe, Settings } from 'lucide-react';
 
 const StatusPage = () => {
   const { slug } = useParams();
@@ -16,8 +16,6 @@ const StatusPage = () => {
   const [userTheme, setUserTheme] = useState(null); // User's local theme preference
   const [responseTime, setResponseTime] = useState(null); // Real-time response time
   const [pingLoading, setPingLoading] = useState(false);
-  const [badgePeriod, setBadgePeriod] = useState('24h');
-  const [copiedBadge, setCopiedBadge] = useState(null);
   const isValidSlug = slug && slug !== 'undefined';
 
   useEffect(() => {
@@ -221,25 +219,6 @@ const StatusPage = () => {
       minute: '2-digit',
       second: '2-digit',
       hour12: false
-    });
-  };
-
-  const getBadgeUrl = (period = '24h') => {
-    return `${window.location.origin}/api/badge/${slug}?period=${period}`;
-  };
-
-  const getBadgeMarkdown = (period = '24h') => {
-    return `[![Uptime](${getBadgeUrl(period)})](${window.location.href})`;
-  };
-
-  const getBadgeHtml = (period = '24h') => {
-    return `<a href="${window.location.href}"><img src="${getBadgeUrl(period)}" alt="Uptime Badge" /></a>`;
-  };
-
-  const copyToClipboard = (text, type) => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopiedBadge(type);
-      setTimeout(() => setCopiedBadge(null), 2000);
     });
   };
 
@@ -488,92 +467,6 @@ const StatusPage = () => {
           />
         </section>
       )}
-
-      {/* Badge Section */}
-      <section className="badge-section">
-        <div className="badge-container">
-          <div className="badge-header">
-            <Award className="badge-header-icon" />
-            <h3 className="badge-title">Uptime Badge</h3>
-          </div>
-          <p className="badge-description">
-            Share this uptime badge on your website, README, or social media
-          </p>
-
-          {/* Period Selector */}
-          <div className="badge-period-selector">
-            <label>Time Period:</label>
-            <div className="badge-period-buttons">
-              {['24h', '7d', '30d', '90d'].map((period) => (
-                <button
-                  key={period}
-                  className={`badge-period-btn ${badgePeriod === period ? 'active' : ''}`}
-                  onClick={() => setBadgePeriod(period)}
-                >
-                  {period}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Badge Preview */}
-          <div className="badge-preview-section">
-            <label>Preview:</label>
-            <div className="badge-preview-box">
-              <img 
-                src={getBadgeUrl(badgePeriod)} 
-                alt="Uptime Badge"
-                style={{ maxWidth: '100%', height: 'auto' }}
-              />
-            </div>
-          </div>
-
-          {/* Code Snippets */}
-          <div className="badge-codes">
-            <div className="badge-code-section">
-              <label>Markdown (GitHub, etc.):</label>
-              <div className="badge-code-box">
-                <code>{getBadgeMarkdown(badgePeriod)}</code>
-                <button
-                  className="badge-copy-btn"
-                  onClick={() => copyToClipboard(getBadgeMarkdown(badgePeriod), 'markdown')}
-                  title="Copy to clipboard"
-                >
-                  {copiedBadge === 'markdown' ? <Check size={18} /> : <Copy size={18} />}
-                </button>
-              </div>
-            </div>
-
-            <div className="badge-code-section">
-              <label>HTML:</label>
-              <div className="badge-code-box">
-                <code>{getBadgeHtml(badgePeriod)}</code>
-                <button
-                  className="badge-copy-btn"
-                  onClick={() => copyToClipboard(getBadgeHtml(badgePeriod), 'html')}
-                  title="Copy to clipboard"
-                >
-                  {copiedBadge === 'html' ? <Check size={18} /> : <Copy size={18} />}
-                </button>
-              </div>
-            </div>
-
-            <div className="badge-code-section">
-              <label>Direct URL:</label>
-              <div className="badge-code-box">
-                <code>{getBadgeUrl(badgePeriod)}</code>
-                <button
-                  className="badge-copy-btn"
-                  onClick={() => copyToClipboard(getBadgeUrl(badgePeriod), 'url')}
-                  title="Copy to clipboard"
-                >
-                  {copiedBadge === 'url' ? <Check size={18} /> : <Copy size={18} />}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Footer */}
       <footer className="status-footer">
