@@ -799,9 +799,23 @@
     grid-template-columns: 1fr;
   }
 
-  .badge-modal {
-    max-width: 95%;
-    margin: 1rem;
+  .app-actions {
+    flex-wrap: wrap;
+  }
+
+  .action-btn {
+    font-size: 0.8rem;
+    padding: 0.6rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-section {
+    grid-template-columns: 1fr;
+  }
+
+  .app-stat .stat-value {
+    font-size: 1rem;
   }
 }
 
@@ -825,32 +839,72 @@
   background: linear-gradient(135deg, #1a1a2e, #16213e);
   border: 2px solid #8C52FF;
   border-radius: 16px;
-  max-width: 600px;
+  max-width: 650px;
   width: 100%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5),
+              0 0 30px rgba(140, 82, 255, 0.3);
   max-height: 90vh;
   overflow-y: auto;
+  position: relative;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+/* Custom scrollbar for badge modal */
+.badge-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.badge-modal::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+.badge-modal::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #8C52FF, #00fff7);
+  border-radius: 4px;
+}
+
+.badge-modal::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #00fff7, #8C52FF);
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .badge-modal .modal-header {
   padding: 1.5rem 2rem;
-  border-bottom: 1px solid rgba(140, 82, 255, 0.3);
+  border-bottom: 2px solid rgba(140, 82, 255, 0.3);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  border-radius: 14px 14px 0 0;
 }
 
 .badge-modal .modal-header h3 {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   color: #00fff7;
   margin: 0;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
+  text-shadow: 0 0 10px rgba(0, 255, 247, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .close-btn {
-  background: none;
-  border: none;
+  background: rgba(255, 51, 102, 0.1);
+  border: 2px solid transparent;
   color: #a0a8c0;
   cursor: pointer;
   padding: 0.5rem;
@@ -859,11 +913,16 @@
   justify-content: center;
   transition: all 0.3s ease;
   border-radius: 8px;
+  width: 38px;
+  height: 38px;
 }
 
 .close-btn:hover {
-  background: rgba(255, 51, 102, 0.2);
+  background: rgba(255, 51, 102, 0.3);
+  border-color: #ff3366;
   color: #ff3366;
+  transform: rotate(90deg);
+  box-shadow: 0 0 15px rgba(255, 51, 102, 0.5);
 }
 
 .badge-modal .modal-content {
@@ -872,86 +931,131 @@
 
 .modal-description {
   color: #a0a8c0;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
   line-height: 1.6;
+  font-size: 0.95rem;
+  padding: 1rem;
+  background: rgba(0, 255, 247, 0.05);
+  border-left: 3px solid #00fff7;
+  border-radius: 4px;
 }
 
 .period-selector {
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: rgba(29, 27, 78, 0.4);
+  border-radius: 12px;
+  border: 1px solid rgba(140, 82, 255, 0.3);
 }
 
 .period-selector label {
   display: block;
   color: #00fff7;
-  font-weight: 600;
-  margin-bottom: 0.75rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
   text-transform: uppercase;
   font-size: 0.9rem;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
+  text-shadow: 0 0 8px rgba(0, 255, 247, 0.3);
 }
 
 .period-buttons {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+  gap: 0.75rem;
 }
 
 .period-btn {
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
   border: 2px solid #8C52FF;
-  border-radius: 8px;
+  border-radius: 10px;
   background: rgba(140, 82, 255, 0.1);
   color: #8C52FF;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   font-family: inherit;
   transition: all 0.3s ease;
   text-transform: uppercase;
-  font-size: 0.85rem;
-  letter-spacing: 0.5px;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.period-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(0, 255, 247, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.4s ease, height 0.4s ease;
+}
+
+.period-btn:hover::before {
+  width: 100%;
+  height: 100%;
 }
 
 .period-btn:hover {
   background: rgba(140, 82, 255, 0.2);
   border-color: #00fff7;
   color: #00fff7;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 255, 247, 0.3);
 }
 
 .period-btn.active {
   background: linear-gradient(135deg, #00fff7, #8C52FF);
   border-color: #00fff7;
   color: #0f0f23;
-  box-shadow: 0 0 15px rgba(0, 255, 247, 0.5);
+  box-shadow: 0 0 20px rgba(0, 255, 247, 0.6);
+  transform: scale(1.05);
+  font-weight: 900;
 }
 
 .badge-preview {
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .badge-preview label {
   display: block;
   color: #00fff7;
-  font-weight: 600;
-  margin-bottom: 0.75rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
   text-transform: uppercase;
   font-size: 0.9rem;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
+  text-shadow: 0 0 8px rgba(0, 255, 247, 0.3);
 }
 
 .preview-box {
-  background: rgba(29, 27, 78, 0.6);
+  background: rgba(0, 0, 0, 0.4);
   border: 2px solid #8C52FF;
-  border-radius: 8px;
-  padding: 1.5rem;
+  border-radius: 12px;
+  padding: 2rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 80px;
+  min-height: 100px;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s ease;
+}
+
+.preview-box:hover {
+  border-color: #00fff7;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5),
+              0 0 15px rgba(0, 255, 247, 0.3);
 }
 
 .preview-box img {
   max-width: 100%;
   height: auto;
+  filter: drop-shadow(0 0 10px rgba(0, 255, 247, 0.3));
 }
 
 .code-section {
@@ -961,22 +1065,30 @@
 .code-section label {
   display: block;
   color: #00fff7;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 0.75rem;
   text-transform: uppercase;
-  font-size: 0.9rem;
-  letter-spacing: 1px;
+  font-size: 0.85rem;
+  letter-spacing: 1.5px;
+  text-shadow: 0 0 8px rgba(0, 255, 247, 0.3);
 }
 
 .code-box {
   position: relative;
-  background: rgba(15, 15, 35, 0.8);
+  background: rgba(15, 15, 35, 0.9);
   border: 2px solid #8C52FF;
-  border-radius: 8px;
-  padding: 1rem;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
   display: flex;
   align-items: center;
   gap: 1rem;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.code-box:hover {
+  border-color: #00fff7;
+  box-shadow: 0 0 15px rgba(0, 255, 247, 0.2);
 }
 
 .code-box code {
@@ -985,31 +1097,59 @@
   font-family: 'JetBrains Mono', 'Courier New', monospace;
   font-size: 0.85rem;
   word-break: break-all;
-  line-height: 1.5;
+  line-height: 1.6;
+  overflow-x: auto;
+  padding-right: 0.5rem;
+}
+
+/* Custom scrollbar for code boxes */
+.code-box code::-webkit-scrollbar {
+  height: 6px;
+}
+
+.code-box code::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+}
+
+.code-box code::-webkit-scrollbar-thumb {
+  background: #8C52FF;
+  border-radius: 3px;
+}
+
+.code-box code::-webkit-scrollbar-thumb:hover {
+  background: #00fff7;
 }
 
 .copy-btn {
   flex-shrink: 0;
   background: rgba(0, 255, 247, 0.1);
   border: 2px solid #00fff7;
-  border-radius: 6px;
+  border-radius: 8px;
   color: #00fff7;
-  padding: 0.5rem;
+  padding: 0.6rem;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  min-width: 40px;
+  height: 40px;
 }
 
 .copy-btn:hover {
   background: rgba(0, 255, 247, 0.2);
-  box-shadow: 0 0 10px rgba(0, 255, 247, 0.5);
+  box-shadow: 0 0 15px rgba(0, 255, 247, 0.5);
+  transform: scale(1.1);
+}
+
+.copy-btn:active {
+  transform: scale(0.95);
 }
 
 .copy-btn svg {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
 }
 
 .badge-btn {
@@ -1022,4 +1162,74 @@
   background: rgba(255, 110, 199, 0.2);
   border-color: #FF6EC7;
   color: #FF6EC7;
+  box-shadow: 0 0 12px rgba(255, 110, 199, 0.4);
+}
+
+/* Responsive adjustments for badge modal */
+@media (max-width: 768px) {
+  .badge-modal {
+    max-width: 100%;
+    max-height: 95vh;
+    margin: 0.5rem;
+    border-radius: 12px;
+  }
+
+  .badge-modal .modal-header {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .badge-modal .modal-header h3 {
+    font-size: 1.3rem;
+  }
+
+  .badge-modal .modal-content {
+    padding: 1.5rem;
+  }
+
+  .period-buttons {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .code-box {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .code-box code {
+    font-size: 0.75rem;
+    padding-right: 0;
+    margin-bottom: 0.5rem;
+  }
+
+  .copy-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .badge-modal-overlay {
+    padding: 0.5rem;
+  }
+
+  .badge-modal {
+    border-radius: 8px;
+  }
+
+  .badge-modal .modal-header h3 {
+    font-size: 1.1rem;
+  }
+
+  .period-selector {
+    padding: 1rem;
+  }
+
+  .preview-box {
+    padding: 1.5rem 1rem;
+  }
+
+  .modal-description {
+    font-size: 0.9rem;
+    padding: 0.75rem;
+  }
 }
