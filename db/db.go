@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -32,10 +33,14 @@ type App struct {
 
 type AppWithStatus struct {
 	App
-	Status      string  `json:"status"`
-	StatusCode  int     `json:"status_code"`
-	Uptime24h   float64 `json:"uptime_24h"`
-	LastChecked string  `json:"last_checked"`
+	Status             string  `json:"status"`
+	StatusCode         int     `json:"status_code"`
+	Uptime24h          float64 `json:"uptime_24h"`
+	LastChecked        string  `json:"last_checked"`
+	SSLExpiryDate      *string `json:"ssl_expiry_date,omitempty"`
+	SSLDaysUntilExpiry *int    `json:"ssl_days_until_expiry,omitempty"`
+	SSLIssuer          *string `json:"ssl_issuer,omitempty"`
+	SSLLastChecked     *string `json:"ssl_last_checked,omitempty"`
 }
 
 type LatestStatus struct {
@@ -464,7 +469,11 @@ func GetUserAppsWithStatus(conn *sql.DB, userId int) ([]AppWithStatus, error) {
 			a.id, a.user_id, a.app_name, a.slug, a.health_url, a.theme, a.alerts, a.created_at, a.updated_at, a.logo_url,
 			COALESCE(ls.status_code, 0) as status_code,
 			ls.checked_at as last_checked,
-			COALESCE(uptime.uptime_24h, 0) as uptime_24h
+			COALESCE(uptime.uptime_24h, 0) as uptime_24h,
+			a.ssl_expiry_date,
+			a.ssl_days_until_expiry,
+			a.ssl_issuer,
+			a.ssl_last_checked
 		FROM apps a
 		LEFT JOIN LATERAL (
 			SELECT status_code, checked_at 
@@ -499,10 +508,13 @@ func GetUserAppsWithStatus(conn *sql.DB, userId int) ([]AppWithStatus, error) {
 		var updatedAt, lastChecked sql.NullString
 		var statusCode sql.NullInt64
 		var uptime24h sql.NullFloat64
+		var sslExpiryDate, sslIssuer, sslLastChecked sql.NullString
+		var sslDaysUntilExpiry sql.NullInt64
 
 		err := rows.Scan(
 			&app.Id, &app.UserId, &app.AppName, &app.Slug, &app.HealthUrl, &app.Theme, &app.Alerts,
 			&app.CreatedAt, &updatedAt, &app.LogoURL, &statusCode, &lastChecked, &uptime24h,
+			&sslExpiryDate, &sslDaysUntilExpiry, &sslIssuer, &sslLastChecked,
 		)
 		if err != nil {
 			return nil, err
@@ -523,6 +535,19 @@ func GetUserAppsWithStatus(conn *sql.DB, userId int) ([]AppWithStatus, error) {
 		}
 		if uptime24h.Valid {
 			app.Uptime24h = uptime24h.Float64
+		}
+		if sslExpiryDate.Valid {
+			app.SSLExpiryDate = &sslExpiryDate.String
+		}
+		if sslDaysUntilExpiry.Valid {
+			days := int(sslDaysUntilExpiry.Int64)
+			app.SSLDaysUntilExpiry = &days
+		}
+		if sslIssuer.Valid {
+			app.SSLIssuer = &sslIssuer.String
+		}
+		if sslLastChecked.Valid {
+			app.SSLLastChecked = &sslLastChecked.String
 		}
 
 		apps = append(apps, app)
@@ -789,4 +814,18 @@ func CleanupOldStatusChecks(conn *sql.DB) error {
 	}
 
 	return nil
+}
+
+// UpdateSSLInfo updates SSL certificate information for an app
+func UpdateSSLInfo(conn *sql.DB, appId int, expiryDate *time.Time, daysUntilExpiry *int, issuer *string) error {
+	query := `
+		UPDATE apps 
+		SET ssl_expiry_date = $1, 
+		    ssl_days_until_expiry = $2,
+		    ssl_issuer = $3,
+		    ssl_last_checked = NOW()
+		WHERE id = $4
+	`
+	_, err := conn.Exec(query, expiryDate, daysUntilExpiry, issuer, appId)
+	return err
 }

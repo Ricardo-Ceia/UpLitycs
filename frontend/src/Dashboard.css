@@ -511,6 +511,35 @@
   color: #ffdd00;
 }
 
+/* SSL Status Colors */
+.app-stat .stat-value.ssl-status-green {
+  color: #00ff41;
+}
+
+.app-stat .stat-value.ssl-status-red {
+  color: #ff3366;
+  animation: pulse-red 2s infinite;
+}
+
+.app-stat .stat-value.ssl-status-yellow {
+  color: #ffdd00;
+  animation: pulse-yellow 2s infinite;
+}
+
+.app-stat .stat-value.ssl-status-gray {
+  color: #8899aa;
+}
+
+@keyframes pulse-red {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes pulse-yellow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
 /* App Actions */
 .app-actions {
   display: flex;

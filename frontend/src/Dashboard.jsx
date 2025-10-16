@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, TrendingUp, Activity, Clock, ExternalLink, Trash2, AlertCircle, Award, Copy, Check, X } from 'lucide-react';
+import { Plus, TrendingUp, Activity, Clock, ExternalLink, Trash2, AlertCircle, Award, Copy, Check, X, Shield, ShieldAlert } from 'lucide-react';
 import UpgradeModal from './UpgradeModal';
 import PlanFeatures from './PlanFeatures';
 import './Dashboard.css';
@@ -107,6 +107,28 @@ const Dashboard = () => {
     if (status === 'down' || status === 'error') return '✗';
     if (status === 'degraded') return '⚠';
     return '?';
+  };
+
+  const getSSLStatus = (app) => {
+    if (!app.health_url?.startsWith('https://')) {
+      return null; // Not HTTPS
+    }
+    
+    if (!app.ssl_days_until_expiry) {
+      return { status: 'checking', color: 'gray', icon: Shield, text: 'Checking...' };
+    }
+
+    const days = app.ssl_days_until_expiry;
+    
+    if (days <= 0) {
+      return { status: 'expired', color: 'red', icon: ShieldAlert, text: 'EXPIRED' };
+    } else if (days <= 7) {
+      return { status: 'critical', color: 'red', icon: ShieldAlert, text: `${days}d left` };
+    } else if (days <= 30) {
+      return { status: 'warning', color: 'yellow', icon: ShieldAlert, text: `${days}d left` };
+    } else {
+      return { status: 'ok', color: 'green', icon: Shield, text: `${days}d left` };
+    }
   };
 
   const formatDate = (dateString) => {
@@ -361,6 +383,23 @@ const Dashboard = () => {
                     <span className="stat-label">Last Check</span>
                     <span className="stat-value">{formatDate(app.last_checked)}</span>
                   </div>
+
+                  {getSSLStatus(app) && (
+                    <div className="app-stat">
+                      <span className="stat-label">SSL Expiry</span>
+                      <span className={`stat-value ssl-status-${getSSLStatus(app).color}`}>
+                        {(() => {
+                          const SSLIcon = getSSLStatus(app).icon;
+                          return (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <SSLIcon size={14} />
+                              {getSSLStatus(app).text}
+                            </span>
+                          );
+                        })()}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="app-actions">

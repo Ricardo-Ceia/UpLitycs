@@ -109,6 +109,11 @@ func main() {
 	go healthChecker.Start()
 	log.Println("✅ Health checker worker started (checking every 30 seconds)")
 
+	// Start SSL certificate checker (check daily)
+	sslChecker := worker.NewSSLChecker(conn)
+	go sslChecker.Start()
+	log.Println("✅ SSL certificate checker started (checking daily)")
+
 	// --- API routes (must come first) ---
 	r.Route("/api", func(r chi.Router) {
 		r.With(auth.AuthMiddleware).Get("/start-onboarding", handlers.StartOnboardingHandler)
