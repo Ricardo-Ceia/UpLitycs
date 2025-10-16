@@ -470,11 +470,12 @@ func GetUserAppsWithStatus(conn *sql.DB, userId int) ([]AppWithStatus, error) {
 			COALESCE(ls.status_code, 0) as status_code,
 			ls.checked_at as last_checked,
 			COALESCE(uptime.uptime_24h, 0) as uptime_24h,
-			a.ssl_expiry_date,
-			a.ssl_days_until_expiry,
-			a.ssl_issuer,
-			a.ssl_last_checked
+			CASE WHEN u.plan IN ('pro', 'business') THEN a.ssl_expiry_date ELSE NULL END as ssl_expiry_date,
+			CASE WHEN u.plan IN ('pro', 'business') THEN a.ssl_days_until_expiry ELSE NULL END as ssl_days_until_expiry,
+			CASE WHEN u.plan IN ('pro', 'business') THEN a.ssl_issuer ELSE NULL END as ssl_issuer,
+			CASE WHEN u.plan IN ('pro', 'business') THEN a.ssl_last_checked ELSE NULL END as ssl_last_checked
 		FROM apps a
+		JOIN users u ON a.user_id = u.id
 		LEFT JOIN LATERAL (
 			SELECT status_code, checked_at 
 			FROM user_status 

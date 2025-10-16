@@ -540,6 +540,184 @@
   50% { opacity: 0.7; }
 }
 
+/* SSL Stat Enhanced Styles */
+.app-stat.ssl-stat {
+  grid-column: 1 / -1;
+  background: rgba(140, 82, 255, 0.05);
+  border: 1px solid rgba(140, 82, 255, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 8px;
+}
+
+.app-stat.ssl-stat .stat-label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 0.75rem;
+  color: #a0a6ff;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.ssl-status-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.ssl-badge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ssl-badge-green {
+  background: rgba(0, 255, 65, 0.15);
+  color: #00ff41;
+  border: 1px solid rgba(0, 255, 65, 0.3);
+}
+
+.ssl-badge-yellow {
+  background: rgba(255, 221, 0, 0.15);
+  color: #ffdd00;
+  border: 1px solid rgba(255, 221, 0, 0.3);
+  animation: badge-pulse-yellow 2s infinite;
+}
+
+.ssl-badge-red {
+  background: rgba(255, 51, 102, 0.15);
+  color: #ff3366;
+  border: 1px solid rgba(255, 51, 102, 0.3);
+  animation: badge-pulse-red 1.5s infinite;
+}
+
+.ssl-badge-gray {
+  background: rgba(136, 153, 170, 0.15);
+  color: #8899aa;
+  border: 1px solid rgba(136, 153, 170, 0.3);
+}
+
+@keyframes badge-pulse-red {
+  0%, 100% { 
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 51, 102, 0.7);
+  }
+  50% { 
+    transform: scale(1.05);
+    box-shadow: 0 0 10px 5px rgba(255, 51, 102, 0);
+  }
+}
+
+@keyframes badge-pulse-yellow {
+  0%, 100% { 
+    box-shadow: 0 0 0 0 rgba(255, 221, 0, 0.7);
+  }
+  50% { 
+    box-shadow: 0 0 10px 5px rgba(255, 221, 0, 0);
+  }
+}
+
+.ssl-status-container .stat-value {
+  flex: 1;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.ssl-status-container .ssl-text {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.ssl-issuer {
+  margin-top: 6px;
+  font-size: 0.7rem;
+  color: #8899aa;
+  font-style: italic;
+  padding-left: 4px;
+  border-left: 2px solid rgba(140, 82, 255, 0.3);
+}
+
+/* SSL Critical Alert */
+.ssl-status-container.ssl-critical,
+.ssl-status-container.ssl-expired {
+  background: linear-gradient(90deg, 
+    rgba(255, 51, 102, 0.1) 0%, 
+    rgba(255, 51, 102, 0.05) 100%
+  );
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin: -4px 0;
+}
+
+.ssl-status-container.ssl-warning {
+  background: linear-gradient(90deg, 
+    rgba(255, 221, 0, 0.08) 0%, 
+    rgba(255, 221, 0, 0.03) 100%
+  );
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin: -4px 0;
+}
+
+.ssl-status-container.ssl-ok {
+  background: linear-gradient(90deg, 
+    rgba(0, 255, 65, 0.05) 0%, 
+    rgba(0, 255, 65, 0.02) 100%
+  );
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin: -4px 0;
+}
+
+/* SSL Locked State for Free Users */
+.app-stat.ssl-stat-locked {
+  grid-column: 1 / -1;
+  background: rgba(140, 82, 255, 0.03);
+  border: 1px dashed rgba(140, 82, 255, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.app-stat.ssl-stat-locked:hover {
+  background: rgba(140, 82, 255, 0.08);
+  border-color: rgba(140, 82, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+.app-stat.ssl-stat-locked .stat-label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 0.75rem;
+  color: #a0a6ff;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.ssl-locked-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: linear-gradient(135deg, rgba(140, 82, 255, 0.1), rgba(0, 255, 247, 0.1));
+  border-radius: 6px;
+  color: #8C52FF;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.ssl-locked-message .lock-icon {
+  font-size: 1.2rem;
+}
+
 /* App Actions */
 .app-actions {
   display: flex;

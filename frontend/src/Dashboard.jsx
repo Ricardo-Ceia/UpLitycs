@@ -115,19 +115,47 @@ const Dashboard = () => {
     }
     
     if (!app.ssl_days_until_expiry) {
-      return { status: 'checking', color: 'gray', icon: Shield, text: 'Checking...' };
+      return { status: 'checking', color: 'gray', icon: Shield, text: 'Checking...', tooltip: 'SSL certificate check in progress' };
     }
 
     const days = app.ssl_days_until_expiry;
     
     if (days <= 0) {
-      return { status: 'expired', color: 'red', icon: ShieldAlert, text: 'EXPIRED' };
+      return { 
+        status: 'expired', 
+        color: 'red', 
+        icon: ShieldAlert, 
+        text: 'EXPIRED',
+        tooltip: `SSL certificate has expired! Renew immediately.`,
+        badge: '🔴 CRITICAL'
+      };
     } else if (days <= 7) {
-      return { status: 'critical', color: 'red', icon: ShieldAlert, text: `${days}d left` };
+      return { 
+        status: 'critical', 
+        color: 'red', 
+        icon: ShieldAlert, 
+        text: `${days}d left`,
+        tooltip: `SSL expires in ${days} day${days === 1 ? '' : 's'}. Renew urgently!`,
+        badge: '⚠️ URGENT'
+      };
     } else if (days <= 30) {
-      return { status: 'warning', color: 'yellow', icon: ShieldAlert, text: `${days}d left` };
+      return { 
+        status: 'warning', 
+        color: 'yellow', 
+        icon: ShieldAlert, 
+        text: `${days}d left`,
+        tooltip: `SSL expires in ${days} days. Consider renewing soon.`,
+        badge: '⚡ SOON'
+      };
     } else {
-      return { status: 'ok', color: 'green', icon: Shield, text: `${days}d left` };
+      return { 
+        status: 'ok', 
+        color: 'green', 
+        icon: Shield, 
+        text: `${days}d left`,
+        tooltip: `SSL certificate valid for ${days} more days`,
+        badge: '✓ VALID'
+      };
     }
   };
 
@@ -384,20 +412,49 @@ const Dashboard = () => {
                     <span className="stat-value">{formatDate(app.last_checked)}</span>
                   </div>
 
-                  {getSSLStatus(app) && (
-                    <div className="app-stat">
-                      <span className="stat-label">SSL Expiry</span>
-                      <span className={`stat-value ssl-status-${getSSLStatus(app).color}`}>
-                        {(() => {
-                          const SSLIcon = getSSLStatus(app).icon;
-                          return (
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <SSLIcon size={14} />
-                              {getSSLStatus(app).text}
-                            </span>
-                          );
-                        })()}
+                  {getSSLStatus(app) && (planInfo.plan === 'pro' || planInfo.plan === 'business') && (
+                    <div className="app-stat ssl-stat">
+                      <span className="stat-label">
+                        <Shield size={12} style={{ display: 'inline', marginRight: '4px' }} />
+                        SSL Certificate
                       </span>
+                      <div className={`ssl-status-container ssl-${getSSLStatus(app).status}`}>
+                        <div className={`ssl-badge ssl-badge-${getSSLStatus(app).color}`}>
+                          {getSSLStatus(app).badge}
+                        </div>
+                        <span 
+                          className={`stat-value ssl-status-${getSSLStatus(app).color}`}
+                          title={getSSLStatus(app).tooltip}
+                        >
+                          {(() => {
+                            const SSLIcon = getSSLStatus(app).icon;
+                            return (
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <SSLIcon size={16} />
+                                <span className="ssl-text">{getSSLStatus(app).text}</span>
+                              </span>
+                            );
+                          })()}
+                        </span>
+                      </div>
+                      {app.ssl_issuer && (
+                        <div className="ssl-issuer">
+                          Issuer: {app.ssl_issuer}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {getSSLStatus(app) && planInfo.plan === 'free' && (
+                    <div className="app-stat ssl-stat-locked">
+                      <span className="stat-label">
+                        <Shield size={12} style={{ display: 'inline', marginRight: '4px' }} />
+                        SSL Certificate
+                      </span>
+                      <div className="ssl-locked-message">
+                        <span className="lock-icon">🔒</span>
+                        <span>Upgrade to Pro</span>
+                      </div>
                     </div>
                   )}
                 </div>
