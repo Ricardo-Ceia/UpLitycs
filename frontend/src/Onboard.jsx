@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronRight, Monitor, Zap, Sparkles, Check, Copy, Globe, Upload, X, Image as ImageIcon, Slack, Loader2, AlertCircle } from 'lucide-react';
+import { ChevronRight, Monitor, Zap, Sparkles, Check, Copy, Globe, Upload, X, Image as ImageIcon, Loader2, AlertCircle } from 'lucide-react';
 import UpgradeModal from './UpgradeModal';
 
 const RetroOnboarding = () => {
@@ -20,13 +20,6 @@ const RetroOnboarding = () => {
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
   const [uploadError, setUploadError] = useState(null);
-  const [slackStatus, setSlackStatus] = useState({
-    loading: false,
-    connected: false,
-    integration: null,
-    error: null,
-    eligible: false,
-  });
   const fileInputRef = useRef(null);
 
   // Check for subscription success on mount
@@ -53,7 +46,6 @@ const RetroOnboarding = () => {
         if (response.ok) {
           const data = await response.json();
           setPlanFeatures(data);
-          await loadSlackStatus(data.plan);
         }
       } catch (err) {
         console.error('Error fetching plan features:', err);
@@ -560,146 +552,6 @@ public class HealthController {
     return planFeatures && (planFeatures.plan === 'pro' || planFeatures.plan === 'business');
   };
 
-  const loadSlackStatus = async (plan) => {
-    const eligible = plan === 'pro' || plan === 'business';
-
-    if (!eligible) {
-      setSlackStatus({
-        loading: false,
-        connected: false,
-        integration: null,
-        error: null,
-        eligible: false,
-      });
-      return;
-    }
-
-    try {
-      setSlackStatus((prev) => ({ ...prev, loading: true, error: null, eligible }));
-      const response = await fetch('/api/slack/integration', {
-        credentials: 'include',
-      });
-
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to load Slack integration');
-      }
-
-      setSlackStatus({
-        loading: false,
-        connected: Boolean(data.integration),
-        integration: data.integration,
-        error: null,
-        eligible,
-      });
-    } catch (err) {
-      console.error('Error loading Slack integration:', err);
-      setSlackStatus({
-        loading: false,
-        connected: false,
-        integration: null,
-        error: err.message,
-        eligible,
-      });
-    }
-  };
-
-  const startSlackAuth = async () => {
-    if (!slackStatus.eligible) {
-      window.location.href = '/pricing';
-      return;
-    }
-
-    try {
-      setSlackStatus((prev) => ({ ...prev, loading: true, error: null }));
-      const response = await fetch('/api/slack/start-auth', {
-        credentials: 'include',
-      });
-
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to start Slack authentication');
-      }
-
-      window.location.href = data.oauth_url;
-    } catch (err) {
-      console.error('Error starting Slack auth:', err);
-      setSlackStatus((prev) => ({ ...prev, loading: false, error: err.message }));
-    }
-  };
-
-  const renderSlackCallout = () => {
-    if (!planFeatures) {
-      return null;
-    }
-
-    const shouldShow = !slackStatus.connected || slackStatus.loading || slackStatus.error;
-    if (!shouldShow) {
-      return null;
-    }
-
-    const eligible = slackStatus.eligible;
-
-    return (
-      <div className="space-y-4">
-        <div className="bg-gradient-to-r from-cyan-900/40 via-purple-900/40 to-pink-900/40 border border-cyan-500/40 rounded-xl p-6 shadow-lg shadow-cyan-500/20">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-cyan-500/20 rounded-lg border border-cyan-400/50">
-                <Slack className="w-6 h-6 text-cyan-300" />
-              </div>
-              <div>
-                <h3 className="text-cyan-300 font-bold text-sm md:text-base tracking-wide mb-1 uppercase">
-                  Connect Slack Alerts
-                </h3>
-                <p className="text-xs md:text-sm text-gray-300 max-w-md">
-                  {eligible
-                    ? 'Wire up instant incident alerts directly into your Slack workspace while you finish onboarding.'
-                    : 'Upgrade to Pro or Business to unlock real-time Slack alerts for outages and recoveries.'}
-                </p>
-                {slackStatus.error && (
-                  <div className="mt-3 px-3 py-2 bg-red-900/30 border border-red-500/40 rounded text-xs text-red-300 flex items-center gap-2">
-                    <AlertCircle size={14} />
-                    <span>{slackStatus.error}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              <span className={`inline-flex items-center justify-center px-3 py-1 text-xs font-bold rounded-full border ${eligible ? 'border-yellow-400/50 text-yellow-300 bg-yellow-500/10' : 'border-purple-400/40 text-purple-200 bg-purple-500/10'}`}>
-                {eligible ? 'Not connected' : 'Locked'}
-              </span>
-              <button
-                className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold uppercase tracking-wide transition-all ${eligible ? 'bg-gradient-to-r from-cyan-400 to-emerald-400 text-gray-900 hover:from-cyan-300 hover:to-emerald-300' : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-400 hover:to-pink-400'}`}
-                onClick={startSlackAuth}
-                disabled={slackStatus.loading}
-              >
-                {slackStatus.loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Connecting...
-                  </>
-                ) : (
-                  eligible ? 'Connect Slack' : 'Upgrade for Slack'
-                )}
-              </button>
-              {eligible && (
-                <button
-                  className="inline-flex items-center justify-center px-4 py-2 rounded-lg text-xs font-semibold uppercase tracking-wide border border-cyan-400/50 text-cyan-200 hover:bg-cyan-400/10 transition-all"
-                  onClick={() => window.location.href = '/settings?tab=integrations'}
-                >
-                  Learn More
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   const handleSubmit = async () => {
     if (selectedTheme && homepageUrl && appName && slug) {
       setIsSubmitting(true);
@@ -824,8 +676,6 @@ public class HealthController {
                 </li>
               </ol>
             </div>
-
-            {renderSlackCallout()}
 
             <div className="bg-black/50 rounded-lg p-6 border border-purple-500/50">
               <div className="flex items-center justify-between mb-4">

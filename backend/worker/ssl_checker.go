@@ -10,8 +10,8 @@ import (
 )
 
 type SSLChecker struct {
-	conn          *sql.DB
-	checkTrigger  chan int // Channel to trigger checks for specific app IDs
+	conn         *sql.DB
+	checkTrigger chan int // Channel to trigger checks for specific app IDs
 }
 
 func NewSSLChecker(conn *sql.DB) *SSLChecker {
@@ -146,7 +146,6 @@ func (sc *SSLChecker) checkSpecificAppSSL(appID int) {
 		emoji, app.AppName, daysUntilExpiry, expiryDate.Format("2006-01-02"), issuer)
 }
 
-
 type httpsApp struct {
 	AppID     int
 	AppName   string
@@ -198,7 +197,6 @@ func (sc *SSLChecker) getHTTPSAppByID(appID int) (*httpsApp, error) {
 
 	return &app, nil
 }
-
 
 func (sc *SSLChecker) checkSSLCertificate(healthURL string) (time.Time, string, error) {
 	parsedURL, err := url.Parse(healthURL)
