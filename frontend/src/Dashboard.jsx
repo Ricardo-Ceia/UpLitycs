@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, TrendingUp, Activity, Clock, ExternalLink, Trash2, AlertCircle, Award, Copy, Check, X, Shield, ShieldAlert } from 'lucide-react';
+import { Plus, TrendingUp, Activity, Clock, ExternalLink, Trash2, AlertCircle, Award, Copy, Check, X, Shield, ShieldAlert, Settings, Slack, Loader2 } from 'lucide-react';
 import UpgradeModal from './UpgradeModal';
 import PlanFeatures from './PlanFeatures';
 import './Dashboard.css';
@@ -21,6 +21,12 @@ const Dashboard = () => {
   const [showBadgeModal, setShowBadgeModal] = useState(null);
   const [badgePeriods, setBadgePeriods] = useState({}); // Store period per app ID
   const [copiedBadge, setCopiedBadge] = useState(null);
+  const [slackStatus, setSlackStatus] = useState({
+    loading: false,
+    connected: false,
+    integration: null,
+    error: null,
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -62,6 +68,8 @@ const Dashboard = () => {
 
       if (data.can_add) {
         navigate('/onboarding');
+
+          await loadSlackStatus(data.plan);
       } else {
         setShowUpgradeModal(true);
       }
@@ -70,6 +78,75 @@ const Dashboard = () => {
     }
   };
 
+
+      const loadSlackStatus = async (plan) => {
+        if (plan !== 'pro' && plan !== 'business') {
+          setSlackStatus({
+            loading: false,
+            connected: false,
+            integration: null,
+            error: null,
+          });
+          return;
+        }
+
+        try {
+          setSlackStatus((prev) => ({ ...prev, loading: true, error: null }));
+          const response = await fetch('/api/slack/integration', {
+            credentials: 'include',
+          });
+
+          const data = await response.json().catch(() => ({}));
+
+          if (!response.ok) {
+            throw new Error(data.error || 'Failed to load Slack integration');
+          }
+
+          setSlackStatus({
+            loading: false,
+            connected: Boolean(data.integration),
+            integration: data.integration,
+            error: null,
+          });
+        } catch (err) {
+          console.error('Error loading Slack integration:', err);
+          setSlackStatus({
+            loading: false,
+            connected: false,
+            integration: null,
+            error: err.message,
+          });
+        }
+      };
+
+      const startSlackAuth = async () => {
+        if (planInfo.plan !== 'pro' && planInfo.plan !== 'business') {
+          navigate('/pricing');
+          return;
+        }
+
+        try {
+          setSlackStatus((prev) => ({ ...prev, loading: true, error: null }));
+          const response = await fetch('/api/slack/start-auth', {
+            credentials: 'include',
+          });
+
+          const data = await response.json().catch(() => ({}));
+
+          if (!response.ok) {
+            throw new Error(data.error || 'Failed to start Slack authentication');
+          }
+
+          window.location.href = data.oauth_url;
+        } catch (err) {
+          console.error('Error starting Slack auth:', err);
+          setSlackStatus((prev) => ({ ...prev, loading: false, error: err.message }));
+        }
+      };
+
+      const handleManageSlack = () => {
+        navigate('/settings?tab=integrations');
+      };
   const handleDeleteApp = async (appId) => {
     try {
       const response = await fetch(`/api/apps/${appId}`, {
@@ -277,6 +354,14 @@ const Dashboard = () => {
               <span className="plan-count">{planInfo.app_count}/{planInfo.plan_limit}</span>
             </div>
             
+            <button 
+              className="settings-btn" 
+              onClick={() => navigate('/settings')}
+              title="Settings"
+            >
+              <Settings size={18} />
+            </button>
+            
             {planInfo.plan === 'free' && (
               <button className="upgrade-btn" onClick={() => navigate('/pricing')}>
                 <TrendingUp size={16} />
@@ -334,6 +419,75 @@ const Dashboard = () => {
                 ? (apps.reduce((sum, app) => sum + (app.uptime_24h || 0), 0) / apps.length).toFixed(1)
                 : 0}%
             </span>
+          </div>
+        </div>
+      </section>
+
+      {/* Slack Shortcut */}
+      <section className="slack-shortcut">
+        <div className={`slack-card ${slackStatus.connected ? 'slack-connected' : 'slack-disconnected'}`}>
+          <div className="slack-card-header">
+            <div className="slack-icon-wrapper">
+              <Slack size={28} />
+            </div>
+            <div>
+              <h3>Slack Alerts</h3>
+              <p>
+                {planInfo.plan === 'pro' || planInfo.plan === 'business'
+                  ? slackStatus.connected
+                    ? `Connected to #${slackStatus.integration?.slack_channel_name || 'channel'}`
+                    : 'Instant incident alerts in your Slack workspace'
+                  : 'Upgrade to enable Slack notifications'}
+              </p>
+            </div>
+          </div>
+
+          {slackStatus.error && (
+            <div className="slack-card-error">
+              <AlertCircle size={16} />
+              <span>{slackStatus.error}</span>
+            </div>
+          )}
+
+          <div className="slack-card-actions">
+            {planInfo.plan === 'pro' || planInfo.plan === 'business' ? (
+              slackStatus.connected ? (
+                <div className="slack-connected-row">
+                  <span className="slack-status-badge slack-status-active">Connected</span>
+                  <button className="slack-manage-btn" onClick={handleManageSlack}>
+                    Manage
+                  </button>
+                </div>
+              ) : (
+                <div className="slack-connect-row">
+                  <span className="slack-status-badge slack-status-inactive">Not connected</span>
+                  <button
+                    className="slack-connect-btn"
+                    onClick={startSlackAuth}
+                    disabled={slackStatus.loading}
+                  >
+                    {slackStatus.loading ? (
+                      <>
+                        <Loader2 className="spinner" size={16} />
+                        Connecting...
+                      </>
+                    ) : (
+                      'Connect Slack'
+                    )}
+                  </button>
+                  <button className="slack-manage-btn" onClick={handleManageSlack}>
+                    Learn more
+                  </button>
+                </div>
+              )
+            ) : (
+              <div className="slack-upgrade-row">
+                <span className="slack-status-badge slack-status-locked">Locked</span>
+                <button className="slack-upgrade-btn" onClick={() => navigate('/pricing')}>
+                  Upgrade for Slack Alerts
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </section>

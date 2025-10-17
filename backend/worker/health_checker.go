@@ -2,8 +2,10 @@ package worker
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
+	"statusframe/backend/handlers"
 	"statusframe/db"
 	"time"
 )
@@ -12,6 +14,7 @@ type HealthChecker struct {
 	conn     *sql.DB
 	interval time.Duration
 	client   *http.Client
+	slack    *handlers.Handler
 }
 
 func NewHealthChecker(conn *sql.DB, interval time.Duration) *HealthChecker {
@@ -21,6 +24,7 @@ func NewHealthChecker(conn *sql.DB, interval time.Duration) *HealthChecker {
 		client: &http.Client{
 			Timeout: 10 * time.Second,
 		},
+		slack: handlers.NewHandler(conn),
 	}
 }
 
@@ -100,6 +104,12 @@ func (hc *HealthChecker) checkAllUsers() {
 func (hc *HealthChecker) checkAppHealth(appId, userId int, appName, slug, healthUrl, plan string) {
 	startTime := time.Now()
 
+	previousStatus, err := hc.getPreviousStatus(appId)
+	if err != nil {
+		log.Printf("⚠️ Error fetching previous status for app %s (ID: %d): %v", appName, appId, err)
+		previousStatus = ""
+	}
+
 	resp, err := hc.client.Get(healthUrl)
 
 	responseTime := time.Since(startTime).Milliseconds()
@@ -133,6 +143,10 @@ func (hc *HealthChecker) checkAppHealth(appId, userId int, appName, slug, health
 
 		log.Printf("%s %s | App: %s (ID: %d, Plan: %s) | Status: %d (%s) | Response: %dms",
 			emoji, healthUrl, appName, appId, plan, statusCode, status, responseTime)
+
+		if err := hc.maybeSendSlackAlert(plan, appId, appName, status, statusCode, previousStatus); err != nil {
+			log.Printf("⚠️ Slack notification error for app %s (ID: %d): %v", appName, appId, err)
+		}
 	}
 
 	// Update next_check_at based on plan interval
@@ -144,4 +158,124 @@ func (hc *HealthChecker) checkAppHealth(appId, userId int, appName, slug, health
 	if err != nil {
 		log.Printf("❌ Error updating next_check_at for app %s: %v", appName, err)
 	}
+}
+
+func (hc *HealthChecker) getPreviousStatus(appId int) (string, error) {
+	var statusCode sql.NullInt64
+	err := hc.conn.QueryRow(
+		"SELECT status_code FROM user_status WHERE app_id = $1 ORDER BY checked_at DESC LIMIT 1",
+		appId,
+	).Scan(&statusCode)
+	if err == sql.ErrNoRows {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	if !statusCode.Valid {
+		return "", nil
+	}
+
+	return db.GetStatusFromCode(int(statusCode.Int64)), nil
+}
+
+func (hc *HealthChecker) maybeSendSlackAlert(plan string, appId int, appName, currentStatus string, statusCode int, previousStatus string) error {
+	if hc.slack == nil {
+		return nil
+	}
+
+	if plan != "pro" && plan != "business" {
+		return nil
+	}
+
+	classification, shouldNotify := classifyStatusChange(previousStatus, currentStatus)
+	if !shouldNotify {
+		return nil
+	}
+
+	alertStatus := normalizeStatusForSlack(currentStatus, classification)
+	message := buildSlackAlertMessage(appName, classification, currentStatus, statusCode)
+
+	alert := handlers.IncidentAlert{
+		AppID:      appId,
+		AppName:    appName,
+		Status:     alertStatus,
+		StatusCode: statusCode,
+		Message:    message,
+		Timestamp:  time.Now(),
+	}
+
+	return hc.slack.SendSlackAlert(alert)
+}
+
+func classifyStatusChange(previousStatus, currentStatus string) (string, bool) {
+	if previousStatus == currentStatus {
+		return "", false
+	}
+
+	incidentStatuses := map[string]bool{
+		"down":  true,
+		"error": true,
+	}
+
+	degradedStatuses := map[string]bool{
+		"degraded":     true,
+		"client_error": true,
+	}
+
+	if incidentStatuses[currentStatus] {
+		return "incident", true
+	}
+
+	if degradedStatuses[currentStatus] {
+		return "degraded", true
+	}
+
+	if currentStatus == "up" && (incidentStatuses[previousStatus] || degradedStatuses[previousStatus]) {
+		return "recovery", true
+	}
+
+	return "", false
+}
+
+func normalizeStatusForSlack(status, classification string) string {
+	switch status {
+	case "error":
+		return "down"
+	case "client_error":
+		return "degraded"
+	case "up":
+		return "up"
+	}
+
+	if classification == "recovery" {
+		return "up"
+	}
+
+	return status
+}
+
+func buildSlackAlertMessage(appName, classification, currentStatus string, statusCode int) string {
+	statusLabel := formatStatusCode(statusCode)
+
+	switch classification {
+	case "incident":
+		if statusCode <= 0 {
+			return fmt.Sprintf("%s is unreachable. The monitor did not receive any response.", appName)
+		}
+		return fmt.Sprintf("%s is unreachable (%s).", appName, statusLabel)
+	case "degraded":
+		return fmt.Sprintf("%s is experiencing issues (%s). Some requests may be failing.", appName, statusLabel)
+	case "recovery":
+		return fmt.Sprintf("%s has recovered. Latest check returned %s.", appName, statusLabel)
+	default:
+		return fmt.Sprintf("%s status update: %s (%s).", appName, currentStatus, statusLabel)
+	}
+}
+
+func formatStatusCode(statusCode int) string {
+	if statusCode <= 0 {
+		return "no response"
+	}
+	return fmt.Sprintf("HTTP %d", statusCode)
 }

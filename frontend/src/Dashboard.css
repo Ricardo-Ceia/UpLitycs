@@ -215,6 +215,27 @@
   box-shadow: 0 6px 20px rgba(255, 110, 199, 0.6);
 }
 
+.settings-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(0, 255, 247, 0.1);
+  border: 2px solid #00fff7;
+  border-radius: 8px;
+  color: #00fff7;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.3s ease;
+}
+
+.settings-btn:hover {
+  background: rgba(0, 255, 247, 0.2);
+  box-shadow: 0 0 10px rgba(0, 255, 247, 0.4);
+  transform: scale(1.05);
+}
+
 /* Stats Section */
 .stats-section {
   display: grid;
@@ -281,6 +302,227 @@
   font-weight: 900;
   color: #00fff7;
   line-height: 1;
+}
+
+/* Slack Shortcut */
+.slack-shortcut {
+  margin-bottom: 3rem;
+  position: relative;
+  z-index: 2;
+}
+
+.slack-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.75rem;
+  border-radius: 16px;
+  border: 2px solid rgba(0, 255, 247, 0.2);
+  background: rgba(16, 20, 45, 0.7);
+  backdrop-filter: blur(12px);
+  transition: all 0.3s ease;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.slack-card.slack-connected {
+  border-color: rgba(0, 255, 128, 0.6);
+  box-shadow: 0 12px 40px rgba(0, 255, 128, 0.2);
+}
+
+.slack-card.slack-disconnected {
+  border-color: rgba(255, 110, 199, 0.4);
+  box-shadow: 0 12px 40px rgba(255, 110, 199, 0.2);
+}
+
+.slack-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(0, 255, 247, 0.6);
+}
+
+.slack-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.slack-card-header h3 {
+  margin: 0;
+  font-size: 1.35rem;
+  color: #00fff7;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.slack-card-header p {
+  margin: 0.25rem 0 0 0;
+  color: #a0a8c0;
+  font-size: 0.9rem;
+}
+
+.slack-icon-wrapper {
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: rgba(21, 184, 255, 0.15);
+  color: #36c5f0;
+  position: relative;
+  overflow: hidden;
+}
+
+.slack-icon-wrapper::after {
+  content: '';
+  position: absolute;
+  inset: -40%;
+  background: linear-gradient(135deg, rgba(54, 197, 240, 0.35), rgba(88, 101, 242, 0.35));
+  transform: rotate(25deg);
+  filter: blur(20px);
+}
+
+.slack-card-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  background: rgba(255, 110, 199, 0.12);
+  border: 1px solid rgba(255, 110, 199, 0.4);
+  color: #ff93d7;
+  font-size: 0.85rem;
+}
+
+.slack-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.slack-connect-row,
+.slack-connected-row,
+.slack-upgrade-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.slack-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.slack-status-active {
+  background: rgba(0, 255, 128, 0.15);
+  color: #7bffba;
+  border: 1px solid rgba(0, 255, 128, 0.4);
+}
+
+.slack-status-inactive {
+  background: rgba(255, 110, 199, 0.12);
+  color: #ff9ee2;
+  border: 1px solid rgba(255, 110, 199, 0.4);
+}
+
+.slack-status-locked {
+  background: rgba(255, 196, 0, 0.12);
+  color: #ffd966;
+  border: 1px solid rgba(255, 196, 0, 0.4);
+}
+
+.slack-connect-btn,
+.slack-manage-btn,
+.slack-upgrade-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.4rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.slack-connect-btn {
+  background: linear-gradient(135deg, #36c5f0, #2eb67d);
+  color: #061023;
+  box-shadow: 0 6px 20px rgba(54, 197, 240, 0.4);
+}
+
+.slack-connect-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(54, 197, 240, 0.55);
+}
+
+.slack-connect-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.slack-manage-btn {
+  background: rgba(0, 255, 247, 0.1);
+  color: #00fff7;
+  border: 1px solid rgba(0, 255, 247, 0.4);
+}
+
+.slack-manage-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 255, 247, 0.3);
+}
+
+.slack-upgrade-btn {
+  background: linear-gradient(135deg, #ff6ec7, #8c52ff);
+  color: white;
+  box-shadow: 0 8px 24px rgba(140, 82, 255, 0.4);
+}
+
+.slack-upgrade-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(140, 82, 255, 0.55);
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@media (max-width: 768px) {
+  .slack-card {
+    padding: 1.25rem;
+  }
+
+  .slack-card-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .slack-connect-row,
+  .slack-upgrade-row,
+  .slack-connected-row {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .slack-connect-btn,
+  .slack-manage-btn,
+  .slack-upgrade-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 /* Apps Section */

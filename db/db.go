@@ -830,3 +830,150 @@ func UpdateSSLInfo(conn *sql.DB, appId int, expiryDate *time.Time, daysUntilExpi
 	_, err := conn.Exec(query, expiryDate, daysUntilExpiry, issuer, appId)
 	return err
 }
+
+// ========== SLACK INTEGRATION FUNCTIONS ==========
+
+// SlackIntegration represents a Slack integration
+type SlackIntegration struct {
+	ID               int    `json:"id"`
+	UserID           int    `json:"user_id"`
+	SlackTeamID      string `json:"slack_team_id"`
+	SlackTeamName    string `json:"slack_team_name"`
+	SlackBotToken    string `json:"slack_bot_token,omitempty"` // Don't expose token in API
+	SlackChannelID   string `json:"slack_channel_id"`
+	SlackChannelName string `json:"slack_channel_name"`
+	IsEnabled        bool   `json:"is_enabled"`
+	CreatedAt        string `json:"created_at"`
+	UpdatedAt        string `json:"updated_at"`
+}
+
+// SaveSlackIntegration saves or updates a Slack integration for a user
+func SaveSlackIntegration(conn *sql.DB, userID int, botToken, teamID, teamName, channelID, channelName string) (*SlackIntegration, error) {
+	query := `
+		INSERT INTO slack_integrations (user_id, slack_team_id, slack_team_name, slack_bot_token, slack_channel_id, slack_channel_name, is_enabled)
+		VALUES ($1, $2, $3, $4, $5, $6, true)
+		ON CONFLICT (user_id) DO UPDATE
+		SET slack_team_id = $2,
+		    slack_team_name = $3,
+		    slack_bot_token = $4,
+		    slack_channel_id = $5,
+		    slack_channel_name = $6,
+		    is_enabled = true,
+		    updated_at = NOW()
+		RETURNING id, user_id, slack_team_id, slack_team_name, slack_channel_id, slack_channel_name, is_enabled, created_at, updated_at
+	`
+
+	var integration SlackIntegration
+	err := conn.QueryRow(query, userID, teamID, teamName, botToken, channelID, channelName).Scan(
+		&integration.ID,
+		&integration.UserID,
+		&integration.SlackTeamID,
+		&integration.SlackTeamName,
+		&integration.SlackChannelID,
+		&integration.SlackChannelName,
+		&integration.IsEnabled,
+		&integration.CreatedAt,
+		&integration.UpdatedAt,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("error saving Slack integration: %w", err)
+	}
+
+	return &integration, nil
+}
+
+// GetSlackIntegration retrieves a user's Slack integration (without bot token for security)
+func GetSlackIntegration(conn *sql.DB, userID int) (*SlackIntegration, error) {
+	query := `
+		SELECT id, user_id, slack_team_id, slack_team_name, slack_channel_id, slack_channel_name, is_enabled, created_at, updated_at
+		FROM slack_integrations
+		WHERE user_id = $1
+	`
+
+	var integration SlackIntegration
+	err := conn.QueryRow(query, userID).Scan(
+		&integration.ID,
+		&integration.UserID,
+		&integration.SlackTeamID,
+		&integration.SlackTeamName,
+		&integration.SlackChannelID,
+		&integration.SlackChannelName,
+		&integration.IsEnabled,
+		&integration.CreatedAt,
+		&integration.UpdatedAt,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, nil // No integration found
+	}
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving Slack integration: %w", err)
+	}
+
+	return &integration, nil
+}
+
+// GetSlackIntegrationByAppID retrieves Slack integration using app ID (with bot token for internal use)
+func GetSlackIntegrationByAppID(conn *sql.DB, appID int) (*SlackIntegration, error) {
+	query := `
+		SELECT 
+			si.id, si.user_id, si.slack_team_id, si.slack_team_name, 
+			si.slack_bot_token, si.slack_channel_id, si.slack_channel_name, 
+			si.is_enabled, si.created_at, si.updated_at
+		FROM slack_integrations si
+		JOIN apps a ON a.user_id = si.user_id
+		WHERE a.id = $1 AND si.is_enabled = true
+	`
+
+	var integration SlackIntegration
+	err := conn.QueryRow(query, appID).Scan(
+		&integration.ID,
+		&integration.UserID,
+		&integration.SlackTeamID,
+		&integration.SlackTeamName,
+		&integration.SlackBotToken,
+		&integration.SlackChannelID,
+		&integration.SlackChannelName,
+		&integration.IsEnabled,
+		&integration.CreatedAt,
+		&integration.UpdatedAt,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving Slack integration: %w", err)
+	}
+
+	return &integration, nil
+}
+
+// DisableSlackIntegration disables Slack integration for a user
+func DisableSlackIntegration(conn *sql.DB, userID int) error {
+	_, err := conn.Exec(
+		"UPDATE slack_integrations SET is_enabled = false, updated_at = NOW() WHERE user_id = $1",
+		userID,
+	)
+	return err
+}
+
+// DeleteSlackIntegration removes Slack integration for a user
+func DeleteSlackIntegration(conn *sql.DB, userID int) error {
+	_, err := conn.Exec(
+		"DELETE FROM slack_integrations WHERE user_id = $1",
+		userID,
+	)
+	return err
+}
+
+// LogIncidentNotification logs a notification event
+func LogIncidentNotification(conn *sql.DB, appID int, notificationType, status string) error {
+	query := `
+		INSERT INTO incident_notifications (app_id, notification_type, status)
+		VALUES ($1, $2, $3)
+	`
+	_, err := conn.Exec(query, appID, notificationType, status)
+	return err
+}

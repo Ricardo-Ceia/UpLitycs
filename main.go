@@ -134,6 +134,13 @@ func main() {
 		r.With(auth.AuthMiddleware).Get("/stripe-success", appHandlers.StripeSuccessHandler) // Handle successful payment
 		r.Post("/stripe-webhook", appHandlers.StripeWebhookHandler)                          // No auth - Stripe signs the request
 
+		// Slack integration routes (Protected - Pro/Business only)
+		r.With(auth.AuthMiddleware).Get("/slack/start-auth", appHandlers.StartSlackAuthHandler)
+		r.Get("/slack/callback", appHandlers.SlackCallbackHandler)
+		r.With(auth.AuthMiddleware).Post("/slack/save-integration", appHandlers.SaveSlackIntegrationHandler)
+		r.With(auth.AuthMiddleware).Get("/slack/integration", appHandlers.GetSlackIntegrationHandler)
+		r.With(auth.AuthMiddleware).Post("/slack/disable", appHandlers.DisableSlackIntegrationHandler)
+
 		// Public API - no authentication required
 		r.Get("/public/status/{slug}", appHandlers.GetPublicStatusHandler)
 		r.Get("/public/ping/{slug}", appHandlers.GetCurrentResponseTimeHandler)

@@ -1,8 +1,32 @@
 import "./Home.css";
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Activity, Zap, Shield, Bell, Terminal, TrendingUp } from 'lucide-react';
 
 function Home() {
+  const navigate = useNavigate();
+
+  const handleGetStarted = async () => {
+    try {
+      const response = await fetch('/auth/check-session', {
+        method: 'GET',
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        // User is authenticated, redirect to dashboard
+        navigate('/dashboard');
+      } else {
+        // User is not authenticated, redirect to auth
+        navigate('/auth');
+      }
+    } catch (error) {
+      console.error('Error checking authentication:', error);
+      // On error, redirect to auth as fallback
+      navigate('/auth');
+    }
+  };
+
   return (
     <div className="home-container">
       {/* CRT Effect Overlay */}
@@ -163,10 +187,6 @@ function Home() {
     </div>
   );
 }
-
-const handleGetStarted = () => {
-  window.location.href = "/auth";
-};
 
 function StatusLight() {
   const [active, setActive] = useState("green");
