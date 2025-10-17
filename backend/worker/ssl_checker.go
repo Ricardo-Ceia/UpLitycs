@@ -10,12 +10,24 @@ import (
 )
 
 type SSLChecker struct {
-	conn *sql.DB
+	conn          *sql.DB
+	checkTrigger  chan int // Channel to trigger checks for specific app IDs
 }
 
 func NewSSLChecker(conn *sql.DB) *SSLChecker {
 	return &SSLChecker{
-		conn: conn,
+		conn:         conn,
+		checkTrigger: make(chan int, 100), // Buffered channel for on-demand checks
+	}
+}
+
+// CheckAppSSL performs an immediate SSL check for a specific app
+func (sc *SSLChecker) CheckAppSSL(appID int) {
+	select {
+	case sc.checkTrigger <- appID:
+		log.Printf("📨 SSL check queued for app ID: %d", appID)
+	default:
+		log.Printf("⚠️  SSL check queue full, skipping app ID: %d", appID)
 	}
 }
 
@@ -30,8 +42,15 @@ func (sc *SSLChecker) Start() {
 	ticker := time.NewTicker(24 * time.Hour)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		sc.checkAllSSLCertificates()
+	for {
+		select {
+		case <-ticker.C:
+			// Regular scheduled check
+			sc.checkAllSSLCertificates()
+		case appID := <-sc.checkTrigger:
+			// On-demand check for a specific app
+			sc.checkSpecificAppSSL(appID)
+		}
 	}
 }
 
@@ -83,6 +102,51 @@ func (sc *SSLChecker) checkAllSSLCertificates() {
 	log.Printf("🔒 SSL check complete: %d checked, %d errors", checkedCount, errorCount)
 }
 
+// checkSpecificAppSSL performs an SSL check for a single app
+func (sc *SSLChecker) checkSpecificAppSSL(appID int) {
+	log.Printf("🔍 Starting on-demand SSL check for app ID: %d", appID)
+
+	app, err := sc.getHTTPSAppByID(appID)
+	if err != nil {
+		log.Printf("❌ Error fetching HTTPS app %d: %v", appID, err)
+		return
+	}
+
+	if app == nil {
+		log.Printf("⚠️  App %d is not HTTPS or does not exist", appID)
+		return
+	}
+
+	expiryDate, issuer, err := sc.checkSSLCertificate(app.HealthURL)
+	if err != nil {
+		log.Printf("⚠️  SSL check failed for %s (%s): %v", app.AppName, app.HealthURL, err)
+		// Clear SSL data on error
+		db.UpdateSSLInfo(sc.conn, app.AppID, nil, nil, nil)
+		return
+	}
+
+	daysUntilExpiry := int(time.Until(expiryDate).Hours() / 24)
+
+	// Update SSL info in database
+	err = db.UpdateSSLInfo(sc.conn, app.AppID, &expiryDate, &daysUntilExpiry, &issuer)
+	if err != nil {
+		log.Printf("❌ Error updating SSL info for %s: %v", app.AppName, err)
+		return
+	}
+
+	// Log with appropriate emoji
+	emoji := "✅"
+	if daysUntilExpiry <= 7 {
+		emoji = "🔴"
+	} else if daysUntilExpiry <= 30 {
+		emoji = "🟡"
+	}
+
+	log.Printf("%s SSL checked (on-demand) for %s: expires in %d days (%s) - Issuer: %s",
+		emoji, app.AppName, daysUntilExpiry, expiryDate.Format("2006-01-02"), issuer)
+}
+
+
 type httpsApp struct {
 	AppID     int
 	AppName   string
@@ -114,6 +178,27 @@ func (sc *SSLChecker) getHTTPSApps() ([]httpsApp, error) {
 
 	return apps, nil
 }
+
+// getHTTPSAppByID retrieves a single HTTPS app by ID
+func (sc *SSLChecker) getHTTPSAppByID(appID int) (*httpsApp, error) {
+	query := `
+		SELECT id, app_name, health_url
+		FROM apps
+		WHERE id = $1 AND health_url LIKE 'https://%'
+	`
+
+	var app httpsApp
+	err := sc.conn.QueryRow(query, appID).Scan(&app.AppID, &app.AppName, &app.HealthURL)
+	if err == sql.ErrNoRows {
+		return nil, nil // App not found or not HTTPS
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return &app, nil
+}
+
 
 func (sc *SSLChecker) checkSSLCertificate(healthURL string) (time.Time, string, error) {
 	parsedURL, err := url.Parse(healthURL)

@@ -30,12 +30,22 @@ type OnboardingRequest struct {
 	LogoURL  string `json:"logo_url,omitempty"` // Optional logo URL
 }
 
+// SSLCheckerInterface defines the methods we need from the SSL checker
+type SSLCheckerInterface interface {
+	CheckAppSSL(appID int)
+}
+
 type Handler struct {
-	conn *sql.DB
+	conn       *sql.DB
+	sslChecker SSLCheckerInterface
 }
 
 func NewHandler(conn *sql.DB) *Handler {
 	return &Handler{conn: conn}
+}
+
+func (h *Handler) SetSSLChecker(sslChecker SSLCheckerInterface) {
+	h.sslChecker = sslChecker
 }
 
 func StartOnboardingHandler(w http.ResponseWriter, r *http.Request) {
@@ -214,6 +224,11 @@ func (h *Handler) GoToDashboardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("Successfully created app with ID: %d", appId)
+
+	// Trigger immediate SSL check if it's an HTTPS URL and SSL checker is available
+	if h.sslChecker != nil && strings.HasPrefix(req.Homepage, "https://") {
+		go h.sslChecker.CheckAppSSL(appId)
+	}
 
 	// Return success JSON
 	w.Header().Set("Content-Type", "application/json")

@@ -114,6 +114,9 @@ func main() {
 	go sslChecker.Start()
 	log.Println("✅ SSL certificate checker started (checking daily)")
 
+	// Pass SSL checker to handlers so we can trigger on-demand checks
+	appHandlers.SetSSLChecker(sslChecker)
+
 	// --- API routes (must come first) ---
 	r.Route("/api", func(r chi.Router) {
 		r.With(auth.AuthMiddleware).Get("/start-onboarding", handlers.StartOnboardingHandler)
