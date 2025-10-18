@@ -147,6 +147,10 @@ func (hc *HealthChecker) checkAppHealth(appId, userId int, appName, slug, health
 		if err := hc.maybeSendSlackAlert(plan, appId, appName, status, statusCode, previousStatus); err != nil {
 			log.Printf("⚠️ Slack notification error for app %s (ID: %d): %v", appName, appId, err)
 		}
+
+		if err := hc.maybeSendDiscordAlert(plan, appId, appName, status, statusCode, previousStatus); err != nil {
+			log.Printf("⚠️ Discord notification error for app %s (ID: %d): %v", appName, appId, err)
+		}
 	}
 
 	// Update next_check_at based on plan interval
@@ -206,6 +210,35 @@ func (hc *HealthChecker) maybeSendSlackAlert(plan string, appId int, appName, cu
 	}
 
 	return hc.slack.SendSlackAlert(alert)
+}
+
+func (hc *HealthChecker) maybeSendDiscordAlert(plan string, appId int, appName, currentStatus string, statusCode int, previousStatus string) error {
+	if hc.slack == nil {
+		return nil
+	}
+
+	if plan != "pro" && plan != "business" {
+		return nil
+	}
+
+	classification, shouldNotify := classifyStatusChange(previousStatus, currentStatus)
+	if !shouldNotify {
+		return nil
+	}
+
+	alertStatus := normalizeStatusForSlack(currentStatus, classification)
+	message := buildSlackAlertMessage(appName, classification, currentStatus, statusCode)
+
+	alert := handlers.IncidentAlert{
+		AppID:      appId,
+		AppName:    appName,
+		Status:     alertStatus,
+		StatusCode: statusCode,
+		Message:    message,
+		Timestamp:  time.Now(),
+	}
+
+	return hc.slack.SendDiscordAlert(alert)
 }
 
 func classifyStatusChange(previousStatus, currentStatus string) (string, bool) {

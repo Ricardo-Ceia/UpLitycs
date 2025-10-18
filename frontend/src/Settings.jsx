@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Settings as SettingsIcon, LogOut, Lock, Shield, Bell, Slack as SlackIcon, AlertCircle, Check } from 'lucide-react';
-import SlackIntegration from './SlackIntegration';
+import { Settings as SettingsIcon, LogOut, Lock, Shield, Bell, MessageCircle as DiscordIcon, AlertCircle, Check } from 'lucide-react';
+import DiscordIntegration from './DiscordIntegration';
 import './Settings.css';
 
 const SettingsPage = () => {
@@ -136,7 +136,7 @@ const SettingsPage = () => {
                 className={`tab-btn ${activeTab === 'integrations' ? 'active' : ''}`}
                 onClick={() => setActiveTab('integrations')}
               >
-                <SlackIcon size={18} />
+                <DiscordIcon size={18} />
                 <span>Integrations</span>
                 {planInfo.plan !== 'free' && (
                   <span className="tab-badge">Pro</span>
@@ -238,7 +238,7 @@ const SettingsPage = () => {
                   </div>
                 ) : (
                   <div className="integrations-list">
-                    <SlackIntegration 
+                    <DiscordIntegration 
                       userPlan={planInfo.plan}
                     />
                   </div>
@@ -280,7 +280,7 @@ const SettingsPage = () => {
                   </div>
 
                   <p className="notification-hint">
-                    💡 Enable integrations above to receive notifications via Slack, Email, and more.
+                    💡 Enable integrations above to receive notifications via Discord, Email, and more.
                   </p>
                 </div>
               </div>

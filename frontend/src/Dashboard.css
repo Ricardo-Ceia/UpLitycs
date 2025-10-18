@@ -304,84 +304,90 @@
   line-height: 1;
 }
 
-/* Slack Shortcut */
-.slack-shortcut {
+/* Discord Shortcut */
+.discord-shortcut {
   margin-bottom: 3rem;
   position: relative;
   z-index: 2;
 }
 
-.slack-card {
+.discord-card {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
   padding: 1.75rem;
   border-radius: 16px;
-  border: 2px solid rgba(0, 255, 247, 0.2);
+  border: 2px solid rgba(88, 101, 242, 0.2);
   background: rgba(16, 20, 45, 0.7);
   backdrop-filter: blur(12px);
   transition: all 0.3s ease;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
 }
 
-.slack-card.slack-connected {
+.discord-card.discord-connected {
   border-color: rgba(0, 255, 128, 0.6);
   box-shadow: 0 12px 40px rgba(0, 255, 128, 0.2);
 }
 
-.slack-card.slack-disconnected {
-  border-color: rgba(255, 110, 199, 0.4);
-  box-shadow: 0 12px 40px rgba(255, 110, 199, 0.2);
+.discord-card.discord-disconnected {
+  border-color: rgba(88, 101, 242, 0.4);
+  box-shadow: 0 12px 40px rgba(88, 101, 242, 0.2);
 }
 
-.slack-card:hover {
+.discord-card:hover {
   transform: translateY(-4px);
-  border-color: rgba(0, 255, 247, 0.6);
+  border-color: rgba(88, 101, 242, 0.6);
 }
 
-.slack-card-header {
+.discord-card-header {
   display: flex;
   align-items: center;
   gap: 1rem;
 }
 
-.slack-card-header h3 {
+.discord-card-header h3 {
   margin: 0;
   font-size: 1.35rem;
-  color: #00fff7;
+  color: #5865f2;
   letter-spacing: 1px;
   text-transform: uppercase;
 }
 
-.slack-card-header p {
+.discord-card-header p {
   margin: 0.25rem 0 0 0;
   color: #a0a8c0;
   font-size: 0.9rem;
 }
 
-.slack-icon-wrapper {
+.discord-icon-wrapper {
   width: 54px;
   height: 54px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 14px;
-  background: rgba(21, 184, 255, 0.15);
-  color: #36c5f0;
+  background: rgba(88, 101, 242, 0.15);
+  color: #5865f2;
   position: relative;
   overflow: hidden;
 }
 
-.slack-icon-wrapper::after {
+.discord-icon-wrapper::after {
   content: '';
   position: absolute;
   inset: -40%;
-  background: linear-gradient(135deg, rgba(54, 197, 240, 0.35), rgba(88, 101, 242, 0.35));
+  background: linear-gradient(135deg, rgba(88, 101, 242, 0.35), rgba(88, 101, 242, 0.35));
   transform: rotate(25deg);
   filter: blur(20px);
 }
 
-.slack-card-error {
+.discord-logo {
+  width: 32px;
+  height: 32px;
+  filter: drop-shadow(0 0 8px rgba(88, 101, 242, 0.5));
+}
+
+.discord-card-error {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -393,7 +399,7 @@
   font-size: 0.85rem;
 }
 
-.slack-card-actions {
+.discord-card-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
@@ -401,16 +407,16 @@
   justify-content: space-between;
 }
 
-.slack-connect-row,
-.slack-connected-row,
-.slack-upgrade-row {
+.discord-connect-row,
+.discord-connected-row,
+.discord-upgrade-row {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   flex-wrap: wrap;
 }
 
-.slack-status-badge {
+.discord-status-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -422,27 +428,27 @@
   text-transform: uppercase;
 }
 
-.slack-status-active {
+.discord-status-active {
   background: rgba(0, 255, 128, 0.15);
   color: #7bffba;
   border: 1px solid rgba(0, 255, 128, 0.4);
 }
 
-.slack-status-inactive {
-  background: rgba(255, 110, 199, 0.12);
-  color: #ff9ee2;
-  border: 1px solid rgba(255, 110, 199, 0.4);
+.discord-status-inactive {
+  background: rgba(88, 101, 242, 0.12);
+  color: #b5bef7;
+  border: 1px solid rgba(88, 101, 242, 0.4);
 }
 
-.slack-status-locked {
+.discord-status-locked {
   background: rgba(255, 196, 0, 0.12);
   color: #ffd966;
   border: 1px solid rgba(255, 196, 0, 0.4);
 }
 
-.slack-connect-btn,
-.slack-manage-btn,
-.slack-upgrade-btn {
+.discord-connect-btn,
+.discord-manage-btn,
+.discord-upgrade-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -457,42 +463,42 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.slack-connect-btn {
-  background: linear-gradient(135deg, #36c5f0, #2eb67d);
-  color: #061023;
-  box-shadow: 0 6px 20px rgba(54, 197, 240, 0.4);
+.discord-connect-btn {
+  background: linear-gradient(135deg, #5865f2, #4752c4);
+  color: white;
+  box-shadow: 0 6px 20px rgba(88, 101, 242, 0.4);
 }
 
-.slack-connect-btn:hover:not(:disabled) {
+.discord-connect-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(54, 197, 240, 0.55);
+  box-shadow: 0 8px 24px rgba(88, 101, 242, 0.55);
 }
 
-.slack-connect-btn:disabled {
+.discord-connect-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.slack-manage-btn {
-  background: rgba(0, 255, 247, 0.1);
-  color: #00fff7;
-  border: 1px solid rgba(0, 255, 247, 0.4);
+.discord-manage-btn {
+  background: rgba(88, 101, 242, 0.1);
+  color: #5865f2;
+  border: 1px solid rgba(88, 101, 242, 0.4);
 }
 
-.slack-manage-btn:hover {
+.discord-manage-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 255, 247, 0.3);
+  box-shadow: 0 8px 20px rgba(88, 101, 242, 0.3);
 }
 
-.slack-upgrade-btn {
-  background: linear-gradient(135deg, #ff6ec7, #8c52ff);
+.discord-upgrade-btn {
+  background: linear-gradient(135deg, #5865f2, #4752c4);
   color: white;
-  box-shadow: 0 8px 24px rgba(140, 82, 255, 0.4);
+  box-shadow: 0 8px 24px rgba(88, 101, 242, 0.4);
 }
 
-.slack-upgrade-btn:hover {
+.discord-upgrade-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 28px rgba(140, 82, 255, 0.55);
+  box-shadow: 0 10px 28px rgba(88, 101, 242, 0.55);
 }
 
 .spinner {

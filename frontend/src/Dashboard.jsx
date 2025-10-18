@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, TrendingUp, Activity, Clock, ExternalLink, Trash2, AlertCircle, Award, Copy, Check, X, Shield, ShieldAlert, Settings, Slack, Loader2 } from 'lucide-react';
+import { Plus, TrendingUp, Activity, Clock, ExternalLink, Trash2, AlertCircle, Award, Copy, Check, X, Shield, ShieldAlert, Settings, MessageCircle, Loader2 } from 'lucide-react';
 import UpgradeModal from './UpgradeModal';
 import PlanFeatures from './PlanFeatures';
 import './Dashboard.css';
@@ -21,7 +21,7 @@ const Dashboard = () => {
   const [showBadgeModal, setShowBadgeModal] = useState(null);
   const [badgePeriods, setBadgePeriods] = useState({}); // Store period per app ID
   const [copiedBadge, setCopiedBadge] = useState(null);
-  const [slackStatus, setSlackStatus] = useState({
+  const [discordStatus, setDiscordStatus] = useState({
     loading: false,
     connected: false,
     integration: null,
@@ -69,7 +69,7 @@ const Dashboard = () => {
       if (data.can_add) {
         navigate('/onboarding');
 
-          await loadSlackStatus(data.plan);
+          await loadDiscordStatus(data.plan);
       } else {
         setShowUpgradeModal(true);
       }
@@ -79,9 +79,9 @@ const Dashboard = () => {
   };
 
 
-      const loadSlackStatus = async (plan) => {
+      const loadDiscordStatus = async (plan) => {
         if (plan !== 'pro' && plan !== 'business') {
-          setSlackStatus({
+          setDiscordStatus({
             loading: false,
             connected: false,
             integration: null,
@@ -91,26 +91,26 @@ const Dashboard = () => {
         }
 
         try {
-          setSlackStatus((prev) => ({ ...prev, loading: true, error: null }));
-          const response = await fetch('/api/slack/integration', {
+          setDiscordStatus((prev) => ({ ...prev, loading: true, error: null }));
+          const response = await fetch('/api/discord/integration', {
             credentials: 'include',
           });
 
           const data = await response.json().catch(() => ({}));
 
           if (!response.ok) {
-            throw new Error(data.error || 'Failed to load Slack integration');
+            throw new Error(data.error || 'Failed to load Discord integration');
           }
 
-          setSlackStatus({
+          setDiscordStatus({
             loading: false,
             connected: Boolean(data.integration),
             integration: data.integration,
             error: null,
           });
         } catch (err) {
-          console.error('Error loading Slack integration:', err);
-          setSlackStatus({
+          console.error('Error loading Discord integration:', err);
+          setDiscordStatus({
             loading: false,
             connected: false,
             integration: null,
@@ -119,32 +119,32 @@ const Dashboard = () => {
         }
       };
 
-      const startSlackAuth = async () => {
+      const startDiscordAuth = async () => {
         if (planInfo.plan !== 'pro' && planInfo.plan !== 'business') {
           navigate('/pricing');
           return;
         }
 
         try {
-          setSlackStatus((prev) => ({ ...prev, loading: true, error: null }));
-          const response = await fetch('/api/slack/start-auth', {
+          setDiscordStatus((prev) => ({ ...prev, loading: true, error: null }));
+          const response = await fetch('/api/discord/start-auth', {
             credentials: 'include',
           });
 
           const data = await response.json().catch(() => ({}));
 
           if (!response.ok) {
-            throw new Error(data.error || 'Failed to start Slack authentication');
+            throw new Error(data.error || 'Failed to start Discord authentication');
           }
 
           window.location.href = data.oauth_url;
         } catch (err) {
-          console.error('Error starting Slack auth:', err);
-          setSlackStatus((prev) => ({ ...prev, loading: false, error: err.message }));
+          console.error('Error starting Discord auth:', err);
+          setDiscordStatus((prev) => ({ ...prev, loading: false, error: err.message }));
         }
       };
 
-      const handleManageSlack = () => {
+      const handleManageDiscord = () => {
         navigate('/settings?tab=integrations');
       };
   const handleDeleteApp = async (appId) => {
@@ -423,68 +423,72 @@ const Dashboard = () => {
         </div>
       </section>
 
-      {/* Slack Shortcut */}
-      <section className="slack-shortcut">
-        <div className={`slack-card ${slackStatus.connected ? 'slack-connected' : 'slack-disconnected'}`}>
-          <div className="slack-card-header">
-            <div className="slack-icon-wrapper">
-              <Slack size={28} />
+      {/* Discord Shortcut */}
+      <section className="discord-shortcut">
+        <div className={`discord-card ${discordStatus.connected ? 'discord-connected' : 'discord-disconnected'}`}>
+          <div className="discord-card-header">
+            <div className="discord-icon-wrapper">
+              <img 
+                src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 127.14 96.36'%3E%3Cdefs%3E%3Cstyle%3E.a%7Bfill:%235865F2;%7D%3C/style%3E%3C/defs%3E%3Cpath class='a' d='M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0A105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.15,68.15,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a77.52,77.52,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.22,77,77,0,0,0,6.89,11.1A105.73,105.73,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.66,65.69,31.6,60.55,31.6,54s5-11.75,10.89-11.75S53.3,47.55,53.3,54,48.25,65.69,42.45,65.69Zm42.24,0C78.91,65.69,73.86,60.55,73.86,54s5-11.75,10.89-11.75S95.55,47.55,95.55,54,90.5,65.69,84.69,65.69Z'/%3E%3C/svg%3E"
+                alt="Discord"
+                className="discord-logo"
+              />
             </div>
             <div>
-              <h3>Slack Alerts</h3>
+              <h3>Discord Alerts</h3>
               <p>
                 {planInfo.plan === 'pro' || planInfo.plan === 'business'
-                  ? slackStatus.connected
-                    ? `Connected to #${slackStatus.integration?.slack_channel_name || 'channel'}`
-                    : 'Instant incident alerts in your Slack workspace'
-                  : 'Upgrade to enable Slack notifications'}
+                  ? discordStatus.connected
+                    ? `Connected to #${discordStatus.integration?.channel_name || 'channel'}`
+                    : 'Instant incident alerts in your Discord server'
+                  : 'Upgrade to enable Discord notifications'}
               </p>
             </div>
           </div>
 
-          {slackStatus.error && (
-            <div className="slack-card-error">
+          {discordStatus.error && (
+            <div className="discord-card-error">
               <AlertCircle size={16} />
-              <span>{slackStatus.error}</span>
+              <span>{discordStatus.error}</span>
             </div>
           )}
 
-          <div className="slack-card-actions">
+          <div className="discord-card-actions">
             {planInfo.plan === 'pro' || planInfo.plan === 'business' ? (
-              slackStatus.connected ? (
-                <div className="slack-connected-row">
-                  <span className="slack-status-badge slack-status-active">Connected</span>
-                  <button className="slack-manage-btn" onClick={handleManageSlack}>
+              discordStatus.connected ? (
+                <div className="discord-connected-row">
+                  <span className="discord-status-badge discord-status-active">Connected</span>
+                  <button className="discord-manage-btn" onClick={handleManageDiscord}>
                     Manage
                   </button>
                 </div>
               ) : (
-                <div className="slack-connect-row">
-                  <span className="slack-status-badge slack-status-inactive">Not connected</span>
+                <div className="discord-connect-row">
+                  <span className="discord-status-badge discord-status-inactive">Not connected</span>
                   <button
-                    className="slack-connect-btn"
-                    onClick={startSlackAuth}
-                    disabled={slackStatus.loading}
+                    className="discord-connect-btn"
+                    onClick={startDiscordAuth}
+                    disabled={discordStatus.loading}
                   >
-                    {slackStatus.loading ? (
+                    {discordStatus.loading ? (
                       <>
                         <Loader2 className="spinner" size={16} />
                         Connecting...
                       </>
                     ) : (
-                      'Connect Slack'
+                      'Connect Discord'
                     )}
                   </button>
-                  <button className="slack-manage-btn" onClick={handleManageSlack}>
+                  <button className="discord-manage-btn" onClick={handleManageDiscord}>
                     Learn more
                   </button>
                 </div>
               )
             ) : (
-              <div className="slack-upgrade-row">
-                <span className="slack-status-badge slack-status-locked">Locked</span>
-                <button className="slack-upgrade-btn" onClick={() => navigate('/pricing')}>
-                  Upgrade for Slack Alerts
+              <div className="discord-upgrade-row">
+                <span className="discord-status-badge discord-status-locked">Locked</span>
+                <button className="discord-upgrade-btn" onClick={() => navigate('/pricing')}>
+                  Upgrade for Discord Alerts
                 </button>
               </div>
             )}

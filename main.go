@@ -144,6 +144,13 @@ func main() {
 		r.With(auth.AuthMiddleware).Get("/slack/integration", appHandlers.GetSlackIntegrationHandler)
 		r.With(auth.AuthMiddleware).Post("/slack/disable", appHandlers.DisableSlackIntegrationHandler)
 
+		// Discord integration routes (Protected - Pro/Business only)
+		r.With(auth.AuthMiddleware).Get("/discord/start-auth", appHandlers.StartDiscordAuthHandler)
+		r.Get("/discord/callback", appHandlers.DiscordCallbackHandler)
+		r.With(auth.AuthMiddleware).Get("/discord/integration", appHandlers.GetDiscordIntegrationHandler)
+		r.With(auth.AuthMiddleware).Post("/discord/webhook", appHandlers.UpdateDiscordWebhookHandler)
+		r.With(auth.AuthMiddleware).Post("/discord/disable", appHandlers.DisableDiscordIntegrationHandler)
+
 		// Public API - no authentication required
 		r.Get("/public/status/{slug}", appHandlers.GetPublicStatusHandler)
 		r.Get("/public/ping/{slug}", appHandlers.GetCurrentResponseTimeHandler)

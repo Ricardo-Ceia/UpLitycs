@@ -977,3 +977,150 @@ func LogIncidentNotification(conn *sql.DB, appID int, notificationType, status s
 	_, err := conn.Exec(query, appID, notificationType, status)
 	return err
 }
+
+// ========== DISCORD INTEGRATION FUNCTIONS ==========
+
+// DiscordIntegration represents a Discord integration
+type DiscordIntegration struct {
+	ID              int    `json:"id"`
+	UserID          int    `json:"user_id"`
+	DiscordUserID   string `json:"discord_user_id"`
+	DiscordUsername string `json:"discord_username"`
+	WebhookURL      string `json:"webhook_url,omitempty"` // Don't expose webhook URL in API
+	ServerID        string `json:"server_id"`
+	ServerName      string `json:"server_name"`
+	ChannelID       string `json:"channel_id"`
+	ChannelName     string `json:"channel_name"`
+	IsEnabled       bool   `json:"is_enabled"`
+	CreatedAt       string `json:"created_at"`
+	UpdatedAt       string `json:"updated_at"`
+}
+
+// SaveDiscordIntegration saves or updates a Discord integration for a user
+func SaveDiscordIntegration(conn *sql.DB, userID int, discordUserID, discordUsername, webhookURL, serverID, serverName, channelID, channelName string) (*DiscordIntegration, error) {
+	query := `
+		INSERT INTO discord_integrations (user_id, discord_user_id, discord_username, webhook_url, server_id, server_name, channel_id, channel_name, is_enabled)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)
+		ON CONFLICT (user_id) DO UPDATE
+		SET discord_user_id = $2,
+		    discord_username = $3,
+		    webhook_url = $4,
+		    server_id = $5,
+		    server_name = $6,
+		    channel_id = $7,
+		    channel_name = $8,
+		    is_enabled = true,
+		    updated_at = NOW()
+		RETURNING id, user_id, discord_user_id, discord_username, server_id, server_name, channel_id, channel_name, is_enabled, created_at, updated_at
+	`
+
+	var integration DiscordIntegration
+	err := conn.QueryRow(query, userID, discordUserID, discordUsername, webhookURL, serverID, serverName, channelID, channelName).Scan(
+		&integration.ID,
+		&integration.UserID,
+		&integration.DiscordUserID,
+		&integration.DiscordUsername,
+		&integration.ServerID,
+		&integration.ServerName,
+		&integration.ChannelID,
+		&integration.ChannelName,
+		&integration.IsEnabled,
+		&integration.CreatedAt,
+		&integration.UpdatedAt,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("error saving Discord integration: %w", err)
+	}
+
+	return &integration, nil
+}
+
+// GetDiscordIntegration retrieves a user's Discord integration (without webhook URL for security)
+func GetDiscordIntegration(conn *sql.DB, userID int) (*DiscordIntegration, error) {
+	query := `
+		SELECT id, user_id, discord_user_id, discord_username, server_id, server_name, channel_id, channel_name, is_enabled, created_at, updated_at
+		FROM discord_integrations
+		WHERE user_id = $1
+	`
+
+	var integration DiscordIntegration
+	err := conn.QueryRow(query, userID).Scan(
+		&integration.ID,
+		&integration.UserID,
+		&integration.DiscordUserID,
+		&integration.DiscordUsername,
+		&integration.ServerID,
+		&integration.ServerName,
+		&integration.ChannelID,
+		&integration.ChannelName,
+		&integration.IsEnabled,
+		&integration.CreatedAt,
+		&integration.UpdatedAt,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, nil // No integration found
+	}
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving Discord integration: %w", err)
+	}
+
+	return &integration, nil
+}
+
+// GetDiscordIntegrationByAppID retrieves Discord integration using app ID (with webhook URL for internal use)
+func GetDiscordIntegrationByAppID(conn *sql.DB, appID int) (*DiscordIntegration, error) {
+	query := `
+		SELECT 
+			di.id, di.user_id, di.discord_user_id, di.discord_username, 
+			di.webhook_url, di.server_id, di.server_name, di.channel_id, 
+			di.channel_name, di.is_enabled, di.created_at, di.updated_at
+		FROM discord_integrations di
+		JOIN apps a ON a.user_id = di.user_id
+		WHERE a.id = $1 AND di.is_enabled = true
+	`
+
+	var integration DiscordIntegration
+	err := conn.QueryRow(query, appID).Scan(
+		&integration.ID,
+		&integration.UserID,
+		&integration.DiscordUserID,
+		&integration.DiscordUsername,
+		&integration.WebhookURL,
+		&integration.ServerID,
+		&integration.ServerName,
+		&integration.ChannelID,
+		&integration.ChannelName,
+		&integration.IsEnabled,
+		&integration.CreatedAt,
+		&integration.UpdatedAt,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving Discord integration: %w", err)
+	}
+
+	return &integration, nil
+}
+
+// DisableDiscordIntegration disables Discord integration for a user
+func DisableDiscordIntegration(conn *sql.DB, userID int) error {
+	_, err := conn.Exec(
+		"UPDATE discord_integrations SET is_enabled = false, updated_at = NOW() WHERE user_id = $1",
+		userID,
+	)
+	return err
+}
+
+// DeleteDiscordIntegration removes Discord integration for a user
+func DeleteDiscordIntegration(conn *sql.DB, userID int) error {
+	_, err := conn.Exec(
+		"DELETE FROM discord_integrations WHERE user_id = $1",
+		userID,
+	)
+	return err
+}
