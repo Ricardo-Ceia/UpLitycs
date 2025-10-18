@@ -5,7 +5,6 @@
 [![Go](https://img.shields.io/badge/Go-1.24.1-00ADD8?logo=go)](https://golang.org)
 [![React](https://img.shields.io/badge/React-19.1-61DAFB?logo=react)](https://react.dev)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Latest-336791?logo=postgresql)](https://www.postgresql.org)
-[![License](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
 
 **A modern, real-time uptime monitoring and status page platform with integrations for Slack, Discord, and Stripe payments**
 
@@ -675,27 +674,6 @@ Found a bug? Please open an issue with:
 - Expected vs actual behavior
 - Your environment details
 
----
-
-## Roadmap
-
-### Planned Features
-- [ ] Mobile app for iOS/Android
-- [ ] Advanced analytics and reporting
-- [ ] Custom metrics and KPIs
-- [ ] API rate limiting
-- [ ] Webhook notifications
-- [ ] Email digest reports
-- [ ] Advanced alert scheduling
-- [ ] Team collaboration features
-- [ ] Multi-language support
-
-### In Development
-- [ ] Performance optimization
-- [ ] Enhanced dashboard UI
-- [ ] Real-time notifications
-
----
 
 ## Performance & Scalability
 
@@ -723,17 +701,7 @@ Found a bug? Please open an issue with:
 - ✅ **HTTPS Ready** - Full HTTPS support with Caddy
 - ✅ **Admin Authentication** - Protected admin endpoints
 
-### Security Recommendations
-1. Always use HTTPS in production
-2. Keep dependencies updated
-3. Rotate secrets regularly
-4. Monitor access logs
-5. Use strong database passwords
-6. Restrict API access with rate limiting
 
----
-
-## Troubleshooting
 
 ### Database Connection Issues
 ```bash
@@ -775,65 +743,8 @@ See `docker-compose.yaml` for configuration.
 - **Heroku** - Buildpack deployment
 - **Render** - Native support for Go + React
 
-### Production Checklist
-- [ ] Set production environment variables
-- [ ] Configure HTTPS/SSL
-- [ ] Set up database backups
-- [ ] Configure monitoring
-- [ ] Set up CI/CD pipeline
-- [ ] Configure email service
-- [ ] Test payment processing
-- [ ] Set up logging and monitoring
-
----
-
-## Support
-
-### Getting Help
-- 📖 **Documentation**: Check docs/ folder
-- 🐛 **Bug Reports**: Open an issue on GitHub
-- 💬 **Discussions**: Use GitHub Discussions
-- 📧 **Email**: support@uplitycs.com
-
-### Community
-- Join our [Discord community](#)
-- Follow on [Twitter](#)
-- Read our [Blog](#)
-
----
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## Acknowledgments
-
 - Built with ❤️ by Ricardo Ceia
 - Inspired by modern status page solutions
 - Thanks to all contributors and community members
 
----
 
-## Changelog
-
-### Version 1.0.0 (Current)
-- ✨ Initial release
-- 🎨 Real-time status page generation
-- 💳 Stripe payment integration
-- 🔐 OAuth 2.0 authentication
-- 💬 Slack and Discord integrations
-- 🔒 SSL certificate monitoring
-- 📊 Multi-app dashboard
-- 🌙 Customizable themes
-
----
-
-<div align="center">
-
-Made with 💚 by [Ricardo Ceia](https://github.com/Ricardo-Ceia)
-
-[⬆ back to top](#uplitycs---status-page--uptime-monitoring-platform)
-
-</div>
